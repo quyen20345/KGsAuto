@@ -1,0 +1,14 @@
+# KG-Core Dependencies
+# LLM
+google-genai>=0.2.0
+requests>=2.31.0
+
+# # Vector Database
+# qdrant-client>=1.7.0
+# sentence-transformers>=2.2.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+ollama==0.6.1
+openai==2.20.0
