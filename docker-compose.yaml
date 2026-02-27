@@ -10,5 +10,23 @@ services:
       - ollama_data:/root/.ollama
     restart: always
 
+  neo4j:
+    image: neo4j:2026.01.4     
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ${HOME}/neo4j/data:/data
+      - ${HOME}/neo4j/logs:/logs
+      - ${HOME}/neo4j/plugins:/plugins
+      - ${HOME}/neo4j/conf:/conf   
+    environment:
+      - NEO4J_AUTH=neo4j/12345678
+      - NEO4JLABS_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+    restart: always
+
 volumes:
   ollama_data:
