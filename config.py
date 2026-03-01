@@ -19,18 +19,5 @@ class Config:
     # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     # ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-    # Model defaults
+    # Model defaults gemini-2.5-flash
     DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.5-flash")
-    DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", "0.7"))
-    DEFAULT_TOP_P = 0.95
-    DEFAULT_MAX_TOKENS = 8192
-
-    @classmethod
-    def validate(cls):
-        """Validate required configuration."""
-        if not cls.GOOGLE_API_KEY:
-            raise ValueError("GOOGLE_API_KEY not set in .env file")
-
-
-# Auto-validate on import (optional - remove if you prefer manual validation)
-# Config.validate()

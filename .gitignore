@@ -1,0 +1,25 @@
+# Environment variables
+.env
+
+# Directories
+/data
+/neo4j/import
+/logs
+kg-core/
+.claude
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

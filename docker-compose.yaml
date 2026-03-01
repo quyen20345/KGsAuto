@@ -28,5 +28,14 @@ services:
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
     restart: always
 
+  qdrant:
+    image: qdrant/qdrant:v1.15.0
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - ${HOME}/qdrant/data:/qdrant/storage
+    restart: always
+
 volumes:
   ollama_data:

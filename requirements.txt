@@ -1,14 +1,16 @@
 # KG-Core Dependencies
-# LLM
+# LLM services
 google-genai>=0.2.0
-requests>=2.31.0
+ollama==0.6.1
+openai==2.20.0
 
-# # Vector Database
-# qdrant-client>=1.7.0
-# sentence-transformers>=2.2.0
+# transformers
+sentence-transformers>=2.2.0
+
+# Database
+qdrant-client>=1.7.0
+neo4j>=5.10.0
 
 # Utilities
 python-dotenv>=1.0.0
-neo4j>=5.10.0
-ollama==0.6.1
-openai==2.20.0
+requests>=2.31.0
