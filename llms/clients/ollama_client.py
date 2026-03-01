@@ -38,8 +38,7 @@ class OllamaClient(BaseLLM):
         usage_tokens=total_tokens if total_tokens > 0 else None
       )
     except Exception as e:
-      # return f"Ollama Error: {str(e)}"
-      LLMResponse(
+      return LLMResponse(
         content=f"Error {str(e)}",
         model=self.model_name
       )

@@ -4,7 +4,7 @@ from openai import OpenAI
 from config import Config
 from llms import LLMResponse, Message
 
-class AntigravityClient(BaseLLM):
+class ProxypalClient(BaseLLM):
     def __init__(self, model_name : Optional[str] = None, **kwargs):
         self.model_name = model_name
         self.host = kwargs.get("host", "http://localhost:8317/v1")
@@ -43,11 +43,11 @@ class AntigravityClient(BaseLLM):
             )
         except Exception as e:
             return LLMResponse(
-                f"Antigravity Error: {str(e)}", 
+                f"Proxypal Error: {str(e)}", 
                 model=self.model_name
             )
             
             
 # if __name__=="__main__":
-#   client = AntigravityClient("gemini-2.5-flash")
+#   client = ProxypalClient("gemini-2.5-flash") # gemini-2.5-flash gemini-claude-sonnet-4-5
 #   print(client.generate("why is the sky blue?"))
