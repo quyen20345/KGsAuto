@@ -2,8 +2,10 @@ from llms import BaseLLM
 from typing import Optional, List, Dict
 from openai import OpenAI
 from config import Config
+from llms.factory import register_llm 
 from llms import LLMResponse, Message
 
+@register_llm("proxypal")
 class ProxypalClient(BaseLLM):
     def __init__(self, model_name : Optional[str] = None, **kwargs):
         self.model_name = model_name

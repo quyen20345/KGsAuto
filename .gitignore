@@ -1,12 +1,16 @@
 # Environment variables
 .env
+.continue/ 
+.claude
+
+# logs
+*logs/ 
+
 
 # Directories
 /data
-/neo4j/import
-/logs
 kg-core/
-.claude
+
 
 # Python
 __pycache__/

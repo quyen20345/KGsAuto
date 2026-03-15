@@ -1,16 +1,10 @@
-"""
-can dieu chinh prompt ti mi hon:
-    - id phai o dang kho bi trung lap, ...
-code phai extract lien mach 
-"""
-
 import json
 import argparse
 from typing import Optional, Dict, Any
 from pathlib import Path
 
 from llms import get_llm
-from extract.prompts import get_extraction_prompt
+from extract.strict_prompt import get_extraction_prompt
 
 class KGExtractor:
     def __init__(self, provider: str = "gemini", model_name: str = "gemma-3-27b-it"):
@@ -44,12 +38,13 @@ class KGExtractor:
             """
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
+            # Auto-generate doc_id from filename.
             doc_id = file_path.stem 
 
             return self.extract_from_text(text=content, doc_id=doc_id)
 
 
-    def extract_from_dir(self, input_dir: str = "data/uet", output_dir: str = "neo4j/import"):
+    def extract_from_dir(self, input_dir: str = "data/raw/uet", output_dir: str = "data/extracted"):
         in_dir = Path(input_dir)
         out_dir = Path(output_dir)
 
@@ -80,10 +75,12 @@ class KGExtractor:
 if __name__ == "__main__":
     # Setup Argument Parser
     parser = argparse.ArgumentParser(description="Extract KG from a directory of Markdown files.")
-    parser.add_argument("--dir", type=str, default="data/uet", help="Input directory containing .md files")
-    parser.add_argument("--out", type=str, default="neo4j/import", help="Output directory for JSON files")
+    parser.add_argument("--dir", type=str, default="data/raw/uet", help="Input directory containing .md files")
+    parser.add_argument("--out", type=str, default="data/extracted", help="Output directory for JSON files")
     args = parser.parse_args()
 
-    extractor = KGExtractor(provider="gemini", model_name="gemma-3-27b-it")
+    # extractor = KGExtractor(provider="gemini", model_name="gemma-3-27b-it")
+    # extractor = KGExtractor(provider="gemini", model_name="gemini-2.5-flash")
+    extractor = KGExtractor(provider="proxypal", model_name="gpt-5")
     extractor.extract_from_dir(input_dir=args.dir, output_dir=args.out)
         
