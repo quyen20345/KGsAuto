@@ -1,0 +1,35 @@
+# FISU – Cầu nối gắn kết các đơn vị nghiên cứu, đào tạo công nghệ thông tin – truyền thông
+
+- ID: 11444
+- Date: 2018-04-09T10:28:11
+- URL: https://uet.edu.vn/fisu-cau-noi-gan-ket-cac-don-vi-nghien-cuu-dao-tao-cong-nghe-thong-tin-truyen-thong/
+- Categories: Tin Tổng Hợp
+- Tags: 
+
+## Content
+
+Ngày 06/04, Khoa Công nghệ Thông tin trực thuộc Trường Đại học Công nghệ đã chủ trì đăng cai tổ chứcĐại hội đại biểu toàn quốc thành lập Câu lạc bộ Khoa – Trường – Viện Công nghệ thông tin – truyền thông Việt Nam (Vietnam Club of Faculties – Institutes – School – Universities of ICT, FISU).
+
+Tham dự đại hội có TS. Nguyễn Thành Hưng – Thứ trưởng Bộ Thông tin & truyền thông, ông Nguyễn Sơn Hải – Cục trưởng Cục Công nghệ thông tin (Bộ Giáo dục và Đào tạo), ông Nguyễn Long – Phó Chủ tịch kiêm Tổng thư ký hội Tin học Việt Nam và 100 đại biểu đến từ các đơn vị nghiên cứu, đào tạo lĩnh vực Công nghệ thông tin – truyền thông. Về phía ĐHQGHN có GS.TS. Nguyễn Hữu Đức – Phó Giám đốc ĐHQGHN. Về phía trường ĐHCN có PGS.TS. Phạm Bảo Sơn – Phó Hiệu trưởng cùng lãnh đạo, cán bộ khoa Công nghệ thông tin.
+
+FISU – sự ra đời tất yếu, khách quan
+
+Trải qua quá trình hơn 9 năm từ lúc bắt đầu hình thành ý tưởng và quá trình kết nối các đơn vị nghiên cứu, đào tạo trong lĩnh công nghệ thông tin – truyền thông (CNTT-TT), đến nay Câu lạc bộ Khoa – Trường – Viện CNTT – TT đã thành lập và được đánh dấu bằng Đại hội đại biểu toàn quốc thành lập Câu lạc bộ Khoa – Trường – Viện CNTT – TT nhiệm kỳ I. Đại hội nhiệm kỳ I của FISU đã đánh dấu một chặng đường 25 năm phát triển của lĩnh vực CNTT-TT kể từ khi có chương trình quốc gia phát triển CNTT ở Việt Nam, trong đó có vai trò to lớn của đội ngũ các khoa, trường, viện CNTT – TT đào tạo nguồn nhân lực chất lượng cao trong lĩnh vực công nghệ mũi nhọn là CNTT – TT. Từ chỗ chỉ có 10 khoa CNTT ban đầu vào giữa những năm 90 đến nay chũng ta có khoảng 150 khoa CNTT trong các trường đại học có đào tạo CNTT, 10 viện nghiên cứu chuyên ngành CNTTTT và 100 khoa CNTT trong các trường cao đẳng. Chúng ta có đội ngũ to lớn các chuyên gia trẻ, có trình độ TS, được đào tạo bài bản tại các quốc gia có trình độ phát triển cao về CNTTTT. Đây chính là một nhân tố quan trọng, đảm bảo và quyết định chất lượng nguồn nhân lực CNTTTT của VN và cho VN trong giai đoạn hiện nay và thời gian tới.
+
+Sự ra đời của FISU được PGS. TS. Phạm Bảo Sơn đánh giá là quá trình tất yếu, khách quan. PGS còn chia sẻ trải qua quá trình dài thai nghén phát triển về tư duy đến tên gọi, hiệu chỉnh ý tưởng, tôn chỉ, mục đích, phương hướng hoạt động FISU đã tiến đến bước triển khai đại hội đại biểu thành lập. CNTT – TT là ngành khoa học ra đời và phát triển sau một số ngành khác nhưng với tốc độ phát triển như vũ bão. Đến nay, CNTT – TT đã trở thành một trong những ngành quan trọng bậc nhất, là nền tảng chung cho nhiều ngành khoa học các công nghệ hiện đại khác. ICT có mặt ở khắp nơi, trở thành thuật ngữ phổ thông, một lĩnh vực không thể thiếu của xã hội. Việc đẩy mạnh đào tạo, nghiên cứu, ứng dụng phát triển ICT trong sản xuất, quản lý, phát triển kinh tế – xã hội là một trong những ưu tiên hàng đầu của nhiều quốc gia trên thế giới nói chung và Việt Nam nói riêng.
+
+Phó Hiệu trưởng Trường ĐHCN nhấn mạnh từ những ngày đầu nước ta có 7 khoa Công nghệ thông tin (CNTT) trọng điểm, đến nay cả nước có 250 khoa CNTT trong các trường đại học, cao đẳng. Việc liên kết, cộng tác trong đào tạo và nghiên cứu đối với lĩnh vực này vô cùng quan trọng và FISU ra đời là sự đòi hỏi tất yếu khách quan. Khoa CNTTtiền thân là Khoa CNTT của Trường ĐH tổng hợp Hà Nội – 1 trong 7 khoa CNTT trọng điểm cả nước. Trải qua hơn 20 năm phát triển mạnh mẽ với đội ngũ chuyên gia CNTT đông đảo hơn 60 Tiến sỹ và 30% cán bộ học hàm GS, PGS. Nhà trường nói chung và khoa nói riêng hi vọng sẽ nhận được sự tư vấn, phản biện của FISU vào định hướng phát triển CNTT – TT cũng như hoạt động đào tạo, trao đổi học thuật với các đơn vị thành viên FISU khắp cả nước.
+
+Nói đến tầm quan trọng của FISU, Thứ trưởng Nguyễn Thành Hưng khẳng định Câu lạc bộ Khoa – Trường – Viện Công nghệ thông tin – truyền thông Việt Nam đóng vai trò tích cực trong việc hình thành nguồn nhân lực đáp ứng tiêu chuẩn quốc tế. Hiện nay, Việt Nam có 250 trường đại học, cao đẳng có đào tạo ngành CNTT nhưng chất lượng sinh viên chưa đồng đều, tính liên kết giữa các trường chưa cao. Việc thành lập FISU tạo nên cộng đồng mang tính gắn kết giữa các trường đào tạo CNTT và chuẩn hóa giáo trình ngành CNTT, đồng thời chất lượng nguồn lực sẽ được nâng cao. Từ đó, góp phần tăng cường chỉ số xếp hạng lĩnh vực CNTT của Việt Nam trên thế giới. Bộ TT&TThi vọng Hội Tin học Việt Nam và FISU cùng các đơn vị đào tạo CNTT… phối hợp trong việc nghiên cứu, áp dụng và điều chỉnh chuẩn kỹ năng CNTT – TT sát với tiêu chuẩn quốc tế.
+
+Nơi tụ hội, gắn kết trong lĩnh vực công nghệ thông tin
+
+“FISU là nơi tụ hội, kết nối, định hướng, chia sẻ về đào tạo và nghiên cứu, để có tiếng nói chung tham gia vào các hoạt động phát triển giảng dạy, đào tạo và nghiên cứu trong lĩnh vực CNTT- TT của cả nước, mang lại lợi ích chính đáng cho các thành viên, đóng góp tích cực cho cộng đồng và xã hội về các mặt xây dựng giáo trình, cập nhật công nghệ mới, tổ chức hội thảo, hội nghị khoa học và đào tạo, đào tạo công nghệ mới, xây dựng các chứng nhận chuyên môn chuyên sâu đạt chuẩn quốc tế và khu vực, kết nối doanh nghiệp góp phần đưa Việt Nam sánh vai các cường quốc CNTT-TT trong khu vực và trên thế giới”. Đây là quan điểm được GS.TS. Nguyễn Thanh Thủy – Chủ tịch FISU nhiệm kỳ 2018 – 2021 nhận định.
+
+Một lần nữa khẳng định FISU là nơi gắn kết các đơn vị trong lĩnh vực CNTT – TT, ông Nguyễn Long cho biết FISU ra đời nhằm mục đích tập hợp, đoàn kết các thầy cô các khoa viện trường CNTT phát huy hơn nữa tài năng, trí tuệ trong hoạt động nguồn nhân lực CNTT và các hoạt động khoa học công nghệ. Đồng thời làm tốt vai trò tham mưu, tư vấn giúp Hội tin học Việt Nam hoạch định, đề xuất giải pháp đóng góp vào sự phát triển ngành CNTT.
+
+Sự ra đời của FISU nhằm khơi dậy tiềm năng và phát huy được vai trò của đội ngũ các nhà khoa học trong lĩnh vực phát triển của sự nghiệp đào tạo nguồn nhân lực CNTT đáp ứng yêu cầu phát triển đất nước trong thời kỳ cách mạng công nghiệp 4.0. GS.TS. Nguyễn Hữu Đức cho biết, ĐHQGHN có 4 đơn vị hoạt động và đào tạo trong lĩnh vực CNTT gồm trường Đại học Khoa học tự nhiên, trường ĐHCN, Viện CNTT và Viện Tin học Pháp ngữ. Sự kiện này là nền tảng quan trọng, tạo động lực phát triển cho cuộc cách mạng công nghiệp 4.0. Bên cạnh xu hướng phát triển các trường đại học định hướng nghiên cứu, ĐHQGHN đang chuyển dần thành đại học thông minh định hướng đổi mới sáng tạo. Từ đó, FISU phải là nơi đầu tiên đưa tinh thần khởi nghiệp, đổi mới sang tạo vào từng nhà trường để sinh viên CNTT học tập có khả năng trở thành những người sáng nghiệp.
+
+CLB là một chi hội thuộc Hội Tin học Việt Nam, tuân thủ tôn chỉ, mục đích và Điều lệ của Hội. FISU thực hiện tất cả hoạt động liên quan đào tạo nguồn lực CNTT-TT, nghiên cứu triển khai, chuyển giao và dịch vụ CNTT-TT dưới các hình thức khác nhau, theo quy định của pháp luật và điều lệ Hội Tin học Việt Nam.
+
+Tuyết Nga (UET-News)

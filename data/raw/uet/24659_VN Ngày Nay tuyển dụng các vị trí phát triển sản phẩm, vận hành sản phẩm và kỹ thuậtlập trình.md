@@ -1,0 +1,13 @@
+# VN Ngày Nay tuyển dụng các vị trí phát triển sản phẩm, vận hành sản phẩm và kỹ thuật/lập trình
+
+- ID: 24659
+- Date: 2021-06-30T08:46:36
+- URL: https://uet.edu.vn/vn-ngay-nay-tuyen-dung-cac-vi-tri-phat-trien-san-pham-van-hanh-san-pham-va-ky-thuatlap-trinh/
+- Categories: Cơ hội việc làm, Tin Sinh Viên
+- Tags: 
+
+## Content
+
+Được thành lập năm 2017, VN Ngày Nay với công nghệ AI tiên tiến đã cán mốc hơn 35 triệu lượt cài đặt trên khắp cả nước. Nhờ tiềm năng và xu hướng công nghệ đón đầu thị trường, VN Ngày Nay đang không ngừng thu hút các dự án hợp tác chiến lược đến từ những tập đoàn quốc tế. Và để đào tạo thêm một thế hệ nhân tài mới, VN Ngày Nay quyết định triển khai chương trình Asia Interns cho các sinh viên tiềm năng đến làm việc, sinh sống và trưởng thành ở các thành phố hàng đầu Châu Á hiện nay như Thâm Quyến, Bangkok, Manila.
+
+I. Các vị trí tuyển dụng 1. Vị trí 1: MOBILE APP DEVELOPER Nội dung công việc: – Tham gia phát triển chức năng và tối ưu hóa hiệu suất của sản phẩm; – Thiết kế, phát triển và bảo trì các sản phẩm mới; – Tham gia thảo luận với các Giám đốc Sản phẩm về nhu cầu và các tính năng mới; 2. Vị trí 2: MOBILE APP PRODUCT OPERATIONS Nội dung công việc: – Tham gia thiết kế sản phẩm với lượng người dùng lên đến hàng chục triệu; – Thu thập, phân tích các số liệu thị trường nhằm đưa ra chiến lược cho sản phẩm; – Phân tích hành vi, tìm hiểu nhu cầu người dùng và lên ý tưởng tối ưu sản phẩm; – Xử lý các vấn đề phát sinh trong quá trình vận hành sản phẩm; II. Yêu cầu ứng viên: 1. Yêu cầu chung: – Tiếng Anh giao tiếp lưu loát; biết tiếng Trung là một lợi thế; – Yêu thích các lĩnh vực trong ngành công nghệ số và mobile app; – Giao tiếp tốt, tư duy logic rõ ràng; – Chủ động, nhiệt huyết, ham học hỏi và có tinh thần cầu tiến; 2. Đối với vị trí MOBILE APP DEVELOPER – Đang theo học hoặc tốt nghiệp các ngành công nghệ thông tin/lập trình; 3. Quyền lợi được hưởng: – Thời gian làm việc linh hoạt, sắp xếp phù hợp với lịch học và lịch thi; – Sinh sống và làm việc ở các thành phố công nghệ cao bậc nhất như Thâm Quyến, Bangkok, Manila; – Chế độ phúc lợi cực hấp dẫn, thu nhập cao hơn rất nhiều so với thị trường việc làm Việt Nam; – Cộng tác cùng đội ngũ gồm nhiều nhân tài từng làm việc các tập đoàn hàng đầu như Tencent, Xunlei; – Trở thành nhân viên chính thức sau quá trình thử việc cùng cơ hội thăng tiến cực kỳ hấp dẫn; Xem thêm thông tin chương trình tại: Website: https://vngaynay.vn/?fbclid=IwAR2sKUiNUaEinvdsw7i8HPhzmKihDM_RLfabypcJMx-K4cV6bwyzOMBx2NM#/want Fanpage: https://www.facebook.com/vngaynay.tuyendung Tham gia ứng tuyển bằng cách gửi CV về địa chỉ: tuyendung.hr@vnngaynay.vn hoặc liên hệ Mr Toàn (079 480 9880) hoặc Ms Trúc (036 370 5127) để được hướng dẫn thêm.

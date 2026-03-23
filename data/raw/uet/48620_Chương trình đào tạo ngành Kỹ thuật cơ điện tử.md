@@ -1,0 +1,17 @@
+# Chương trình đào tạo ngành Kỹ thuật cơ điện tử
+
+- ID: 48620
+- Date: 2025-07-17T11:10:25
+- URL: https://uet.edu.vn/chuong-trinh-dao-tao-nganh-ky-thuat-co-dien-tu-10/
+- Categories: ĐTSĐH
+- Tags: 
+
+## Content
+
+1. Tóm tắt yêu cầu chương trình đào tạo Tổng số tín chỉ phải tích lũy: 61 tín chỉ, trong đó: – Khối kiến thức chung: 08 tín chỉ – Khối kiến thức cơ sở và chuyên ngành: 24 tín chỉ Bắt buộc: 12 tín chỉ Tự chọn: 12/36 tín chỉ – Nghiên cứu khoa học: 29 tín chỉ Chuyên đề nghiên cứu: 14 tín chỉ Luận văn thạc sĩ: 15 tín chỉ 2. Khung chương trình đào tạo STT Mã học phần Tên học phần (ghi bằng tiếng Việt và tiếng Anh) Số tín chỉ Số giờ tín chỉ Mã số học phần tiên quyết Lí thuyết Thực hành Tự học I Khối kiến thức chung 8 1 PHI 5001 Triết học Philosophy 3 42 3 0 2 ENG 5001 Tiếng Anh B2 English B2 5 30 45 0 II Khối kiến thức cơ sở và chuyên ngành 2 4 II.1 Các học phần bắt buộc 1 2 3 EMA 6137 Động lực học hệ nhiều vật Dynamics of Multibody Systems 3 30 0 15 4 EMA 6138 Hệ thống điều khiển phân tán Distributed Control System 3 30 0 15 5 EMA 6140 Thiết kế hệ thống nhúng Embedded System Design 3 30 0 15 6 EMA 6141 Tự động hóa quá trình sản xuất Automation of Manufacturing Process 3 30 0 15 II.2 Các học phần tự chọn 12/36 7 EMA 7015 Các phương pháp giải tích gần đúng Approximate Analytical Methods 3 26 4 15 8 EMA 7016 Phương pháp số ứng dụng Applied Numerical Methods 3 30 0 15 9 EMA 7017 Công nghệ CNC và ứng dụng CNC Technology and Application 3 30 0 15 10 EMA 7018 Công nghệ chế tạo máy nâng cao Advanced Machine Manufacturing Technology 3 30 0 15 11 EMA 7019 Điều khiển quá trình Process Control 3 30 0 15 12 EMA 7004 Hệ vi cơ điện tử Microelectromechanical Systems 3 30 0 15 13 EMA 7020 Kỹ thuật Vi điều khiển nâng cao Advanced Microcontroller Programming Techniques 3 15 15 15 14 EMA 7021 Mạch điện tử nâng cao Advanced Electronic Circuits 3 30 0 15 15 EMA 7022 Thiết bị và hệ thống đo thông minh Intelligent Measurement Systems and Devices 3 30 0 15 16 EMA 7023 Thiết kế hệ thống điều khiển PLC PLC System Design 3 30 0 15 17 EMA 7025 Tự động hóa tính toán thiết kế chế tạo máy Automation in Design and Manufacturing Machine 3 30 0 15 18 EMA 7025 Hệ thống nhúng và IoT Embedded System and IoT 3 30 0 15 III Nghiên cứu khoa học 29 III.1 Chuyên đề nghiên cứu 14 19 INT 6196 Phương pháp luận nghiên cứu khoa học Scientific Research Methodology 2 30 0 0 20 EMA 6139 Thiết kế hệ thống cơ điện tử Mechatronic System Design 3 20 10 15 21 EMA 7024 Thực hành Cơ điện tử Mechatronics Laboratory 3 6 24 15 22 EMA 7001 Chuyên đề nghiên cứu 1 Research Project 1 3 15 15 15 23 EMA 7002 Chuyên đề nghiên cứu 2 Research Project 2 3 15 15 15 III.2 Luận văn thạc sĩ 15 24 EMA 7200 Luận văn Thesis 15 Tổng cộng 61 Ghi chú:
+
+Học phần Tiếng Anh B2 (SĐH) có khối lượng 5 tín chỉ, được tính vào tổng số tín chỉ của CTĐT nhưng không tính vào điểm trung bình chung học kì và trung bình chung học tập.
+
+Số giờ tín chỉ trên được sử dụng để tổ chức và quản lý giảng dạy. Theo quy định, một tín chỉ tương đương 50 giờ học tập định mức của người học. Vì vậy, ngoài số giờ trên, học viên cần dành thêm 105 giờ tự học ứng với các học phần 3 tín chỉ,
+
+70 giờ tự học ứng với các học phần 2 tín chỉ . 01 giờ tín chỉ thực hành tương ứng với 02 giờ thực tế trên lớp

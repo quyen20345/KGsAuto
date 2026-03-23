@@ -1,0 +1,27 @@
+# Dự án “Hệ thống nước bền vững áp dụng Công nghệ 4.0” do nhóm nghiên cứu hỗn hợp giữa Đại học Công nghệ Sydney và Trường Đại học Công nghệ nhận tài trợ của Chương trình đổi mới sáng tạo Aus4Innovation
+
+- ID: 18320
+- Date: 2019-10-10T15:38:10
+- URL: https://uet.edu.vn/du-thong-nuoc-ben-vung-ap-dung-cong-nghe-4-0-nhom-nghien-cuu-hon-hop-giua-dai-hoc-cong-nghe-sydney-va-truong-dai-hoc-cong-nghe-nhan-tai-tro-cua-chuong-trinh-doi-moi-sang-tao/
+- Categories: Sản phẩm Khoa học công nghệ, Tin Tổng Hợp
+- Tags: khoa học công nghệ, sản phẩm khoa học công nghệ
+
+## Content
+
+Ngày 09/10/2019, nhóm nghiên cứu hỗn hợp giữa Đại học Công nghệ Sydney và Trường Đại học Công nghệ nhận tài trợ 1 triệu đô la Úc từ Chương trình đổi mới sáng tạo Aus4Innovation để thực hiện dự án “Hệ thống nước áp dụng Công nghệ 4.0 nhằm xây dựng các cộng đồng bền vững tại đồng bằng Sông Hồng và Phú Yên”. Đây là một trong ba dự án nhận được Chương trình Aus4Innovation (Chương trình đổi mới sáng tạo hợp tác giữa Úc và Việt Nam).
+
+Chương trình Aus4Innovation tập trung vào bốn mảng hoạt động cốt lõi mang tính bổ trợ, bao gồm: Xây dựng tầm nhìn chiến lược số; Thương mại hóa các kết quả khoa học; Cơ chế tài trợ cạnh tranh và Hỗ trợ chính sách đổi mới sáng tạo. Trong đó, nhóm nghiên cứu hỗn hợp giữa Đại học Công nghệ Sydney và Trường Đại học Công nghệ tham gia mảng lĩnh vực liên quan đến đề xuất các dự án hợp tác nghiên cứu và đổi mới sáng tạo. Tại đợt kêu gọi đề xuất lần thứ nhất, dự án “Hệ thống nước áp dụng Công nghệ 4.0 nhằm xây dựng các cộng đồng bền vững tại đồng bằng Sông Hồng và Phú Yên” là 1 trong 3 dự án được lựa chọn để tài trợ trong tổng số hơn 115 đề xuất tham gia.
+
+Dự án của nhóm nghiên cứu hỗn hợp giữa Đại học Công nghệ Sydney và Trường Đại học Công nghệ là 1 trong 3 dự án được lựa chọn để tài trợ trong tổng số hơn 115 đề xuất tham gia
+
+Xuất phát từ tình hình thực tiễn khi nhóm nghiên cứu nhận thấy lĩnh vực thủy hải sản, ngành công nghiệp xuất khẩu chủ đạo của Việt Nam đang bị ảnh hưởng nghiêm trọng bởi ô nhiễm nước và dịch bệnh đi kèm, đặc biệt tại Phú Yên. Đồng thời, tại đồng bằng Sông Hồng người dân đang đứng trước mối nguy lớn về sức khỏe, khi mà hàng triệu người dân ở đây không được sử dụng nước sạch. Qua quá trình triển khai các hoạt động hợp tác nghiên cứu khoa trong những năm vừa qua, nhóm nghiên cứu đề xuất ứng dụng nền tảng IoT, trí tuệ nhân tạo và xử lý dữ liệu lớn trong hệ thống quản lý nước tại địa phương cũng như những vùng sâu vùng xa nhằm tằng cường khả năng xử lý nước, cải thiện hệ thống giám sát chất lượng nước, giúp loại bỏ các chất gây ô nhiễm trong nguồn nước và xây dựng hệ thống dễ tiếp cận, được quản lý bởi cộng đồng địa phương.
+
+Dự án mục tiêu xây dựng được mô hình công nghệ, áp dụng Công nghệ 4.0 trong việc giám sát nguồn nước tại đồng bằng Sông Hồng và Phú Yên. Quan trọng nhất là việc xây dựng mô hình kết nối và tạo cầu nối giữa trường đại học – hàn lâm với công nghiệp, thể hiện thông qua hệ thống Rapido được UTS chuyển giao, thử nghiệm và điều chỉnh cho phù hợp Việt Nam. Qua đó, xây dựng một mô hình chuyển giao công nghệ giúp các doanh nghiệp vừa và nhỏ tiếp cận kết quả nghiên cứu, phát triển với chi phí thấp hơn. Bên cạnh đó, các hoạt động trong dự án còn hướng tới việc hướng dẫn cộng đồng người dân cách tiếp cận dữ liệu về chất lượng nước trực tuyến, cũng như cách sử dụng các dữ liệu đó để vận hành hệ thống này hàng ngày; phát triển các hệ thống lọc nước mới với hiệu suất cao, áp dụng công nghệ và thiết kế mới.
+
+“Hệ thống nước áp dụng Công nghệ 4.0 nhằm xây dựng các cộng đồng bền vững tại đồng bằng Sông Hồng và Phú Yên” được hình thành trên nền tảng cơ sở mối quan hệ hợp tác trong lĩnh vực nghiên cứu khoa học, đào tạo sau đại học giữa hai bên từ năm 2017 (Trung tâm Hợp tác nghiên cứu và đổi mới công nghệ JTIRC giữa Đại học Công nghệ Sydney và Đại học Quốc gia Hà Nội), trực tiếp được thúc đẩy bởi nguyên Phó Hiệu trưởng Phạm Bảo Sơn (hiện nay là Phó Giám đốc ĐHQGHN) phụ trách lĩnh vực khoa học công nghệ và hợp tác phát triển của Nhà trường. Sau hai năm hợp tác, Đại học Công nghệ Sydney nâng hợp tác với Trường ĐHCN lên tầm chiến lược và công nhận Trường ĐHCN là “đối tác công nghệ chiến lược”. Bên cạnh đó, với tư cách là thành viên trong Hội đồng khoa học của Trung tâm, PGS.TS. Phạm Bảo Sơn đưa ra ý tưởng hai bên cần có những nghiên cứu và phát triển công nghệ chung để hướng đến mục tiêu phát triển bền vững. Thông qua nhiều hội thảo, bàn luận, nhóm nghiên cứu của hai bên đã thống nhất đề xuất cùng nghiên cứu triển khai mô hình Rapido Việt Nam thông qua dự án “Hệ thống nước áp dụng công nghệ 4.0”.
+
+Các bài viết liên quan: – Lễ ký kết “đối tác công nghệ chiến lược” giữa Trường Đại học Công nghệ và Đại học Công nghệ Sydney, Úc – Ra mắt Trung tâm Nghiên cứu Hợp tác giữa UTS và VNU – UET
+
+Chương trình Aus4Innovation hiện thực hóa cam kết giữa Úc và Việt Nam về hợp tác khoa học kỹ thuật và đổi mới sáng tạo, đạt được bên lề Diễn đàn Hợp tác Kinh tế Châu Á – Thái Bình Dương (APEC) năm 2017 tại Đà Nẵng. Dự án này được kỳ vọng sẽ giúp Việt Nam nắm bắt các công nghệ trong Cách mạng Công nghiệp 4.0, trong bối cảnh có các xu hướng triển vọng về kinh tế số ở Việt Nam. Úc sẽ viện trợ 11 triệu đô-la Úc (AUD) trong 4 năm để giúp Việt Nam thúc đẩy đổi mới sáng tạo.
+
+(UET-News)

@@ -1,0 +1,11 @@
+# Điểm trúng tuyển vào trường Đại học Công nghệ qua các năm
+
+- ID: 10291
+- Date: 2018-01-23T15:02:35
+- URL: https://uet.edu.vn/diem-trung-tuyen-vao-truong-dai-hoc-cong-nghe-qua-cac-nam/
+- Categories: Bạn nên biết, Đại học, Tuyển sinh, Uncategorized @vi
+- Tags: 
+
+## Content
+
+ĐIỂM CHUẨN TRÚNG TUYỂN VÀO ĐẠI HỌC CHÍNH QUY THEO KỲ THI CỦA BGDĐT STT Năm tuyển sinh Ngành Công nghệ Thông tin Khoa học máy tính Hệ thống thông tin Công nghệ Điện tử, truyền thông Truyền thông và mạng máy tính Vật lý kỹ thuật Cơ học kỹ thuật Công nghệ Cơ điện tử 1 2004 23,5 – – 20,5 – 19,0 18,0 – 2 2005 25,5 – – 26,5 – 22,5 22,0 – 3 2006 25,0 – – 21,0 – 19,5 18,5 – 4 2007 22,0 – – 24,0 – 18,5 18,0 25,0 5 2008 23,5 – – 23,5 – 19,0 19,0 21,0 6 2009 20,0 20,0 – 19,5 – 18,0 18,0 20,5 7 2010 21,5 21,5 21,5 21,5 – 17,0 17,0 21,5 8 2011 18,5 18,5 18,5 18,5 – 16,0 16,0 16,0 9 2012 20,5 20,5 20,5 20,5 – 16,5 16,5 16,5 10 2013 23,0 23,0 22,0 22,0 22,0 21,0 21,0 22,0 11 2014 23,0 23,0 22,0 19,5 22,0 18,0 18,0 20,0 NGƯỠNG ĐIỂM XÉT TUYỂN ĐẦU VÀO ĐẠI HỌC CHÍNH QUY THEO PHƯƠNG THỨC THI ĐÁNH GIÁ NĂNG LỰC Chương trình đào tạo chuẩn STT Năm tuyển sinh Ngành Công nghệ Thông tin Khoa học máy tính Hệ thống thông tin Truyền thông và mạng máy tính Công nghệ Kỹ thuật điện tử, truyền thông Vật lý kỹ thuật Kỹ thuật năng lượng Cơ học kỹ thuật Công nghệ Cơ điện tử 1 2015 103,0 106,5 101,0 101,0 97,0 87,0 92,0 96,0 2 2016 103 90 90 90 90 81 81 81 90 Chương trình đào tạo chất lượng cao đáp ứng thông tư 23 STT Năm tuyển sinh Ngành Ghi chú Khoa học máy tính Công nghệ Kỹ thuật điện tử, truyền thông 1 2016 125 125 Điểm trúng tuyển tính trên 2 bài thi Đánh giá năng lực và ĐGNL tiếng Anh ĐIỂM CHUẨN TRÚNG TUYỂN VÀO ĐẠI HỌC CHÍNH QUY THEO KỲ THI CỦA BGDĐT NĂM 2017 Chương trình đào tạo chuẩn STT Năm tuyển sinh Ngành Công nghệ Thông tin CNTT định hướng thị trường Nhật Bản Khoa học máy tính Hệ thống thông tin Công nghệ Điện tử, truyền thông Kỹ thuật máy tính Truyền thông và mạng máy tính Vật lý kỹ thuật Kỹ thuật năng lượng Cơ học kỹ thuật Công nghệ Cơ điện tử Công nghệ kỹ thuật trong xây dựng–giao thông 01 2017 26,0 26,0 26,0 26,0 26,0 26,0 26,0 19,0 19,0 23,5 23,5 23,5 Chương trình đào tạo chất lượng cao đáp ứng thông tư 23 STT Năm tuyển sinh Ngành Khoa học máy tính Công nghệ Kỹ thuật điện tử, truyền thông 01 2017 24,0 21,0

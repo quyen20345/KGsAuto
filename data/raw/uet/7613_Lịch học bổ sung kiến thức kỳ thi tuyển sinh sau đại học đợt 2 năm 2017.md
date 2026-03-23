@@ -1,0 +1,13 @@
+# Lịch học bổ sung kiến thức kỳ thi tuyển sinh sau đại học đợt 2 năm 2017
+
+- ID: 7613
+- Date: 2017-09-14T08:33:11
+- URL: https://uet.edu.vn/lich-hoc-bo-sung-kien-thuc-ky-thi-tuyen-sinh-sau-dai-hoc-dot-2-nam-2017/
+- Categories: Sau Đại học
+- Tags: 
+
+## Content
+
+Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội trân trọng thông báo Lịch học bổ sung kiến thức kỳ thi tuyển sinh sau đại học đợt 2 năm 2017 dành cho các thí sinh tham dự Kỳ thi tuyển sinh sau đại học đợt 2 năm 2017. Chi tiết chương trình cụ thể được Nhà trường đăng trong nội dung thông báo:
+
+TT Ngày Thứ Giờ học Giảng đường Môn học Giảng viên 1 18/8/2017 6 18h00 303-G2 Toán  rời rạc TS. Tô Văn Khánh 2 20/8/2017 CN 08h00 303-G2 Toán  rời rạc TS. Tô Văn Khánh 3 22/8/2017 3 18h00 303-G2 Toán  rời rạc TS. Tô Văn Khánh 4 27/8/2017 CN 14h00 303-G2 Toán  rời rạc TS. Tô Văn Khánh 5 16/8/2017 4 18h00 303-G2 Lập trình nâng cao TS.Nguyễn Văn Vinh 6 21/8/2017 2 18h00 303-G2 Lập trình nâng cao TS.Nguyễn Văn Vinh 7 25/8/2017 6 18h00 303-G2 Lập trình nâng cao TS.Nguyễn Văn Vinh 8 27/8/2017 CN 08h00 303-G2 Lập trình nâng cao TS.Nguyễn Văn Vinh 9 19/8/2017 7 14h00 303-G2 Cơ sở dữ liệu TS.Nguyễn Tuệ 10 23/8/2017 4 18h00 303-G2 Cơ sở dữ liệu TS.Nguyễn Tuệ 11 26/8/2017 7 14h00 303-G2 Cơ sở dữ liệu TS.Nguyễn Tuệ 12 17/8/2017 5 18h00 303-G2 Cấu trúc dữ liệu và giải thuật PGS. TS. Hồ Sĩ Đàm 13 20/8/2017 CN 14h00’ 303-G2 Cấu trúc dữ liệu và giải thuật PGS. TS. Hồ Sĩ Đàm 14 24/8/2017 5 18h00 303-G2 Cấu trúc dữ liệu và giải thuật PGS. TS. Hồ Sĩ Đàm 15 26/8/2017 7 08h00 303-G2 Cấu trúc dữ liệu và giải thuật PGS. TS. Hồ Sĩ Đàm 16 19/8/2017 7 14h00 301-G2 Điện tử số TS. Bùi Thanh Tùng 17 23/8/2017 4 18h00 301-G2 Điện tử số TS. Bùi Thanh Tùng 18 26/8/2017 7 14h00 301-G2 Điện tử số TS. Bùi Thanh Tùng 19 18/8/2017 6 18h00 301-G2 Xử lý tín hiệu số TS. Nguyễn Hồng Thịnh 20 21/8/2017 2 18h00 301-G2 Xử lý tín hiệu số TS. Nguyễn Hồng Thịnh 21 24/8/2017 5 18h00 301-G2 Xử lý tín hiệu số TS. Nguyễn Hồng Thịnh 22 17/8/2017 5 18h00 301-G2 Điện tử tương tự TS. Bùi Thanh Tùng 23 22/8/2017 3 18h00 301-G2 Điện tử tương tự TS. Bùi Thanh Tùng 24 26/8/2017 7 14h00 301-G2 Điện tử tương tự TS. Bùi Thanh Tùng 25 05/9/2017 3 18h00 303-G2 Đánh giá năng lực TS. Nguyễn Trung Hiếu Ghi chú: G2 – Nhà G2 của Trường Đại học Công nghệ Mọi chi tiết xin liên hệ tại: Phòng Đào tạo, Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội Phòng 105-E3, 144 Đường Xuân Thủy, Quận Cầu Giấy, Hà Nội Điện thoại: (024) 3754 7865,  (024) 3754 7810 Emai: TuyensinhDHCN@vnu.edu.vn Facebook: https://www.facebook.com/tuyensinh.saudaihoc.dhcn

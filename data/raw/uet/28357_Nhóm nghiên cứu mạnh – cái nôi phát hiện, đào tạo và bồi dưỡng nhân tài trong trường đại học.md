@@ -1,0 +1,65 @@
+# Nhóm nghiên cứu mạnh – cái nôi phát hiện, đào tạo và bồi dưỡng nhân tài trong trường đại học
+
+- ID: 28357
+- Date: 2022-04-08T08:24:42
+- URL: https://uet.edu.vn/nhom-nghien-cuu-manh-cai-noi-phat-hien-dao-tao-va-boi-duong-nhan-tai-trong-truong-dai-hoc/
+- Categories: Bản tin KHCN &amp; HTPT, Tin Nghiên Cứu, Tin Tổng Hợp
+- Tags: GS nguyễn đình đức, nhóm nghiên cứu mạnh
+
+## Content
+
+Mô hình các phòng thí nghiệm, khoa, bộ môn được thành lập từ những bước phát triển bằng nội lực trong nước của các nhóm nghiên cứu, gắn kết chặt chẽ giữa đào tạo – nghiên cứu thực tiễn là mô hình mới, hiệu quả và sáng tạo, phù hợp với các đại học nghiên cứu ở Việt Nam. Phòng thí nghiệm Vật liệu và kết cấu tiên tiến, trực thuộc Bộ môn Công nghệ Kỹ thuật Xây dựng Giao thông, Trường ĐH Công nghệ, ĐHQGHN là điển hình cho mô hình đó.
+
+Khởi nguồn từ tâm huyết của người thầy
+
+Con đường đến với thành công thường không dễ dàng. Khởi đầu với nguồn tài chính bằng “con số 0” để xây dựng nhóm nghiên cứu mạnh về vật liệu và kết cấu tiên tiến của ĐHQGHN (NNC), năm 2010, GS.TSKH Nguyễn Đình Đức – Trưởng ban Đào tạo, ĐHQGHN đã tập hợp, tuyển chọn, dìu dắt những sinh viên đam mê học tập và nghiên cứu khoa học. Ban đầu, nhóm chỉ có thầy và vài trò, nơi làm việc cũng rất đơn sơ, chỉ là phòng làm việc của thầy sau giờ hành chính, giảng đường đã tan học hay quán nước nhỏ bên hè. Nhưng với tâm huyết của người thầy – Trưởng NNC đã tận tâm dìu dắt, chỉ bảo để các em nắm vững kiến thức, không sợ học và còn khơi dậy được tiềm năng sáng tạo ở các bạn trẻ.
+
+“Quan trọng nhất là Trưởng NNC phải cập nhật, hiểu và nắm bắt được những hướng nghiên cứu mới nhất của thế giới để triển khai trong NNC. Trưởng NNC có vai trò định hướng nghiên cứu phù hợp với năng lực và sở trường cho từng nghiên cứu sinh, sinh viên trong nhóm, giao bài tập tính toán, đôn đốc, kiểm tra và thảo luận các kết quả”
+
+, GS.TSKH Nguyễn Đình Đức cho biết.
+
+Thầy trò cùng nhau cố gắng nỗ lực, miệt mài nghiên cứu. Cứ kiên trì như vậy, công lao của thầy và trò được đền đáp bằng những kết quả nghiên cứu được đăng trên các tạp chí quốc tế có uy tín. Đây là nguồn cổ vũ động viên lớn lao đối với thầy và trò, khích lệ sự tự tin và khơi gợi niềm đam mê nghiên cứu khoa học cho những sinh viên khác. Trên cơ sở đó, học trò đến với nhóm nhiều hơn, NNC ngày một đông dần lên. Nhiều em sinh viên trước đây học lực chỉ đạt mức trung bình hoặc khá, nhưng được rèn luyện trong nhóm nghiên cứu, đã trở nên say mê học tập nghiên cứu và sau khi tốt nghiệp đại học đều trở thành sinh viên giỏi và xuất sắc.
+
+Cái nôi phát hiện, đào tạo và bồi dưỡng nhân tài
+
+Mô hình đào tạo của NNC theo hướng cá thể hóa. Điều đó có nghĩa là, trách nhiệm của người đứng đầu NNC rất quan trọng. NNC được tổ chức hoạt động phân cấp theo cơ chế mềm, đứng đầu là các giáo sư, tiếp theo là các tiến sĩ, nghiên cứu sinh rồi đến sinh viên các khóa.
+
+“Để nhóm NNC hoạt động hiệu quả trong nghiên cứu, đào tạo đến từng cá nhân, nhóm NNC được chia làm nhiều nhóm nhỏ. Đứng đầu phụ trách mỗi nhóm nhỏ do các tiến sĩ trẻ đảm nhận; chịu trách nhiệm triển khai, đôn đốc các nhiệm vụ khoa học khi được Trưởng nhóm giao phó”
+
+, GS.TSKH Nguyễn Đình Đức cho biết.
+
+Trên cơ sở các hướng nghiên cứu chung, Trưởng NNC là người sẽ giao nội dung, nhiệm vụ nghiên cứu cụ thể cho từng thành viên hoặc cho các nhóm nhỏ dựa trên thế mạnh của họ. Khi nhận được nhiệm vụ từ các GS, các TS trẻ và NCS trong nhóm lại dìu dắt dìu dắt, hỗ trợ cho các em sinh viên. Trong nhóm, những sinh viên năm trên lại có nhiệm vụ giúp đỡ những sinh viên năm dưới mới tham gia vào NNC. Hằng tuần, NNC đều tổ chức seminar khoa học. Đặc biệt, thông qua hoạt động và hợp tác của NNC, các thành viên trong nhóm còn được tham gia các buổi thảo luận, seminar của các GS trong và ngoài nước. Qua đó, những vấn đề mới trong khoa học được đưa ra trao đổi, bàn luận, giải đáp. Điều đó kích thích tính chủ động, trí sáng tạo của các thành viên trẻ.
+
+Trong quá trình tham gia NNC, nhiều sinh viên, NCS đã được cử đi thực tập tại các doanh nghiệp, viện nghiên cứu và các trường đại học lớn như ĐH Osaka (Nhật Bản), ĐH Birmingham (UK), ĐH Sejong (Hàn Quốc),… Các em trong NNC cũng được tham dự hội thảo khoa học lớn trong nước và quốc tế. Trình độ và kiến thức thực tế của sinh viên, NCS qua đó được nâng cao. Sau khi tốt nghiệp, những sinh viên, NCS có học lực và kết quả nghiên cứu tốt sẽ được giới thiệu chuyển tiếp nghiên cứu sinh hoặc đi làm việc ở nước ngoài. Ngược lại, NNC cũng là môi trường để tiếp nhận các NCS và cán bộ nghiên cứu, TS trẻ của nước ngoài đến trao đổi, nghiên cứu tại Việt Nam. Bên cạnh hoạt động chuyên môn, NNC còn tổ chức những buổi giao lưu khác để tăng cường kết nối các thành viên trong nhóm.
+
+Như vậy, có thể thấy, mô hình NNC rất hiệu quả, không chỉ gắn kết việc học với hành mà còn gắn kết các thầy cô, các nhà khoa học với sinh viên, NCS thành một khối thống nhất, trong đó, có sự dìu dắt, chỉ bảo và định hướng, giúp đỡ tận tình từ những người thầy và các thành viên trong nhóm. Trong NNC, mỗi thành viên được làm việc trong môi trường tập thể nhưng được giao nhiệm vụ chuyên môn riêng, được phát triển và thắp sáng tài năng gắn với những năng lực cụ thể của từng cá nhân. Trưởng NNC là người thầy dẫn dắt và thực sự cũng như “người cha đỡ đầu” cho các thành viên trong nhóm. Nó khắc phục được mối quan hệ lỏng lẻo giữa các sinh viên với nhau và các thầy cô giáo trong mô hình đào tạo theo tín chỉ ở các trường đại học hiện nay. Hơn thế, mô hình NNC còn chú trọng giáo dục nhân cách, tinh thần làm việc nhóm, sự hợp tác và các kỹ năng mềm cho NCS, sinh viên một cách hiệu quả. NNC chính là mô hình đào tạo các tài năng theo hướng cá thể hóa và phù hợp với sự chuyển đổi của giáo dục đại học trong bối cảnh CMCN 4.0.
+
+Đến nay, hầu hết các NCS, sinh viên trong nhóm nghiên cứu khi tốt nghiệp đều trở thành các kỹ sư, TS giỏi, đều có kết quả nghiên cứu được công bố trên các tạp chí quốc tế ISI có uy tín. Một số học trò thành đạt và xuất sắc đã tỏa đi muôn nơi, công tác ở các trường đại học khác nhau trong cả nước.
+
+GS.TSKH Nguyễn Đình Đức cho biết, điểm đặc biệt là phần lớn các học trò trong nhóm nghiên cứu đều là các em ở các tỉnh xa, nhà nghèo; trong số đó, có những em hoàn cảnh gia đình đặc biệt khó khăn. Điều đáng trân trọng là thầy và trò đều công bố quốc tế với nội lực 100% made in Việt Nam, trong điều kiện lúc đầu thiếu thốn về kinh phí, cơ sở vật chất, phòng thí nghiệm.
+
+Sự thành công của mô hình này đã cho thấy sức mạnh ưu việt của NNC mạnh trong công tác đào tạo sinh viên, NCS kết hợp với nghiên cứu khoa học để tạo ra nhiều nhân tài trẻ tuổi cho đất nước. Những trí thức trẻ được đào tạo và trưởng thành trong các NNC mạnh “made in Việt Nam 100%” như vậy là nguồn nhân lực chất lượng cao và chính là những nhân tố mới đóng góp vào sự nghiệp công nghiệp hóa, hiện đại hóa và hội nhập quốc tế.
+
+Tiếp cận những hướng nghiên cứu mới, hiện đại
+
+Theo GS.TSKH Nguyễn Đình Đức, để thành công, thì một trong những yếu tố quan trọng nhất của NNC là phải nắm bắt và theo kịp được những hướng nghiên cứu hiện đại nhất của thế giới. Đối với nhóm nghiên cứu mạnh về vật liệu và kết cấu tiên tiến, trọng tâm nghiên cứu chuyên sâu và thế mạnh là các lĩnh vực về composite, vật liệu chức năng thông minh có cơ lý tính biến đổi và vật liệu nano. NNC cũng là cơ sở nghiên cứu tiên phong trong lĩnh vực kết cấu tiên tiến chế tạo từ các vật liệu nano ứng dụng làm tăng hệ số chuyển đổi năng lượng, vật liệu áp điện có cơ lý tính biến đổi, vật liệu auxetic (có hệ số Poisson âm và có khả năng giảm chấn, hấp thu sóng nổ), các vật liệu mới composite có tính chất đặc biệt sử dụng trong các môi trường điều kiện khắc nghiệt và các công trình đặc biệt. Từ đó, nhóm nghiên cứu đã hình thành nên trường phái khoa học về vật liệu và kết cấu tiên tiến ở Trường ĐH Công nghệ và ĐHQGHN.
+
+Bên cạnh các hướng nghiên cứu hiện nay, chiến lược phát triển của NNC và tập thể PTN cũng như Bộ môn Xây dựng Giao thông trong những năm tới đây là đi vào những lĩnh vực nghiên cứu hiện đại và gắn với phục vụ thực tiễn là: Civil Engineering (liên quan đến tính toán vật liệu và kết cấu cho các công trình giao thông, xây dựng và kỹ thuật hạ tầng); năng lượng mới; biến đổi khí hậu (tính toán dự báo mưa, lũ và các giải pháp thiết kế, thi công các công trình hạ tầng thích ứng với biến đổi khí hậu) và Machine learning (với những từ khóa là thông minh, trí tuệ nhân tạo).
+
+Nhóm nghiên cứu mạnh là tế bào của hoạt động đào tạo và nghiên cứu
+
+Xuất phát từ nhận thức: “NNC có thể lúc mạnh, lúc yếu, nhưng để phát triển bền vững thì phải gắn với đào tạo”. Từ triết lý đó, lại nắm bắt được hướng phát triển của kỹ thuật, công nghệ hiện đại không thể thiếu lĩnh vực vật liệu và kết cấu tiến tiến, GS.TSKH Nguyễn Đình Đức đã kiên trì thuyết phục và được nhà trưởng ủng hộ mở đào tạo chuyên ngành Vật liệu và Kết cấu tiên tiến tại Khoa Cơ học Kỹ thuật (Trường ĐH Công nghệ, ĐHQGHN) vào năm 2015. Đến nay, Khoa đã bước sang năm thứ 8 đào tạo sinh viên theo chuyên ngành này. Ngoài ra, NNC cũng là chỗ dựa quan trọng để gây dựng ngành Kỹ thuật hạ tầng ở Trường ĐH Việt Nhật (2016) và Ngành Kỹ sư Xây dựng-Giao thông ở Trường ĐH Công nghệ. Từ thành công của NNC và PTN, năm 2018, GS.TSKH Nguyễn Đình Đức tiếp tục thành lập Bộ môn mới – Công nghệ Kỹ thuật Xây dựng – Giao thông (Bộ môn trực thuộc trường, tương đương cấp Khoa về mặt hành chính, đến nay đã có khóa kỹ sư đầu tiên ra trường. Sinh viên các ngành này mấy năm gần đây luôn có điểm trúng tuyển đầu vào cao nhất cả nước trong lĩnh vực Kỹ thuật Xây dựng. Những kết quả này mở ra sự hợp tác mới với các Khoa, các trường đại học, các doanh nghiệp lớn trong và ngoài nước trong lĩnh vực Kỹ thuật Xây dựng.
+
+“Đến nay, NNC, Phòng thí nghiệm và Bộ môn đã và đang có quan hệ hợp tác bình đẳng, ngang tầm với các nhà PTN và các nhà khoa học có uy tín trong các trường đại học hàng đầu của Nhật Bản, Hàn Quốc, Vương quốc Anh, Úc, Canada,… như Đại học Công nghệ Tokyo và Đại học Tổng hợp Tokyo (Nhật Bản), Đại học Tổng hợp Melbourne(Úc), Đại học Birmingham (UK), ĐH Sejong (Hàn Quốc),… và còn thu hút được các TS trẻ, các NCS từ nước ngoài như Úc, Hàn Quốc, Nhật Bản, Ấn Độ,… về Việt Nam trao đổi học thuật, thực tập trong NNC”
+
+, GS.TSKH Nguyễn Đình Đức cho biết.
+
+Như vậy, từ mô hình NNC với hoạt động chính là đào tạo nhân tài và nghiên cứu khoa học để có những công bố quốc tế, đã hình thành nên mô hình mới đó là PTN – nơi chuyển từ những nghiên cứu cơ bản sang nghiên cứu ứng dụng. Cũng từ hạt nhân NNC, với sự đòi hỏi phát triển từ nội tại, các ngành mới, Khoa mới đã được thành lập để đáp ứng nhu cầu đào tạo bổ sung nhân lực (các kỹ sư, TS) cho xã hội và cho chính NNC. Một số thành viên của NNC không chỉ sinh hoạt khoa học trong NNC mà còn chính là những thầy, cô giáo tham gia giảng dạy ở những ngành, Khoa mới vừa thành lập. Đây là mô hình đào tạo và phát triển nguồn nhân lực chất lượng cao rất phù hợp, góp phần khẳng định vai trò quan trọng của NNC và cho thấy NNC chính là tế bào của hoạt động đào tạo và nghiên cứu trong trường đại học.
+
+Năm 2017, ĐHQGHN đã có quyết định công nhận là NNC mạnh. Như vậy, từ một nhóm nghiên cứu rất sơ khai ban đầu, chỉ trong thời gian từ 2010 đến nay, bằng sự kiên trì bền bỉ, niềm say mê nghiên cứu khoa học và sự phấn đấu nỗ lực, quên mình, Thầy và trò trong NNC đã vững vàng tự tin vươn lên tầm quốc tế từ nội lực. Sau hơn 10 năm xây dựng và phát triển, NNC đã công bố hơn 300 bài báo, báo cáo khoa học, trong đó có 175 bài báo khoa học trên các tạp chí quốc tế ISI (SCI, SCIE) có uy tín; được cấp 1 bằng sáng chế trong sản xuất chế tạo vật liệu nanocomposite; xuất bản 2 sách chuyên khảo bằng tiếng Anh; đã có 9 NCS bảo vệ thành công xuất sắc luận án tiến sỹ và đang đào tạo 6 NCS. Đến nay ngành Cơ học Việt Nam đã trao 5 giải thưởng Nguyễn Văn Đạo cho các nhà khoa học trẻ tài năng thì 2 học trò trong NNC là PGS.TS Hoàng Văn Tùng và TS. Trần Quốc Quân đã vinh dự được nhận giải thưởng này. 1 thành viên trẻ trong nhóm được Forbes Việt Nam vinh danh đầu năm 2020. Những năm gần đây, NNC vẫn công bố đều mỗi năm 10 – 15 bài báo trên các tạp chí ISI có uy tín, kết quả nghiên cứu được mời báo cáo tại các hội nghị quốc tế lớn. Có thể thấy với kết quả và uy tín như vậy không thua kém các nhóm nghiên cứu mạnh của quốc tế. Thương hiệu và uy tín của nhóm nghiên cứu đã vang xa và có sức thu hút trong cộng đồng khoa học quốc tế.
+
+Nhóm nghiên cứu của GS Nguyễn Đình Đức cũng giữ vai trò nòng cột tổ chức nhiều hội nghị quốc tế có uy tín thành công như ICEMA2010, ICEMA2012, ICEMA2014, ICEMA2016, ICEMA2019, ICEMA2021 và Hội nghị quốc tế về tối ưu hóa theo thuật toán của bầy ong (3/2018), Hội nghị quốc tế về tính toán trong khoa học vật liệu ACCMS TM 2018 (9/2018) với hàng trăm nhà khoa học hàng đầu của quốc tế tham gia…
+
+GS Nguyễn Đình Đức – Trưởng NNC cũng là nhà khoa học Việt Nam được mời làm thành viên Hội đồng biên tập của 10 tạp chí ISI (SCI, SCIE) có uy tín của quốc tế, và đại diện cho Việt Nam tham gia Ủy ban quốc tế về vật liệu chức năng FGM (2017), Hiệp hội quốc tế về composite (2021)…
+
+Bài viết liên quan: 1. Trường Đại học Công nghệ có thêm nhóm nghiên cứu mạnh về Vật liệu và kết cấu tiên tiến Theo VNU Media – Bản tin ĐHQGHN số 362

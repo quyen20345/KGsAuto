@@ -1,0 +1,25 @@
+# Chàng trai “phố núi” ước mơ tạo ra những sáng chế có ích cho xã hội
+
+- ID: 29640
+- Date: 2022-06-27T09:33:55
+- URL: https://uet.edu.vn/chang-trai-pho-nui-uoc-mo-tao-ra-nhung-sang-che-co-ich-cho-xa-hoi/
+- Categories: Gương mặt sinh viên, Tin Tổng Hợp
+- Tags: tốt nghiệp
+
+## Content
+
+Trần Thế Phong – sinh viên khóa QH-2019 ngành Công nghệ thông tin (Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội) với mục tiêu phấn đấu rõ ràng đã tốt nghiệp trước thời hạn 1 năm và đạt kết quả học tập Xuất sắc.
+
+Vào năm 2019, từ một cậu học trò nhỏ với niềm đam mê và đạt nhiều giải thưởng tại các kỳ thi Tin học, Trần Thế Phong đã trở thành niềm tự hào của tỉnh Đắk Lắk khi được tuyển thẳng và trở thành sinh viên khóa QH-2019 của Trường Đại học Công nghệ (Đại học Quốc gia Hà Nội). Sau 3 năm học tập dưới mái trường Công nghệ, Thế Phong đã tốt nghiệp trước thời hạn 1 năm với bằng tốt nghiệp Xuất sắc và được khen thưởng “Bảo vệ khóa luận/đồ án tốt nghiệp đạt kết quả Xuất sắc”. Khi nhắc đến “cơ duyên” với Trường ĐHCN, Thế Phong khẳng định: “Chính niềm đam mê với Tin học đã giúp em được tiếp xúc, trải nghiệm môi trường của Nhà trường ngay từ những năm cấp ba. Và sau những tháng tập huấn khi tham gia kỳ thi Olympic Tin học tại trường em tin rằng đây là nơi em có thể gửi gắm tương lai. Các thành công hiện tại cũng như trải nghiệm trong ba năm vừa qua đã khẳng định lựa chọn của em hoàn toàn chính xác. Em hiện tại và em của ba năm trước là hai con người hoàn toàn khác nhau. Đến nay, em đã tích lũy thêm được vô số kiến thức cũng như kinh nghiệm. Ngoài ra, em cũng tự cảm thấy mình không còn nhút nhát như ba năm về trước. Những thay đổi này sẽ là tiền đề để em có thể tiến xa hơn trong tương lai”.
+
+“Ngay từ năm thứ nhất,thầy Hồ Đắc Phương đã thông báo đến sinh viên chương trình đào tạo AI Residency tại VinAI. Em đã thử sức tham gia và đây cũng là nơi em thực tập trong suốt ba năm học vừa qua.Vì vậy, em đã lên kế hoạch cho việc tốt nghiệp sớm để tập trung toàn thời gian cho việc học lên Tiến sĩ theo chương trình học bổng của Trường Đại học Trí tuệ Nhân tạo Mohammad Bin Zayed (MBZUAI), các Tiểu vương quốc Arab Thống nhất (UAE)vào tháng 8 tới đây” – Thế Phong cho biết.
+
+Mặc dù Thế Phong có chia sẻ về kế hoạch tốt nghiệp trước thời hạn, nhưng vẫn tỏ ra tiếc nuối khi bản thân không được tham gia lễ tốt nghiệp chung với các bạn cùng khóa.Thế Phong chia sẻ: “Để tốt nghiệp sớm, sinh viên cần phải đối mặt với rất nhiều thách thức như áp lực trong việc cân bằng lịch học và những hoạt động khác, thủ tục để tốt nghiệp sớm… Riêng với em, việc sắp xếp thời gian học đủ tín chỉ để tốt nghiệp sớm, lại vừa đi làm tại VinAI với các hoạt động khác trong cuộc sống là một thách thức vô cùng khó khăn và đòi hỏi nhiều cố gắng. Em đã phải bỏ quanhiều hoạt động do khoa hoặc trường, lớp tổ chức và làm việc chăm chỉ hơn các bạn khác. Đối với các bạn sinh viên cũng muốn tốt nghiệp sớm như em, lời khuyên của em là phải chuẩn bị tinh thần trước và biết cách đăng ký môn học thật khôn ngoan, tránh hiện tượng quá tải dẫn đến phá hỏng mọi thứ”.
+
+Ba năm tuy ngắn nhưng Thế Phong cũng đã kịp lưu lại vô số kỷ niệm đẹp ở trường. “Là một trong những thành viên của đội tuyển ACM-ICPC của trường, em có cơ hội du lịch ở những thành phố khác như Đà Nẵng và Cần Thơ, hay thậm chí là đi nước ngoài (Thái Lan), em cũng thích những hôm luyện thi từ 8h tối đến 2h sáng cùng các đồng đội khác. Ngoài ra, trong quá trình học tại trường, em cũng đã rèn luyện các kỹ năng mềm như kỹ năng thuyết trình, trải nghiệm được thuyết truyền trước gần 100 sinh viên giúp em tự tin hơn.. Đây đều là những trải nghiệm quý báu và sẽ theo em suốt phần đời còn lại” – Phong vui vẻ chia sẻ.
+
+Chia sẻ về kinh nghiệm học tập, Thế Phong cho biết: “Đối với các bạn sinh viên ngành Công nghệ thông tin, em nghĩ có hai giai đoạn khó khăn nhất là lúc mới bắt đầu học lập trình và lúc tốt nghiệp. Tư duy lập trình ở đại học khá khác biệt so với các môn học mà các bạn được dạy ở cấp 3, do vậy nó đòi hỏi sự tập trung và cố gắng từ các bạn sinh viên. Tuy nhiên khi đã quen rồi thì việc học sẽ trở nên dễ dàng hơn rất nhiều. Thách thức tiếp theo của các bạn sinh viên là làm sao để áp dụng các kiến thức đã học vào thực tế. Từ kinh nghiệm của em, có rất nhiều trường hợp điểm trên trường rất tốt nhưng khi ra trường lại chật vật trong việc làm quen với môi trường làm việc. Do vậy, em nghĩ ngoài việc học tập trên trường ra, các bạn sinh viên cũng nên tìm kiếm cơ hội thực tập cũng như thường xuyên cập nhật kiến thức mới để có thể làm được việc”.
+
+Dự định tiếp theo của Thế Phong sẽ là bắt đầu chương trình học tiến sĩ vào tháng 8 năm 2022 tại Trường Đại học MBZUAI. “Em hy vọng sau này có thể tạo ra những sáng chế có ích cho xã hội và hi vọng em có cơ hội tiếp nối các thầy/cô để truyền lửa cho những khóa sinh viên sau này của Nhà trường. Đối với sinh viên khóa sau, các em hãy làm bất cứ thứ gì mình muốn, nhưng đừng lãng phí thời gian sinh viên quý báu của bản thân” – Thế Phong nhấn mạnh.
+
+(UET-News)

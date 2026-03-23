@@ -1,0 +1,57 @@
+# Tọa đàm lấy ý kiến góp ý dự thảo Chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học
+
+- ID: 45789
+- Date: 2025-01-16T16:42:53
+- URL: https://uet.edu.vn/toa-dam-lay-y-kien-gop-y-du-thao-chuan-chuong-trinh-dao-tao-ve-vi-mach-ban-dan-trinh-dai-hoc/
+- Categories: Tin Tổng Hợp
+- Tags: bán dẫn, tọa đàm, trường Đại học Công nghệ, vi mạch
+
+## Content
+
+Ngày 16/01/2025, Bộ Giáo dục và Đào tạo (GD&ĐT) tổ chức tọa đàm trực tiếp tại Trường Đại học Công nghệ – Đại học Quốc gia Hà Nội (VNU-UET) và trực tuyến với chủ đề: “Lấy ý kiến Dự thảo Chuẩn
+
+chương trình đào tạo về vi mạch bán dẫn trình độ đại học
+
+”. Buổi tọa đàm nhằm lấy ý kiến và đề xuất từ các nhà khoa học, chuyên gia và đại diện cơ sở đào tạo, các đơn vị sử dụng lao động trên cả nước để hoàn thiện và ban hành Chuẩn chương trình đào tạo (CTĐT).
+
+Buổi tọa đàm thực hiện theo Kế hoạch số 1758/KH-BGDĐT ngày 27/11/2024 của Bộ GD&ĐT nhằm triển khai Quyết định số 1018/QĐ-TTg ngày 21/9/2024 của Thủ tướng Chính phủ phê duyệt Chiến lược phát triển công nghiệp bán dẫn Việt Nam đến năm 2030 và tầm nhìn 2050 và Quyết định số 1017/QĐ-TTg ngày 21/9/2024 của Thủ tướng Chính phủ phê duyệt Chương trình “Phát triển nguồn nhân lực ngành công nghiệp bán dẫn đến năm 2030, định hướng đến năm 2050”.
+
+Buổi tọa đàm có sự tham gia của đại diện Bộ GD&ĐT,
+
+cơ sở đào tạo, doanh nghiệp, Hội đồng thẩm định, Hội đồng tư vấn Chuẩn chương trình đào tạo các trình độ của giáo dục đại học về vi mạch bán dẫn.
+
+Phát biểu khai mạc, ông Nguyễn Anh Dũng – Phó Vụ trưởng Vụ Giáo dục đại học nhấn mạnh việc Thủ tướng Chính phủ ban hành Quyết định số 1017/QĐ-TTg và Quyết định số 1018/QĐ-TTg thể hiện sự quyết tâm chính trị rất lớn của Đảng, Nhà nước trước bối cảnh nước ta đang đứng trước nhiều cơ hội mang tính lịch sử trong việc tham gia sâu rộng đối với hệ sinh thái vi mạch bán dẫn trên toàn cầu. Chia sẻ về tầm quan trọng của các cơ sở giáo dục trong lĩnh vực này, Phó Vụ trưởng nhấn mạnh, đối với Việt Nam, một trong những nhiệm vụ quan trọng để triển khai thành công và nắm bắt cơ hội liên quan đến ngành công nghiệp bán dẫn chính là việc chuẩn bị nguồn nhân lực và nhân lực phục vụ ngành công nghiệp bán dẫn phải trông cậy vào các cơ sở giáo dục đại học đào tạo các ngành kỹ thuật công nghệ, trong đó có vi mạch bán dẫn.
+
+Ông Nguyễn Anh Dũng – Phó Vụ trưởng Vụ Giáo dục đại học phát biểu khai mạc
+
+Theo Phó Vụ trưởng Nguyễn Anh Dũng, chuẩn chương trình đào tạo về vi mạch bán dẫn được xây dựng trên tinh thần không chỉ đào tạo trình độ đại học mà còn tiếp cận và tiếp nhận những sinh viên năm 2, 3, 4 có nhu cầu chuyển sang học vi mạch bán dẫn, đồng thời tiếp cận theo hướng đào tạo những người tốt nghiệp đại học nhưng vẫn có nhu cầu học tập. Do đó, Phó Vụ trưởng Nguyễn Anh Dũng đề nghị các thầy cô trao đổi về tính liên thông dọc và ngang, tạo sự thống nhất để tổ công tác sớm hoàn thiện dự thảo.
+
+Với tính đặc thù của ngành công nghiệp bán dẫn, cũng như việc thực hành thực tập, cơ sở vật chất phát triển phòng thí nghiệm để bảo đảm điều kiện cơ bản đáp ứng được yêu cầu đào tạo nhân lực vi mạch bán dẫn, Phó Vụ trưởng Nguyễn Anh Dũng đề nghị tọa đàm cho ý kiến cụ thể để tìm ra con đường chung nhất, ngắn nhất nhằm tăng cường năng lực về cơ sở vật chất, các nền tảng, hệ thống phần mềm hỗ trợ, công cụ giúp cho chuẩn chương trình đào tạo về vi mạch bán dẫn thực sự đáp ứng được yêu cầu của thị trường.
+
+Phát biểu tại tọa đàm, GS.TS Chử Đức Trình – Hiệu trưởng Trường Đại học Công nghệ, Chủ tịch Hội đồng tư vấn xây dựng chuẩn CTĐT các trình độ của giáo dục đại học về vi mạch bán dẫn khẳng định, Việt Nam có nhiều tiềm năng trong phát triển lĩnh vực bán dẫn. Thực tế, lãnh đạo các tập đoàn và các trường đại học lớn trên thế giới đều nhận định Việt Nam có nhiều cơ hội khi gia nhập sâu hơn vào lĩnh vực công nghiệp bán dẫn. Với chiến lược phát triển của Đảng, Nhà nước trong kỷ nguyên mới, đặc biệt là việc ban hành Nghị quyết số 57-NQ/TW ngày 22/12/2024 của Bộ Chính trị về đột phá phát triển khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số quốc gia, Giáo sư kỳ vọng ngành công nghiệp bán dẫn của Việt Nam sẽ là một trong những điểm sáng.
+
+GS.TS Chử Đức Trình – Hiệu trưởng Trường Đại học Công nghệ phát biểu tại tọa đàm
+
+Đại diện Hội đồng tư vấn xây dựng chuẩn CTĐT các trình độ của giáo dục đại học về vi mạch bán dẫn, GS. TS Chử Đức Trình – Chủ tịch Hội đồng, Hiệu trưởng Trường Đại học Công nghệ  trình bày báo cáo quá trình xây dựng Chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học.
+
+Mục tiêu chung chuẩn CTĐT là cơ sở để các cơ sở đào tạo xây dựng và tổ chức thực hiện các chương trình đào tạo về vi mạch bán dẫn. Chuẩn này cũng là nền tảng để thiết kế và triển khai các CTĐT ngành phụ, song bằng hoặc liên ngành liên quan đến vi mạch bán dẫn; các cơ sở giáo dục đại học xây dựng chương trình đào tạo linh hoạt và hiện đại. Chương trình phải cung cấp nền tảng chung về vi mạch bán dẫn và các kiến thức chuyên sâu, hướng đến việc tích hợp trong các công đoạn chính trong chuỗi giá trị của ngành công nghiệp bán dẫn, bao gồm sản xuất thiết bị tích hợp, thiết kế không xưởng, gia công sản xuất vi mạch, sản xuất thiết bị và công cụ, bảo đảm kết hợp chặt chẽ giữa học thuật và thực tiễn thông qua hợp tác với doanh nghiệp, phòng thí nghiệm hiện đại và các dự án ứng dụng; các cơ sở đào tạo đáp ứng tiêu chuẩn quốc tế, giảng dạy một phần hoặc toàn bộ bằng tiếng Anh và trang bị cho sinh viên các kỹ năng liên ngành như lập trình, mô phỏng, phân tích dữ liệu, qua đó giúp sinh viên nhanh chóng nắm bắt sự phát triển công nghệ, nâng cao năng lực ngoại ngữ và khả năng làm việc toàn cầu, đáp ứng hiệu quả nhu cầu nhân lực trong nước và quốc tế.
+
+Mục tiêu cụ thể của chuẩn chương trình đào tạo nhằm trang bị kiến thức cơ bản và chuyên sâu về khoa học và công nghệ vi mạch bán dẫn; phát triển kỹ năng thiết kế; mô phỏng, chế tạo, kiểm tra vi mạch; nâng cao khả năng giao tiếp, làm việc nhóm và giải quyết vấn đề trong môi trường liên ngành và đa văn hóa; khuyến khích sinh viên tham gia dự án thực tế, khuyến khích tư duy sáng tạo; đào tạo khả năng làm việc toàn cầu, tiếp cận tiêu chuẩn quốc tế.
+
+Giáo sư Chử Đức Trình nhấn mạnh Chuẩn đầu ra của các CTĐT về vi mạch bán dẫn bảo đảm người học có kiến thức nền tảng vững chắc, kỹ năng chuyên sâu và khả năng tự chủ, trách nhiệm trong lĩnh vực vi mạch bán dẫn, các chuẩn đầu ra sau đây được thiết kế riêng cho từng hướng chuyên sâu về vi mạch bán dẫn như: Thiết kế thiết bị tích hợp (Integrated Device Manufacturer – IDM); Thiết kế không xưởng (Fabless Design); Gia công sản xuất vi mạch (Foundry); và Sản xuất thiết bị và công cụ (Tool Manufacturer). Các chuẩn đầu ra này được xây dựng với mục tiêu giúp người học phát triển năng lực chuyên biệt phù hợp với yêu cầu của từng hướng công nghiệp bán dẫn, đồng thời bảo đảm khả năng ứng dụng lý thuyết vào thực tiễn sản xuất và nghiên cứu.
+
+Về chuẩn đầu vào, đối tượng tuyển sinh là người đã được công nhận tốt nghiệp trung học phổ thông của Việt Nam hoặc có bằng tốt nghiệp của nước ngoài được công nhận trình độ tương đương; người đã có bằng tốt nghiệp trung cấp ngành nghề thuộc cùng nhóm ngành dự tuyển và đã hoàn thành đủ yêu cầu khối lượng kiến thức văn hóa bậc trung học phổ thông theo quy định của pháp luật.
+
+Với đối tượng đầu vào là sinh viên năm thứ 2, 3, 4 (không phải sinh viên năm cuối) từ các ngành học khác phải có học lực từ Khá trở lên. Yêu cầu đối tượng tuyển sinh bảo đảm có khối kiến thức về Toán, Khoa học tự nhiên (Vật lý, Hoá học) và Tin học/Công nghệ (Điện – Điện tử) đạt điểm trung bình từ 65% trở lên của thang đánh giá.
+
+GS.TS Chử Đức Trình khẳng định, Việt Nam có nhiều tiềm năng trong phát triển lĩnh vực bán dẫn. Thực tế, lãnh đạo các tập đoàn và các trường đại học lớn trên thế giới đều nhận định Việt Nam có nhiều cơ hội khi gia nhập sâu hơn vào lĩnh vực công nghiệp bán dẫn. Với chiến lược phát triển của Đảng, Nhà nước trong kỷ nguyên mới, đặc biệt là việc ban hành Nghị quyết số 57-NQ/TW ngày 22/12/2024 của Bộ Chính trị về đột phá phát triển khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số quốc gia, Giáo sư kỳ vọng ngành công nghiệp bán dẫn của Việt Nam sẽ là một trong những điểm sáng.
+
+Phần thảo luận diễn ra sôi nổi dưới sự điều phối của ông Nguyễn Anh Dũng và GS.TS. Chử Đức Trình. Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp đánh giá cao Dự thảo Chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học. Đồng thời, các ý kiến từ đại biểu trực tiếp và trực tuyến tham dự có những góp ý xây dựng nhằm bảo đảm chuẩn chương trình đào tạo khi được ban hành đáp ứng các yêu cầu pháp lý,  phù hợp với thực tiễn và khả năng hội nhập quốc tế phục vụ phát triển nguồn nhân lực chất lượng cao trong lĩnh vực vi mạch bán dẫn, đồng thời phù hợp với đặc thù của từng cơ sở giáo dục đại học.
+
+Chia sẻ góp ý xây dựng Dự thảo Chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học, tại điểm cầu trực tuyến, GS.TS Nguyễn Thị Thanh Mai – Phó Giám đốc Đại học Quốc gia Thành phố Hồ Chí Minh đánh giá cách tiếp cận để xây dựng Dự thảo Chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học khá hợp lý khi đã định hướng theo chuyên ngành. Về tổng thể, Giáo sư nhất trí với việc đưa ra chương trình đào tạo hệ chuẩn và chương trình đào tạo hệ tài năng, đặc biệt chương trình đào tạo hệ tài năng đối với vi mạch bán dẫn.
+
+Các ý kiến góp ý sẽ được Ban tổ chức tổng hợp và đưa vào quá trình chỉnh sửa, hoàn thiện dự thảo chuẩn CTĐT. Dự kiến, bản chuẩn cuối cùng sẽ được ban hành trong thời gian tới, đánh dấu một bước tiến quan trọng trong công tác chuẩn hóa CTĐT về vi mạch bán dẫn.
+
+Buổi tọa đàm kết thúc với sự đồng thuận cao từ các đại biểu về tầm quan trọng của dự thảo và cam kết hợp tác vì mục tiêu phát triển giáo dục chất lượng cao.
+
+Một số hình ảnh tại tọa đàm: Ông Nguyễn Anh Dũng và GS.TS. Chử Đức Trình điều phối phần thảo luận PGS.TS Nguyễn Anh Tuấn – Trưởng Ban Đào tạo và Công tác sinh viên ĐHQGHN góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Các chuyên gia, lãnh đạo cơ sở giáo dục đại học, đại diện doanh nghiệp góp ý tại phần thảo luận Bài viết báo chí: Đài Truyền hình Hà Nội: ĐHQGHN: Xây dựng chuẩn chương trình đào tạo đại học về vi mạch bán dẫn Dân trí: Rất “khát” nhân lực ngành bán dẫn trong thời gian tới Tạp chí Giáo dục Việt Nam: Lấy ý kiến góp ý dự thảo chuẩn chương trình đào tạo về vi mạch bán dẫn Báo Tuổi trẻ: Học vi mạch bán dẫn phải giỏi tiếng Anh, không lo thừa nhân lực, chỉ sợ thiếu VnExpress: ‘Đào tạo nhân lực bán dẫn chỉ sợ thiếu, không lo thừa’ Báo Đại biểu nhân dân: Sắp có chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học VOV: Hoàn thiện chuẩn chương trình đào tạo về vi mạch bán dẫn trình độ đại học Tiền phong: Tuyển sinh đào tạo ngành vi mạch bán dẫn: Không sợ thừa, chỉ sợ thiếu? (UET-News)

@@ -1,0 +1,31 @@
+# Xếp hạng Webometrics thế giới tháng 7/2021: ĐHQGHN trong top 1000 cơ sở giáo dục đại học xuất sắc
+
+- ID: 24831
+- Date: 2021-07-27T22:01:05
+- URL: https://uet.edu.vn/xep-hang-webometrics-gioi-thang-72021-dhqghn-trong-top-1000-co-giao-duc-dai-hoc-xuat-sac/
+- Categories: Tin Tổng Hợp
+- Tags: xếp hạng
+
+## Content
+
+Ngày 27/7/2021, Phòng thí nghiệm Cybermetrics Labs (thuộc Hội đồng nghiên cứu quốc gia Tây Ban Nha) đã công bố kết quả xếp hạng Webometrics lần thứ hai của năm 2021. Với kết quả xếp hạng lần này, ĐHQGHN đã trong top 1000 cơ sở giáo dục đại học xuất sắc nhất với vị trí 959.
+
+Webometrics là Bảng xếp hạng tự động, đánh giá năng lực số hóa và mức độ lan tỏa, ảnh hưởng về tài nguyên học thuật của các cơ sở giáo dục đại học dựa trên các chỉ số về mức độ lan tỏa, ảnh hưởng của hệ thống website và thông tin trực tuyến (
+
+impact ), độ mở về tài nguyên học thuật ( openness ) trên Google Scholar, và chỉ số trích dẫn khoa học trên hệ thống cơ sở dữ liệu Scopus ( excellence ) của một cơ sở giáo dục đại học. Top 10 cơ sở giáo dục đại học của Việt Nam trong bảng xếp hạng Webometrics tháng 7/2021 (Nguồn: https://www.webometrics.info/en/Asia/Vietnam )
+
+Trong kỳ xếp hạng tháng 7/2021, ĐHQGHN tiếp tục duy trì vị trí số 1 Việt Nam và trong nhóm 1000 cơ sở giáo dục đại học tốt nhất (vị trí 959, tăng 41 bậc so với lần xếp hạng tháng 01/2021, vị trí 220 Châu Á và vị trí 17 Đông Nam Á).
+
+Cũng trong kỳ xếp hạng này, sự gia tăng vượt bậc của tiêu chí Impact ( Mức độ ảnh hưởng
+
+) – từ xếp hạng 1651 ở tháng 01/2021 lên hạng 1289 ở tháng 7/2021 – đã cho thấy sự gia tăng trong phạm vi ảnh hưởng của website ĐHQGHN không chỉ đối với cộng đồng học thuật trong nước và quốc tế mà còn đang tác động mạnh tới toàn xã hội.
+
+Trong kỳ xếp hạng này, Webometrics vẫn duy trì phương pháp xếp hạng như ở kỳ tháng 01/2021. Cụ thể, tiêu chí “ Presence ” ( Lượng tài nguyên số hóa ) đã được loại bỏ trong phương pháp xếp hạng, tiêu chí Impact ( Mức độ ảnh hưởng ) có trọng số cao nhất (50%), tiếp theo là tiêu chí Excellence ( Sự xuất sắc ) có trọng số 40% và tiêu chí Openness ( Độ mở học thuật ) có trọng số 10%.
+
+Trước đó trong tháng 6/2021, ĐHQGHN cũng nhận được nhiều thông tin tích cực từ các tổ chức xếp hạng uy tín. Ngày 23/6, Tạp chí Times Higher Education – THE công bố Bảng xếp hạng những đại học trẻ tốt nhất thế giới – Young University Rankings 2021. Theo đó, Việt Nam có hai đại diện có mặt trong bảng xếp hạng uy tín này là Đại học Quốc gia Hà Nội (ĐHQGHN) (top 251 – 300) và Đại học Quốc gia Hồ Chí Minh (ĐHQGHCM) (top 401+).
+
+Ngày 09/6/2021, QS World University Rankings 2022 xếp ĐHQGHN lần thứ 4 liên tiếp đứng trong nhóm 801-1000 các trường đại học tốt nhất toàn cầu. Mặc dù liên tục duy trì ở nhóm thứ hạng này trên bảng xếp hạng, nhưng điểm xếp hạng của ĐHQGHN ngày càng gia tăng, dẫn tới thứ hạng tuyệt đối trong bảng xếp hạng cũng dần được nâng cao. Cụ thể, trong ba lần xếp hạng trước, ĐHQGHN đứng trong nhóm 78,5% (2019), 74,9% (2020), 67,5% (2021) các trường đại học hàng đầu. Ở lần xếp hạng lần này, ĐHQGHN vươn lên đứng trong nhóm 61,6% các trường đại học hàng đầu thế giới.
+
+Ngày 02/06/2021, trong Bảng xếp hạng các trường đại học khu vực Châu Á năm 2021 do tạp chí Times Higher Education (THE Châu Á) công bố, ĐHQGHN tiếp tục có mặt trong năm thứ hai với vị trí trong nhóm 251 – 300, đứng đầu Việt Nam. Tiếp tục duy trì vị thế đứng đầu Việt Nam trong năm thứ hai tham bảng xếp hạng các trường đại học Châu Á của THE năm 2021, với tổng số điểm cao nhất trong số ba cơ sở giáo dục đại học Việt Nam (26,9–29,6), ĐHQGHN còn có điểm cao nhất về 4/5 tiêu chí xếp hạng (Giảng dạy, Nghiên cứu, Trích dẫn và Triển vọng Quốc tế), trong khi ĐHQG Tp.HCM có điểm cao nhất về tiêu chí Thu nhập từ chuyển giao tri thức và công nghệ.
+
+Theo Viện Đảm bảo chất lượng giáo dục – VNU Media

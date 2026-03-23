@@ -1,0 +1,39 @@
+# Đào tạo các ngành công nghệ &#8211; kỹ thuật trong bối cảnh cách mạng công nghiệp 4.0 – cơ hội và giải pháp
+
+- ID: 26272
+- Date: 2021-11-20T08:18:38
+- URL: https://uet.edu.vn/dao-tao-cac-nganh-cong-nghe-ky-thuat-trong-boi-canh-cach-mang-cong-nghiep-4-0-co-hoi-va-giai-phap/
+- Categories: Tin Tổng Hợp
+- Tags: 
+
+## Content
+
+Ngày 19/11/2021, Đại học Quốc gia Hà Nội (ĐHQGHN) phối hợp với Bộ Lao động – Thương binh và Xã hội tổ chức Hội thảo về đào tạo các ngành công nghệ – kỹ thuật trong bối cảnh cách mạng công nghiệp 4.0 (CMCN 4.0). Hội thảo được tổ chức theo hình thức trực tiếp và trực tuyến.
+
+Giám đốc ĐHQGHN Lê Quân và Thứ trưởng Bộ Lao động – Thương binh và Xã hội Lê Tấn Dũng chủ trì hội thảo.
+
+Tham dự Hội thảo có đại diện lãnh đạo văn phòng, các ban chức năng của ĐHQGHN; lãnh đạo Tổng cục và các cục, vụ thuộc Tổng cục Giáo dục nghề nghiệp, Bộ Lao động – Thương binh và Xã hội (LĐ-TB&XH); lãnh đạo các trường đại học thành viên, viện nghiên cứu của ĐHQGHN, các trường đào tạo nghề chất lượng cao thí điểm theo tiêu chuẩn của các quốc gia Úc, Đức; các chuyên gia, nhà khoa học và đại diện các tập đoàn, doanh nghiệp đang hoạt động trong lĩnh vực kĩ thuât – công nghệ.
+
+Hội thảo được tổ chức với mong muốn tạo diễn đàn kết nối các cơ quan lý giáo dục, các cơ sở giáo dục đại học, giáo dục nghề nghiệp, các tổ chức, tập đoàn, doanh nghiệp, các chuyên gia, nhà khoa học cùng nhau thảo luận, chia sẻ kinh nghiệm và giải pháp để phát triển các chương trình đào tạo về lĩnh vực kĩ thuật – công nghệ nhằm đáp ứng nhu cầu nguồn nhân lực chất lượng cao trong bối cảnh CMCN 4.0.
+
+Phát biểu khai mạc Hội thảo, Giám đốc ĐHQGHN Lê Quân cho biết, Hội thảo đóng góp trực tiếp cho Chiến lược phát triển ngành, chuyên ngành đào tạo của ĐHQGHN. Việc đẩy mạnh các ngành kỹ thuật – công nghệ sẽ góp phần phát huy thế mạnh mô hình đa ngành, đa lĩnh vực trong ĐHQGHN. Ông cho biết, trong thời gian tới, ĐHQGHN ưu tiên đào tạo nguồn nhân lực nhóm ngành kỹ thuật – công nghệ đáp ứng nhu cầu thị trường lao động 4.0, với mục tiêu 25% quy mô sinh viên các ngành này.
+
+Giám đốc Lê Quân cho rằng, hội thảo là dịp để các đại biểu cùng bàn thảo các ngành nghề, bối cảnh, xu hướng mới cùng một số vấn đề đặt ra khi đẩy mạnh đào tạo các ngành kỹ thuật – công nghệ. Nhóm ngành này phải hướng tới đáp ứng nhu cầu của doanh nghiệp cũng như đáp ứng được nhu cầu của nhân lực trên thị trường quốc tế.
+
+ĐHQGHN mong muốn đẩy mạnh hợp tác toàn diện với Tổng cục Giáo dục nghề nghiệp và các trường cao đẳng chất lượng cao để phát triển đội ngũ và triển khai hiệu quả các chương trình đào tạo kỹ thuật – công nghệ. Giám đốc Lê Quân nhấn mạnh, mục tiêu quan trọng là có thể thí điểm mô hình liên thông trong đào tạo giữa các cơ sở giáo dục đại học, giáo dục nghề nghiệp và doanh nghiệp, qua đó các học viên cao đẳng có kỹ năng nghề, trình độ ngoại ngữ có thể liên thông lên các bậc đào tạo kỹ sư, cử nhân, góp phần xây dựng xã hội học tập, tổ chức học tập đáp ứng nhu cầu học tập suốt đời.
+
+Thứ trưởng Bộ LĐ-TB&XH Lê Tấn Dũng cho biết, nhu cầu phát triển nền kinh tế số trong xu thế cách mạng 4.0 đòi hỏi sự thích ứng nhanh của nguồn nhân lực được trang bị kiến thức, kỹ năng nghề nghiệp và công nghệ. Ông cho rằng, việc đẩy mạnh liên kết giáo dục nghệ nghiệp và giáo dục đại học có ý nghĩa hết sức quan trọng trong việc đào tạo nguồn nhân lực đáp ứng nhu cầu thị trường lao động.
+
+Đánh giá cao ý nghĩa của Hội thảo này, Thứ trưởng Lê Tấn Dũng kỳ vọng đại diện lãnh đạo, nhà quản lý, nhà khoa học ĐHQGHN với vai trò là đầu tàu trong hệ thống giáo dục Việt Nam và Bộ LĐ-TB&XH với vai trò quản lý nhà nước về giáo dục nghề nghiệp sẽ cùng trao đổi, thảo luận và đưa ra các giải pháp phát triển nguồn nhân lực kĩ thuật – công nghệ; về thực hiện trách nhiệm quốc gia của hai bên với sứ mạng đào tạo nguồn nhân lực chất lượng cao, trình độ cao, bồi dưỡng nhân tài góp phần xây dựng, phát triển và bảo vệ đất nước.
+
+Tại Hội thảo, Trưởng Ban Đào tạo ĐHQGHN Nguyễn Đình Đức đã trình bày báo cáo Tổng quan về đào tạo ngành kỹ thuật – công nghệ trong ĐHQGHN. Ông cho biết, hiện nay quy mô sinh viên đại học chính quy các ngành này tại ĐHQGHN chiếm 22%. Đặc thù đào tạo các ngành liên ngành, kỹ thuật – công nghệ tại ĐHQGHN đó là: ĐHQGHN điều phối nguồn nhân lực và cơ chế, chính sách; chương trình đa dạng, đa ngành, đa lĩnh vực, cơ sở vật chất và phòng thí nghiệm dùng chung. Các ngành kỹ thuật – công nghệ của ĐHQGHN bắt nhịp với xu thế mới, từ đó tăng nguồn lực cho sự phát triển của ĐHQGHN, đặc biệt trong bối cảnh tự chủ đại học; phù hợp với định hướng phát triển và yêu cầu của đất nước trong giai đoạn mới về nguồn lực chất lượng cao.
+
+GS.TSKH Nguyễn Đình Đức cũng chia sẻ một số giải pháp và lộ trình triển khai các ngành kỹ thuật – công nghệ: đánh giá thực trạng đào tạo các chương trình liên ngành, kỹ thuật – công nghệ tại ĐHQGHN; sửa đổi, xây dựng chuẩn đầu ra phù hợp khung trình độ Quốc gia; đổi mới chính sách về tuyển sinh; đổi mới chương trình, hình thức tổ chức đào tạo và hỗ trợ người học; thu hút đội ngũ giảng viên chất lượng cao; đầu tư cơ sở vật chất, phòng thí nghiệm, phòng thực hành; phối hợp giáo dục đại học và giáo dục nghề nghiệp; đào tạo gắn với doanh nghiệp; xây dựng văn bản quản lý, …
+
+Ông Phạm Vũ Quốc Bình – Phó Tổng cục trưởng, Tổng cục Giáo dục nghề nghiệp, Bộ LĐ-TB&XH đã trình bày báo cáo “Hội nhập quốc tế: một định hướng quan trọng trong đào tạo nghề”. Ông chia sẻ về định hướng hội nhập quốc tế trong giáo dục nghề nghiệp, gồm: hoàn thiện hành lang pháp lý thuận lợi để thu hút đầu tư; hợp tác toàn diện giữa Việt Nam và các nước, các tổ chức quốc tế; tích cực tham gia các tổ chức, diễn đàn, hiệp hội khu vực, quốc tế về giáo dục nghề nghiệp và các cuộc thi kỹ năng nghề; tăng cường hợp tác giữa các cơ sở giáo dục nghề nghiệp của VIệt Nam và nước ngoài; trao đổi giảng viên, chuyên gia quốc tế…
+
+Tại Hội thảo, Hiệu trưởng Trường ĐH Công nghệ, ĐHQGHN Nguyễn Việt Hà đã thông tin về vấn đề đào tạo ngành kỹ thuật – công nghệ tại Trường. Ông cho biết, đối với đào tạo các ngành kỹ thuật – công nghệ, hoạt động thực hành, thực tập luôn đóng vai trò quan trọng. Trường có hệ thống phòng thực hành, phòng thí nghiệm hiện đại, đáp ứng nhu cầu học tập và nghiên cứu khoa học của người học. Bên cạnh đó, Nhà trường đã được ĐHQGHN đầu tư chiều sâu cơ sở vật chất trang thiết bị khoa học công nghệ, nông nghiệp công nghệ cao… tập trung cho các ngành đào tạo mới như kỹ thuật năng lượng, công nghệ kỹ thuật xây dựng, … và củng cố cho các ngành cần đẩy mạnh như công nghệ thông tin, điện tử viễn thông.
+
+Ông Vũ Xuân Hùng – Vụ trưởng Vụ Đào tạo chính quy, Tổng cục Giáo dục nghề nghiệp, Bộ LĐ-TB&XH chia sẻ về “Đào tạo chất lượng cao trong giáo dục nghề nghiệp – kinh nghiệm từ các chương trình đào tạo thí điểm theo tiêu chuẩn Úc, Đức”. Theo ông Hùng, thực hiện Đề án “Chuyển giao các bộ chương trình; đào tạo, bồi dưỡng giáo viên và cán bộ quản lý dạy nghề; đào tạo thí điểm các nghề trọng điểm cấp độ khu vực ASEAN, quốc tế” giai đoạn 2012 – 2015 (Đề án 371), từ năm 2014 đến nay, Bộ LĐ-TB&XH đã thực hiện chuyển giao 34 bộ chương trình cấp độ quốc tế từ Úc và Đức (12 nghề từ Úc, 22 nghề từ Đức). Người học tốt nghiệp các chương trình đào tạo thí điểm ngoài việc có kỹ năng nghề nghiệp được quốc tế công nhận còn có năng lực tiếng Anh thấp nhất đạt trình độ B1 đến B2 theo Khung năng lực ngoại ngữ chung châu Âu, đủ điều kiện tham gia thị trường lao động trong khu vực ASEAN và quốc tế.
+
+Sinh Vũ, Quốc Toản, Lan Anh – VNU Media

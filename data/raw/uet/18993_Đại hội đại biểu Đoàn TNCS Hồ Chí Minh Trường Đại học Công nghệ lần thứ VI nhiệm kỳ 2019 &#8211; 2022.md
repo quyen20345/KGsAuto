@@ -1,0 +1,51 @@
+# Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường Đại học Công nghệ lần thứ VI nhiệm kỳ 2019 &#8211; 2022
+
+- ID: 18993
+- Date: 2019-12-09T15:48:56
+- URL: https://uet.edu.vn/dai-hoi-dai-bieu-doan-tncs-ho-chi-minh-truong-dai-hoc-cong-nghe-lan-thu-vi-nhiem-ky-2019-2022/
+- Categories: Tin Tổng Hợp
+- Tags: đại hội đại biểu, đoàn thanh niên
+
+## Content
+
+Ngày 06 – 07/12/2019, Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường Đại học Công nghệ lần thứ VI nhiệm kỳ 2019 – 2022 đã long trọng diễn ra tại Hội trường 3-G3.
+
+Tham dự Đại hội có đ/c Trần Bách Hiếu – Phó Bí thư Đoàn ĐHQGHN, PGS.TS.Chử Đức Trình – Phó Bí thư Đảng ủy Trường ĐHCN, ThS. Phạm Duy Hưng – Ủy viên Ban Thường vụ Đảng ủy cùng đại diện lãnh đạo các Phòng, Ban chức năng, các Khoa trong trường và đơn vị thành viên ĐHQGHN. Đại hội có sự tham gia của 120 đại biểu đến từ các Chi đoàn trong toàn trường.
+
+Ban Chấp hành Đoàn Thanh niên trường ĐHCN khóa VI chụp ảnh lưu niệm cùng đại biểu
+
+Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường ĐHCN đã tiến hành hai phiên làm việc nhằm tổng kết, đánh giá công tác Đoàn và phong trào thanh niên Trường nhiệm kỳ 2017-2019; xây dựng phương hướng, nhiệm vụ công tác Đoàn và phong trào thanh niên nhiệm kỳ 2019-2022 với mục tiêu xây dựng củng cố tổ chức Đoàn vững mạnh, đa dạng hóa hình thức thu hút, tập hợp thanh niên; đồng hành cùng đoàn viên, sinh viên và nâng cao vai trò hoạt động của Đoàn Thanh niên; tạo môi trường đưa sinh viên vào các hoạt động cụ thể dựa trên khẩu hiệu “Bản lĩnh – Trách nhiệm – Tiên phong – Sáng tạo”.
+
+Bí thư Nguyễn Ngọc Linh đã báo cáo, đánh giá kết quả thực hiện Nghị quyết Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường ĐHCN nhiệm kỳ 2017 – 2019
+
+Thay mặt Ban chấp hành Đoàn trường khóa V, Bí thư Nguyễn Ngọc Linh đã báo cáo, đánh giá kết quả thực hiện Nghị quyết Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường ĐHCN nhiệm kỳ 2017 – 2019. Trong nhiệm kỳ vừa qua, Đoàn Thanh niên Trường ĐHCN đã phát triển từ 51 Chi đoàn với gần 2.500 đoàn viên thanh niên lên đến 84 Chi đoàn với hơn 5.000 đoàn viên thanh niên. Về công tác giáo dục tư tưởng chính trị với việc triển khai các hoạt động, tuyên truyền giáo dục đoàn viên, sinh viên về các sự kiện lớn của đất nước, thủ đô, ĐHQGHN và Trường ĐHCN thông qua nhiều chương trình hoạt động thiết thực. Cụ thể, hoạt động “Hiến máu cứu người” tổ chức 2 lần/năm học thu hút hơn 1.000 lượt sinh viên, cán bộ; Chiến dịch “Giảng đường văn minh” với khẩu hiệu “Công nghệ xanh – sống trong lành”; các hoạt động văn thể nâng cao đời sống văn hóa tinh thần cho đoàn viên, sinh viên như chuỗi sự kiện Chào tân sinh viên, Ngày hội truyền thống – UET Connect, Giải bóng đá các câu lạc bộ… Các hoạt động sinh viên tình nguyện như chương trình “Mùa đông ấm”, chiến dịch Mùa hè xanh, các hoạt động ủng hộ biển đảo quê hương, Tiếp sức mùa thi… Các cuộc thi mang tính chuyên môn, học thuật giúp đoàn viên thanh niên, sinh viên được tham gia các hội thảo, diễn đàn và các sân chơi gắn liền với học tập, nghiên cứu khoa học và định hướng nghề nghiệp, gồm “Cuộc thi Procon”, “UET Makerthon”, cuộc thi Ý tưởng sáng tạo công nghệ, UET Code camp, Diễn đàn khởi nghiệp đổi mới sáng tạo với sinh viên ĐHQGHN, Từ công nghệ đến cuộc sống… Ngoài ra, chương trình “Ngày hội hướng nghiệp” thu hút được gần 3.000 sinh viên tham gia với hơn 40 doanh nghiệp tham dự và tạo cơ hội việc làm, thực tập cho sinh viên. Về công tác phát triển Đảng, trong toàn nhiệm kỳ đã có 16 đồng chí đoàn viên đứng trong hàng ngũ của Đảng, gần 100 đồng chí đoàn viên được các cấp đoàn cơ sở giới thiệu tham gia lớp bồi dưỡng nhận thức về Đảng.
+
+Dựa vào những thành tích nổi bật trong nhiệm kỳ vừa qua, Trung ương Đoàn đã trao tặng Bằng khen cho 05 tập thể và 06 cá nhân tiêu biểu vì những thành tích hoạt động xuất sắc trong các phong trào đoàn hội giai đoạn 2017-2019.
+
+Các cá nhân, tập thể nhận Bằng khen của Trung ương Đoàn vì những thành tích hoạt động xuất sắc trong các phong trào đoàn hội giai đoạn 2017-2019
+
+Trong hai phiên, toàn thể đoàn viên được nghe trình bày tham luận gồm “Các giải pháp nhằm nâng cao chất lượng hiệu quả công tác sinh hoạt chi đoàn” của Liên chi đoàn Vật lý kỹ thuật và công nghệ nano; “Sinh viên định hướng nghiên cứu khoa học” của Liên chi đoàn khoa Cơ học kỹ thuật và tự động hóa; “Sinh viên học tập và sáng tạo trong thời đại 4.0” của Liên chi đoàn khoa Công nghệ thông tin; “Đồng hành cùng đoàn viên, thanh niên lập thân, lập nghiệp, hỗ trợ học tập, nghiên cứu khoa học, nâng cao khả năng có việc làm sau khi tốt nghiệp và hỗ trợ khởi nghiệp” của đồng chí Phạm Thiên Long (K62T); “Vai trò của Đoàn TNCS Hồ Chí Minh trong việc bồi dưỡng phẩm chất, đạo đức, năng lực sáng tạo của sinh viên Trường ĐHCN” của đồng chí Hoàng Tích Phúc (K62AE).
+
+Đồng chí Phạm Duy Hưng  biểu dương những thành tích và sự phát triển của công tác đoàn trong nhiệm kỳ vừa qua
+
+Thay mặt Đảng ủy, đồng chí Phạm Duy Hưng – Ủy viên Ban Thường vụ Đảng ủy đã biểu dương những thành tích và sự phát triển của công tác đoàn trong nhiệm kỳ vừa qua. Trong nhiệm kỳ 2017-2019, phong trào Đoàn Thanh niên của Nhà trường phát triển chiều rộng và chiều sâu, đặc biệt các hoạt động xuất hiện trên nhiều mặt tương tác từ văn hóa chính trị – tư tưởng đến các hoạt động hỗ trợ sinh viên trong học tập, nghiên cứu khoa học, lập nghiệp và khởi nghiệp… Đồng thời, nhiều hoạt động có sự lan tỏa, ảnh hưởng trong sinh viên. Đặc biệt, điểm mạnh là các hoạt động hỗ trợ phát triển kỹ năng nghề nghiệp và hướng nghiệp, đổi mới sáng tạo; hoạt động kết nối với doanh nghiệp và hỗ trợ kinh phí từ phía doanh nghiệp đến sinh viên. Bên cạnh đó, ĐTN của Trường đã trở thành địa chỉ tin cậy của lãnh đạo đoàn các cấp như Trung ương Đoàn, Thành đoàn và Đoàn TN ĐHQGHN gửi gắm trong các hoạt động mang bản sắc Trường ĐHCN, liên quan lĩnh vực khoa học kỹ thuật. Và 3 năm liên tiếp nhận lá cờ thi đua của Thành đoàn Hà Nội và trong nhóm các trường ĐHQGHN của phong trào thanh niên; Thủ tướng Chính phủ tặng Bằng khen. Đạt được kết quả này là nhờ vai trò, sự tận tâm, trách nhiệm, nhiệt tình của tập thể BCH Đoàn trường, trực tiếp là đồng chí Nguyễn Ngọc Linh – Bí thư; sự quan tâm chỉ đạo và sát cánh của các lãnh đạo cấp trên. Hi vọng BCH Đoàn trường khóa VI tiếp tục được kết quả đạt được, đặc biệt tiếp lửa nhiệt tình BCH khóa V để lãnh đạo phong trào thanh niên Nhà trường đạt kết quả tốt hơn.
+
+Phong trào Đoàn khóa VI cần quan tâm như hoạt động phong trào đoàn trường mạnh nhưng cấp liên chi đoàn và chi đoàn bên dưới trực thuộc liên chi đoàn còn chưa chủ động, tổ chức cần quan tâm; huy động thu hút đông đảo sinh viên. Hoạt động thanh niên phải tạo được môi trường đưa sinh viên vào các hoạt động cụ thể, giúp sinh viên hoạt động cống hiến, phát triển nhân cách và năng lực, tạo sức cạnh tranh tự tin tiếp cận môi trường công việc có yêu cầu cao. Nhiệm vụ tăng cường giáo dục tuyên truyền nâng cao ý thức trách nhiệm, đạo đức nghề nghiệp, văn hóa ứng xử, tác phong chuyên nghiệp từng sinh viên từng bước hình thành bản sắc sinh viên Trường ĐHCN;
+
+Đồng chí Phạm Duy Hưng nhấn mạnh nhiệm vụ trọng tâm trong phương hướng hoạt động của Ban chấp hành khóa VI cần tạo được môi trường đưa sinh viên vào các hoạt động cụ thể, giúp sinh viên hoạt động cống hiến, phát triển nhân cách và năng lực, tạo sức cạnh tranh tự tin tiếp cận môi trường công việc có yêu cầu cao. Cụ thể là, tăng cường giáo dục tuyên truyền, nâng cao ý thức trách nhiệm, đạo đức nghề nghiệp, văn hóa ứng xử, tác phong chuyên nghiệp từng sinh viên để hình thành bản sắc sinh viên Trường ĐHCN; phát triển kỹ năng nghề nghiệp của sinh viên (đổi mới sáng tạo, khởi nghiệp, hỗ trợ nghiên cứu khoa học); hoạt động văn hóa, thể thao giúp thanh niên được truyền động lực rèn luyện sức khỏe.
+
+Đồng chí Trần Bách Hiếu phát biểu tại đại hội
+
+Đồng chí Trần Bách Hiếu – Phó Bí thư Đoàn ĐHQGHN đánh giá cao những thành tích Ban chấp hành khóa V đạt được trong nhiệm kỳ 2017-2019. Giai đoạn vừa qua, đồng chí Nguyễn Ngọc Linh đã cùng tập thể Ban chấp hành tổ chức nhiều hoạt động sáng tạo dành cho thanh niên, sinh viên Trường ĐHCN. Từ đó, quy mô, phạm vi ảnh hưởng, tính chất hoạt động và hình ảnh Trường ĐHCN đã được nâng cao. Đặc biệt, trong công tác tổ chức đoàn, phong trào sinh viên của Đoàn Thanh niên Trường ĐHCN với sự nỗ lực phát triển về quy mô từ 2.500 đoàn viên thanh niên lên 5.000 đoàn viên thanh niên với nhiều hoạt động phong phú. Trong 2 năm qua, Đoàn Thanh niên Trường ĐHCN đã vươn lên trở thành top 3 các đơn vị đứng đầu trong ĐHQGHN và năm học trước là đơn vị xuất sắc, lá cờ đầu trong ĐHQGHN. Nhà trường có các thế mạnh về các chương trình khởi nghiệp, những chương trình mang nét riêng và đặc thù của Trường ĐHCN như cuộc thi Ý tưởng sáng tạo công nghệ, Ngày hội việc làm, Cuộc đua số, UET – Makerthon…
+
+Tuy nhiên, Ban chấp hành khóa V vẫn còn những khó khăn, hạn chế trong giai đoạn vừa qua. Hi vọng Ban chấp hành khóa VI sẽ thẳng thắn nhìn nhận điểm yếu và xác định giải pháp vì đây là một trong những khâu quan trọng. Đồng thời, nhiệm kỳ 2019 – 2020, Ban chấp hành khóa VI cần tập trung vào những định hướng như sau:
+
+Thứ nhất, cần đổi mới phương thức để tập hợp, thu hút đoàn viên sinh viên trong bối cảnh hiện nay, không chỉ lực lượng cơ bản mà cần lan tỏa sâu rộng hơn nữa, có thêm nhiều hoạt động đi sâu vào từng bộ phận đoàn viên sinh viên.
+
+Thứ hai, cán bộ trẻ của Nhà trường rất nhiều với chuyên môn cao cần phải phát huy được vai trò cán bộ trẻ và truyền cảm hứng trong hoạt động đoàn, thanh niên và hoạt động chuyên môn.
+
+Thứ ba, quan tâm và đẩy mạnh bồi dưỡng phát triển Đảng để giới thiệu cho Đảng những đoàn viên ưu tú, chất lượng hơn.
+
+Thứ tư, thực hiện các chương trình kết nối, giao lưu, liên kết và phối hợp các câu lạc bộ trong các đơn vị thành viên của ĐHQGHN.
+
+Thứ năm, đổi mới trong hoạt động giảng dạy, hô ứng phong trào chung với các hoạt động của đoàn ĐHQGHN và Nhà trường. Trong phiên nội bộ diễn ra chiều ngày 06/12/2019, Đại hội đã bầu ra BCH Đoàn trường khóa VI gồm 21 đồng chí. Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Trường ĐHCN lần thứ VI đã diễn ra thành công tốt đẹp. Tuyết Nga (UET-News)

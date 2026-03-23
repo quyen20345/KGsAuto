@@ -1,0 +1,39 @@
+# Lễ khai trương Xưởng cơ khí &#8211; Tự động hóa
+
+- ID: 5558
+- Date: 2017-05-25T18:33:20
+- URL: https://uet.edu.vn/le-khai-truong-xuong-co-khi-tu-dong-hoa/
+- Categories: Tin Hợp tác phát triển, Tin Tổng Hợp
+- Tags: 
+
+## Content
+
+Nhân dịp kỷ niệm Ngày thành lập Trường 25/05/2004 – 25/05/2017, Trường Đại học Công nghệ (ĐHQGHN) đã tổ chức Lễ khai trương Xưởng cơ khí – Tự động hóa vào ngày 25/05 tại Nhà E3.
+
+Tham dự buổi lễ về phía ĐHQGHN có PGS.TS. Nguyễn Hoàng Hải – Phó Giám đốc, TS. Vũ Tuấn Anh – Phó Trưởng ban KHCN, PGS. TS. Nguyễn Tiến Thảo – Phó trưởng ban Đào tạo, Ông Trần Quang Hùng – Phó trưởng ban Quản lý các dự án. Trường ĐHCN có PGS.TS. Nguyễn Việt Hà – Hiệu trưởng, TS. Nguyễn Anh Thái – Phó Hiệu trưởng và nguyên lãnh đạo Trường các thời kỳ cùng lãnh đạo các phòng ban, khoa trong Trường. Về phía đối tác có PGS.TS. Đinh Văn Mạnh – Viện trưởng Viện Cơ học; TS. Trần Ngọc Hưng- Phó Tổng giám đốc Viện IMI.
+
+Phát biểu khai mạc, Hiệu trưởng Nguyễn Việt Hà khẳng định xưởng là kết quả sự đầu tư trọng điểm của ĐHQGHN trong lĩnh vực cơ khí và tự động hóa trong giai đoạn vừa qua thông qua một số dự án khác nhau được đầu tư tập trung với trang bị thiết bị hiện đại. Đây là nỗ lực về công tác tổ chức cao độ để hoàn thành Xưởng – không gian thực hành thực tập cho sinh viên, đặc biệt là khoa Cơ học kỹ thuật và Tự động hóa (CHKT&TĐH). Trường luôn đặt mục tiêu đào tạo chất lượng cao và nâng cao chất lượng đào tạo, chú trọng nâng cao năng lực và kỹ năng thực hành. Trong giai đoạn vừa qua, được sự quan tâm và đầu tư của ĐHQGHN Nhà trường đã có sự cải thiện đáng kể đầu tư trang thiết bị thực hành như phòng máy thực hành dự án phòng học thông minh, hoàn thiện bộ kit thực hành cho nhiều ngành đào tạo, đồng bộ chủ trương đưa phòng thí nghiệm vào hoạt động khai thác gắn chặt hoạt động nghiên cứu với đào tạo. Qua đó từng bước hướng tới nâng cao chất lượng thực hành, đào tạo sinh viên đáp ứng chuẩn đầu ra. Việc được đầu tư trọng điểm về lĩnh vực cơ khí – tự động hóa và cơ điện tử tạo thêm cơ hội, đẩy mạnh thực hành thực tập tiến tới chế tạo mẫu sản phẩm phần cứng đưa vào ứng dụng. Đồng thời sinh viên có cơ hội thực tập trên trang thiết bị sản xuất có tính công nghiệp, hiện đại và tiếp cận quy trình công nghiệp trong chế thử các thiết bị đưa vào thực tế ứng dụng.
+
+Hiệu trưởng Nguyễn Việt Hà phát biểu tại buổi lễ
+
+Xưởng tạo không gian kết nối để hỗ trợ hoạt động nghiên cứu và chuyển giao công nghệ, không chỉ với khoa CHKT&TĐH mà góp phần lan tỏa đối với các bộ, sinh viên các đơn vị khác hướng tới chế tạo sản phẩm hoàn thiện gắn với chuyển giao công nghệ. Hi vọng giai đoạn tiếp theo Trường sẽ nhận được sự hỗ trợ khi vận hành xưởng sẽ nhận được sự hỗ trợ kinh nghiệm  vận hành, khai thác hiệu quả và phối hợp để chế tạo ra các thiết bị tiếp tục có sự cộng tác của Viện Cơ học và Viện IMI.
+
+PGS.TS. Phạm Mạnh Thắng trình bày quá trình hình thành và xây dựng Xưởng cơ khí – Tự động hóa
+
+Tại buổi lễ, PGS.TS. Phạm Mạnh Thắng, Phó chủ nhiệm thường trực Khoa CHKT&TĐH đã trình bày về quá trình hình thành và xây dựng Xưởng cơ khí – Tự động hóa. Xuất phát từ nhu cầu thực tế và đặc thù cho công tác đào tạo là đào tạo lý thuyết cần đi đôi với thực hành, nâng cao khả năng thích ứng nghề nghiệp cho sinh viên, Trường ĐHCN từ năm 2008 đã xây dựng dự án Xưởng liên ngành Cơ – Điện tử – Tin học theo hướng công nghiệp. Năm 2015- 2016 được sự quan tâm của ĐHQGHN và các Ban chức năng, Trường ĐHCN đã được thụ hưởng 02 Dự án phòng thí nghiệm hiện đại lĩnh vực CHKT&TĐH và Xưởng Cơ khí – Điện tử – Vi cơ điện tử – Điều khiển phục vụ nghiên cứu phát triển một số công nghệ, thiết bị lõi. Từ hai dự án trên và để đáp ứng yêu cầu đào tạo, thực hành Dự án Xưởng cơ khí – Tự động hóa đã ra đời. Kết thúc phần trình bày, PGS.TS. Phạm Mạnh Thắng khẳng định việc vận hành Xưởng thực nghiệm của Nhà trường sẽ đóng góp một phần không nhỏ trong công tác đào tạo và nghiên cứu khoa học công nghệ cao, bắt nhịp nhu cầu thị trường và định hướng của xã hội. Khoa CHKT&TĐH hi vọng trong thời gian tới ĐHQGHN nói chung và Trường ĐHCN nói riêng sẽ tiếp tục tạo điều kiện và cơ chế phù hợp để Xưởng Cơ khí – Tự động hóa hoạt động hiệu quả, phục vụ tốt cho công việc đào tạo, nghiên cứu khoa học và chuyển giao công nghệ của Nhà trường.
+
+Phó Giám đốc ĐHQGHN Nguyễn Hoàng Hải (đứng thứ sáu, bên trái ảnh), Hiệu trưởng Nguyễn Việt Hà – Trường ĐHCN (đứng thứ tư, bên trái ảnh), Viện trưởng Đinh Văn Mạnh – Viện Cơ học (đứng thứ hai, bên trái ảnh) và Phó Giám đốc Trần Quang Hùng – Ban Quản lý các dự án (đứng thứ hai, bên phải ảnh) tham gia cắt băng khai trương và thăm quan tại Xưởng cơ khí – Tự động hóa
+
+Để có sự ra đời của Xưởng cơ khi – Tự động hóa hôm nay, không thể không nhắc đến sự ủng hộ, hỗ trợ của Viện Cơ học (Viện Hàn lâm KH&CN Việt Nam) và Viện IMI. Viện trưởng Đinh Văn Mạnh, đồng thời là Chủ nhiệm khoa CHKT&TĐH và Phó Tổng giám đốc Viện IMI đã chia sẻ những khó khăn và hạn chế về cơ sở vật chất thời kì đầu thành lập của Khoa CHKT&TĐH, đặc biệt là địa điểm thực hành – thực tập. Đối với sinh viên cơ điện tử thì việc thực hành, thực tập là điều hết sức quan trọng và cần thiết. Nhưng với sự hỗ trợ về xưởng, phòng thí nghiệm của Viện Cơ học và Viện IMI mà sinh viên đã có cơ hội được trải nghiệm thực tế trong quá trình học tập. Vì vậy, Xưởng cơ khí – Tự động hóa đi vào hoạt động là bước đột phá trong công tác đào tạo, cũng như thực hành – thực tập của sinh viên để đáp ứng chuẩn đầu ra của Trường.
+
+Phó Giám đốc Nguyễn Hoàng Hải phát biểu tại buổi lễ
+
+Thay mặt lãnh đạo ĐHQGHN, Phó Giám đốc Nguyễn Hoàng Hải cho rằng định hướng đầu tư của ĐHQGHN trong 5 năm trở lại đây đã chuyển sang hướng đầu tư vừa phục vụ nghiên cứu lại vừa gắn với đào tạo. Việc Trường ĐHCN được thành lập từ Khoa Công nghệ đã bổ sung thêm lĩnh vực công nghệ gắn với nhu cầu xã hội trong ĐHQGHN. Ngay từ khi thành lập, Trường có những định hướng, mục tiêu rõ ràng và qua các thời kỳ lãnh đạo như thầy Nguyễn Hữu Đức, thầy Hà Quang Thụy, thầy Trần Quang Vinh… đã mạnh dạn phát triển những bước tiến mới. Các chương trình đào tạo mang tính độc đáo khi có sự gắn kết và đồng hành của các doanh nghiệp, viện nghiên cứu trong đào tạo. Đây là mô hình nên được khuyến khích nhân rộng trong ĐHQGHN. Bên cạnh đó, Trường luôn có sự chuẩn bị kỹ lưỡng đối với kế hoạch phát triển lâu dài gắn với nhu cầu của các khoa và Nhà trường.
+
+Tuy nhiên, để Xưởng cơ khí – Tự động hóa vận hành hiệu quả Phó Giám đốc yêu cầu Trường có cơ chế quản lý phù hợp để phục vụ công tác đào tạo, dịch vụ và chuyển giao.  Ngoài ra, Trường cần có những minh chứng cụ thể với xã hội bằng những thống kê cụ thể của sinh viên tốt nghiệp. Đồng thời, ngoài việc đào tạo chuyên gia trong lĩnh vực công nghệ Trường còn có thể đào tạo để sinh viên trở thành những nhà quản lý tài năng.
+
+Khoa CHKT&TĐH được thành lập theo Quyết định số 1279/QĐ- TCCB ngày 04 tháng 7 năm 2005 của Giám đốc ĐHQGHN và là đơn vị liên kết đào tạo giữa Trường Đại học Công nghệ, ĐHQGHN và Viện Cơ học, Viện Khoa học và Công nghệ Việt Nam. Hiện nay, Khoa đang đào tạo hơn 700 sinh viên đại học chuyên ngành Công nghệ Kỹ thuật Cơ điện tử và Cơ học kỹ thuật. Ở bậc SĐH, Khoa đào tạo ThS. Công nghệ Cơ điện tử, ThS. CHKT, TS. Cơ học kỹ thuật.
+
+Xưởng cơ khí – Tự động hóa được đưa vào hoạt động từ ngày 25/05/2017. Xưởng bao gồm các thiết bị như máy tiện CNC, máy phay CNC, dụng cụ cơ khí cơ bản, dây chuyền sản xuất mạch in 2 mặt, robot hàn công nghiệp, hệ thống điều khiển lập trình PLC… Ngoài mục tiêu đào tạo lý thuyết, thực hành cho sinh viên, Xưởng còn có thể đào tạo các khóa học ngắn hạn cấp chứng chỉ theo nhu cầu xã hội. Đồng thời để nghiên cứu, chuyển giao công nghệ, thực hiện hợp đồng theo nhu cầu công nghiệp.
+
+Tuyết Nga (UET-News)

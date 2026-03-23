@@ -50,7 +50,7 @@ class KGImporter:
                 props = node.get("properties", {}) or {}
                 props_with_meta = dict(props)
                 props_with_meta["id"] = node_id
-                props_with_meta["source_file"] = source_file
+                # props_with_meta["source_file"] = source_file
 
                 label_clause = ":".join([f"`{l}`" for l in labels]) if labels else ""
                 
@@ -77,7 +77,7 @@ class KGImporter:
                 props = rel.get("properties", {}) or {}
                 props_with_meta = dict(props)
                 props_with_meta["id"] = rel_id
-                props_with_meta["source_file"] = source_file
+                # props_with_meta["source_file"] = source_file
 
                 cypher = (
                     "MATCH (s:KgNode {id: $start_id}), "

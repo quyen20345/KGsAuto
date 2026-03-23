@@ -1,0 +1,31 @@
+# Trung tâm nghiên cứu và phát triển về phần mềm ứng dụng cho ô tô tại Việt Nam (LG VC DCV) tuyển dụng và tuyển sinh viên thực tập 2017
+
+- ID: 7724
+- Date: 2017-09-18T10:53:50
+- URL: https://uet.edu.vn/trung-tam-nghien-cuu-va-phat-trien-ve-phan-mem-ung-dung-cho-o-tai-viet-nam-lg-vc-dcv-tuyen-dung-va-tuyen-sinh-vien-thuc-tap-2017/
+- Categories: Cơ hội việc làm, Tin Sinh Viên
+- Tags: 
+
+## Content
+
+Trung tâm nghiên cứu & phát triển về phần mềm ứng dụng cho ô tô tại VN (LG VC DCV) là công ty sản xuất các linh kiện ô tô thân thiện với môi trường. Công ty chuyên cung cấp các hệ thống thông tin giải trí chất lương cao trên ô tô cho nhiều thương hiệu ô tô lớn trên toàn thế giới.
+
+Trung tâm tiến hành các hoạt động nghiên cứu và phát triển và đảm bảo chất lượng cho nhiều sản phẩm của nghiệp vụ sản xuất linh kiện trên xe hơi.
+
+Là thành viên của bộ phận phát triển phần mềm, bạn sẽ nghiên cứu và phát triển các ứng dụng thông tin giải trí trên ô tô, các hệ thống thông tin dẫn đường (AVN), hệ thống thông tin và cảnh báo về tình trạng xe (Cluster) và các hệ thống viễn thông (Telematics):
+
+Phát triển các sản phẩm automotive và các công nghệ liên quan (bao gồm các ứng dụng tương tác với người dùng (HMI Applications), các HMI frameworks, các phương thức giao tiếp giữa HMI framework và middleware phía dưới…);
+
+Đảm bảo phát triển phần mềm đúng hạn và đảm bảo chất lượng của sản phẩm; Báo cáo công việc với các cấp quản lý. Địa chỉ: Tầng 34, Tòa nhà Keangnam Landmark, Phạm Hùng, Nam Từ Liêm, Hà Nội Lĩnh vực hoạt động: Công nghệ thông tin – Nghiên cứu & phát triển phần mềm nhúng Website: http://topit.vietnamworks.com/companies/company/LG-Development-Center/ I. TUYỂN  LẬP TRÌNH VIÊN C/C++ Số lượng: 30 lập trình viên Yêu cầu chung
+
+Tốt nghiệp đại học các chuyên ngành Công nghệ thông tin, Khoa học máy tính, Kỹ thuật máy tính, Điện, Điện tử viễn thông, Toán tin ứng dụng, cơ điện tử và các ngành liên quan đến công nghệ thông tin và phần mềm;
+
+Yêu thích và có mục tiêu phát triển sự nghiệp trong lĩnh vực phần mềm cho ôtô. Yêu cầu đối với các ứng viên có kinh nghiệm Hơn 2 năm kinh nghiệm phát triển phần mềm sử dụng ngôn ngữ C++; Có kiến thức tốt về phân tích, thiết kế và lập trình hướng đối tượng; Có kinh nghiệm sử dụng công cụ quản lý bug, source code: JIRA, GIT và Gerrit; Có kinh nghiệm làm việc với các hệ thống phần mềm lớn; * Các ứng viên tài năng và có kinh nghiệm tốt sẽ được cân nhắc cho vị trí Senior hoặc Leader. Yêu cầu đối với các ứng viên chưa có kinh nghiệm hoặc mới ra trường Yêu thích và có mong muốn lập trình sử dụng ngôn ngữ C++ (Công ty sẽ có các khóa học on-job-training); Có thể sử dụng ít nhất một ngôn ngữ lập trình (Ưu tiên biết ngôn ngữ lập trình hướng đối tượng);
+
+Bất kỳ kinh nghiệm lập trình thực tế (bao gồm bài tập lớn, đồ án tốt nghiệp) được khuyến khích đề cập trong hồ sơ ứng tuyển
+
+Các ứng viên có một hoặc nhiều kỹ năng dưới đây sẽ là lợi thế Có kinh nghiệm lập trình đa luồng, đa tiến trình; Có kinh nghiệm thực tế trong việc sử dụng và thực hiện các design patterns (MVC, Observer, Singleton); Có kinh nghiệm phát triển ứng dụng sử dung Qt/QML framework; Có kinh nghiệm liên quan đến việc thiết kế GUI framework và các ứng dụng front-end; Có khả năng thuyết trình, chia sẻ thông tin và tạo lập báo cáo. Phúc lợi Mức lương hấp dẫn lên tới 2000$ Thưởng nóng cho ứng viên ký hợp đồng trước 31/12/2017 Lương tháng 13 và thưởng theo năng lực Cơ hội đào tạo, công tác ngắn và dài hạn tại Hàn Quốc 12 ngày nghỉ phép theo luật và 7 ngày nghỉ của công ty Vui lòng gửi CV về: recruitment-vcdcv@lge.com II. TUYỂN SINH VIÊN THỰC TẬP NĂM 2017 Mục tiêu của chương trình Mang lại kiến thức chuyên môn, kỹ năng mềm và kinh nghiệm làm việc cho sinh viên năm cuối Tạo cơ hội cho sinh viên năm cuối được học hỏi, làm việc trong môi trường toàn cầu chuyên nghiệp. Thông tin chươngtrình – Đối tượng & điều kiện xét tuyển:
+
+Sinh viên năm cuối chuyên ngành Công nghệ Thông tin, điện tử viễn thông, khoa học máy tính, toán tin ứng dụng, cơ điện tử hoặc các chuyên ngành liên quan sẽ tốt nghiệp năm 2017
+
+Yêu thích lĩnh vực phát triển phần mềm Có khả năng sử dụng Tiếng Anh là lợi thế. – Vị trí: Kỹ sư phát triển phần mềm – Thời lượng chương trình : 4 tuần từ 02/10/2017 đến 28/10/2017. – Lịch trình: Đăng ký (ngày 13/9-25/9/2017) Phỏng vấn (25/09- 27/09/2017) Ký hợp động (2/10/2017) Thực tập (2/10-28/10/2017) – Địa điểm: Trung tâm nghiên cứu & phát triển về phần mềm ứng dụng cho ô tô tại VN (LG VC DCV) Tầng 34, Tòa nhà Keangnam Landmark, Phạm Hùng, Nam Từ Liêm, Hà Nội – Bạn sẽ thu được những gì? Mở rộng kiến thức và tích lũy kinh nghiệm thông qua các dự án đào tạo thực tế Kỹ năng lập trình C/C++, Embedded Linux … Hiểu thêm vềphát triển phần mềm thông tin giải trí trên ô tô (Car infotainment) Thiết kế& thực hiện các phần mềm & công cụ trong lĩnh vực car infotainment Được đội ngũ kỹ sư chuyên nghiệp, giàu kinh nghiệm của LG đào tạo Phát triển kỹ năng mềm Học tập và làm việc trong môi trường làm việc toàn cầu chuyên nghiệp, có cơ hội trở thành nhân viên chính thức của LG. – Quyền lợi: Cơ hội trở thành nhân viên chính thức toàn thời gian sau kỳ thực tập; Được hỗ trợ chi phí 4,000,000 VNĐ/kỳ thực tập/sinh viên Giải thưởng cho sinh viên có kết quả thực tập xuất sắc & được tuyển dụng vào LG Nhận Chứng chỉ hoàn thành chương trình thực tập. – Cách thức đăng ký: Vui lòng gửi hồsơ đăng ký bao gồm: CV và kết quả học tập theo 1 trong 2 cách sau: Ứng tuyển trực tuyến tại: http://lgejobs.com/viec-lam/chuong-trinh-thuc-tap-cho-ky-su-phat-trien-phan-mem-2017.35a5c6d7.html Ứng tuyển qua email : recruitment-vcdcv@lge.com * Lưu ý: – Tiêu đềhồ sơ ghi rõ “LG_InternshipApplication_[Position]_[Your name]” Vídụ: LG_InternshipApplication_SoftwareEngineer_Nguyen Van A – Ưu tiên các hồ sơ nhận được trước. Chỉ những ứng viên được lựa chọn sẽ được thông báo. Thông tin liên hệ: Chị Vũ Thị Mỹ Dung Điện thoại: 84-4-32753173 (Ext: 3080) Di động: 84-904 161 368 E-mail: dung2.vu@lge.com Chị Phan Thị Hoa Điệnthoại: 84-4-32753173 (Ext: 3041) Di động: 84-1667 416 950 Email: hoa.phan@lge.com

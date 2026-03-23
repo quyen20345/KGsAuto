@@ -1,0 +1,13 @@
+# Danh sách SV được tham gia kỳ thi phụ, học kỳ II năm học 2018-2019
+
+- ID: 17272
+- Date: 2019-07-29T08:53:17
+- URL: https://uet.edu.vn/danh-sach-sv-duoc-tham-gia-ky-thi-phu-hoc-ky-ii-nam-hoc-2018-2019-2/
+- Categories: Tin Sinh Viên
+- Tags: 
+
+## Content
+
+Căn cứ vào đơn và hồ sơ minh chứng của sinh viên xin hoãn thi kỳ thi chính, Phòng Đào tạo thông báo danh sách sinh viên được tham gia kỳ thi phụ học kỳ II năm học 2018-2019, cụ thể như sau:
+
+TT Mã SV Họ tên Ngày sinh Lớp Mã LHP Học phần Lý do 1 15022888 Vũ Hữu Quang 21/09/1997 K60V PHI1005 13 Những nguyên lý cơ bản của Chủ nghĩa Mác-Lênin 2 Sức khoẻ (Ngộ độc thức ăn) 2 16022114 Nguyễn Xuân Nam 25/03/1993 K61CACLC1 INT3411 21 Xử lý tiếng nói Sức khoẻ (Đau bụng Hội chứng ruột kích thích) 3 16021043 Đào Tiến Mạnh 09/08/1998 K61CB INT3109 1 Thu thập và phân tích yêu cầu Bị tai nạn (Bị thương ở bàn tay và cổ tay trái) 4 16022291 Nguyễn Quỳnh Nga 03/05/1998 K61ĐB HIS1002 14 Đường lối cách mạng của Đảng Cộng sản Việt Nam Sức khoẻ (Sốt virus) 5 16021590 Hoàng Mạnh Hưng 13/03/1998 K61T HIS1002 9 Đường lối cách mạng của Đảng Cộng sản Việt Nam Bị ốm giữa giờ thi 6 16022492 Nguyễn Văn Lâm 04/08/1998 K61T HIS1002 14 Đường lối cách mạng của Đảng Cộng sản Việt Nam Sức khoẻ (Mổ ruột thừa) INT2206 1 Nguyên lý hệ điều hành Sức khoẻ (Mổ ruột thừa) 7 16021721 Vũ Thị Ngọc Khánh 20/05/1998 K61V KNM3 Kỹ năng bổ trợ (Ứng dụng công nghệ thông tin cơ bản) Việc bận đột xuất của gia đình 8 18020024 Vũ Trần Quang Huy 26/10/2000 K63CE PHY1103 11 Điện và Quang Sức khoẻ (Mổ ruột thừa) INT1050 4 Toán học rời rạc Sức khoẻ (Mổ ruột thừa) 9 17020496 Nguyễn Tiến Đồng 27/02/1999 K62ĐACLC INT2203 24 Cấu trúc dữ liệu và giải thuật Sức khoẻ (sốt cao do viêm amidal cấp mủ) 10 17021442 Nguyễn Đăng Thành 19/12/1999 K62V EPN 2011 1 Vật lý các hiện tượng từ và ứng dụng Bị tai nạn (Ngã dập vùng khuỷu tay) EPN2015 1 Vật lý lượng tử Bị tai nạn (Ngã dập vùng khuỷu tay) EPN2030 1 Vật lý thống kê Bị tai nạn (Ngã dập vùng khuỷu tay) 11 18020648 Trần Đăng Huy 29/10/2000 K63AE PHI1005 12 Những nguyên lý cơ bản của Chủ nghĩa Mác-Lênin 2 Việc bận đột xuất của gia đình 12 18020214 Lê Minh Bình 19/12/2000 K63CACLC1 MAT1042 21 Giải tích 2 Sức khoẻ (Ngộ độc thức ăn) 13 18020065 Nguyễn Quang Vinh 24/12/2000 K63J MAT1093 4 Đại số Sức khoẻ (Phẫu thuật) PHI1005 11 Những nguyên lý cơ bản của Chủ nghĩa Mác-Lênin 2 Sức khoẻ (Phẫu thuật) 14 18021277 Nguyễn Thái Tiệp 20/06/2000 K63J MAT1093 4 Đại số Việc bận đột xuất của gia đình PHI1005 11 Những nguyên lý cơ bản của Chủ nghĩa Mác-Lênin 2 Việc bận đột xuất của gia đình

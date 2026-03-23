@@ -1,0 +1,15 @@
+# Chương trình đào tạo ngành Cơ kỹ thuật
+
+- ID: 33023
+- Date: 2022-11-28T16:18:05
+- URL: https://uet.edu.vn/chuong-trinh-dao-tao-nganh-co-ky-thuat-18/
+- Categories: ĐTSĐH
+- Tags: 
+
+## Content
+
+1. Tóm tắt yêu cầu chương trình đào tạo Tổng số tín chỉ phải tích lũy: 61 tín chỉ, trong đó: Khối kiến thức chung: 07 tín chỉ Khối kiến thức cơ sở và chuyên ngành: 39 tín chỉ + Các học phần bắt buộc :                                                                   24 tín chỉ + Các học phần lựa chọn :                                                                   15 /42 tín chỉ Luận văn: 15 tín chỉ 2. Khung chương trình đào tạo S TT Mã học phần Tên học phần Số tín chỉ Số giờ tín chỉ Mã số học phần tiên quyết Lý thuyết Thực hành Tự học I Khối kiến thức chung 07 1 PHI 5001 Triết học Phylosophy 3 30 15 0 2 ENG 5001 Tiếng Anh chung English for General Purposes 4 30 30 0 II Khối kiến thức cơ sở và chuyên ngành 39 II .1 Các học phần bắt buộc 24 3 INT 6001 Phương pháp luận nghiên cứu khoa học và đổi mới sáng tạo* Scientific Research Methodology and Innovation 3 30 0 15 4 EMA 6001 Cơ học kỹ thuật hiện đại Modern Engineering Mechanics 3 35 10 0 5 EMA 6120 Kỹ thuật công trình Structural Engineering 3 26 4 15 6 EMA 6121 Kỹ thuật điều khiển và tự động hóa Control & Automation Engineering 3 20 10 15 7 EMA 6122 Kỹ thuật môi trường Environmental Engineering 3 26 4 15 8 EMA 6123 Thực tập Cơ Kỹ thuật * Training for Eng. Mechanics 3 8 37 0 9 EMA7001 Chuyên đề nghiên cứu 1* Research Project 1 3 15 15 15 10 EMA7002 Chuyên đề nghiên cứu 2* Research Project 2 3 15 15 15 II.2 Các học phần tự chọn 15 /42 11 EMA7003 Tin học chuyên ngành Informatics for Specific Purposes 3 19 11 15 12 EMA 7004 Hệ vi cơ điện tử Microelectromechanical Systems(MEMS) 3 22 4 19 13 EMA 7005 Chẩn đoán kỹ thuật Technical Diagnostics 3 30 0 15 14 EMA 7006 Cơ học vật liệu nâng cao Advanced Materials Mechanics. 3 30 0 15 15 EMA 7007 Dao động kỹ thuật Technical vibration 3 26 4 15 16 EMA 7008 Động lực học biển nâng cao Advanced Sea Dynamics 3 27 3 15 17 EMA 7009 Động lực học sông hồ Advanced River Dynamics 3 26 4 15 18 EMA 7010 Kỹ thuật thủy khí Aero-hydraulic Engineering 3 26 4 15 19 EMA 7011 Kỹ thuật vi điều khiển Micro-controller Systems 3 10 20 15 20 EMA 7012 Máy CNC và CAD/CAM nâng cao Advanced CNC Machine & CAD / CAM 3 26 4 15 21 EMA 7013 Thủy khí động lực học tính toán Computational Fluid Dynamics 3 22 8 15 22 EMA 7014 Seminar các vấn đề hiện đại của Cơ học kỹ thuật* Seminar on Modern Problems of Engineering Mechanics 3 9 0 36 23 ELT 6002 Hệ thống nhúng và IoT Embedded System and IoT 3 30 0 15 III EMA 7 200 Luận văn* Thesis 15 Tổng 61 Ghi chú: Học phần Tiếng Anh chung ( ENG 5001 )
+
+là học phần điều kiện, có khối lượng 4 tín chỉ, được tổ chức đào tạo chung trong toàn ĐHQGHN cho các học viên có nhu cầu và được đánh giá theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam hoặc tương đương. Kết quả đánh giá học phần ngoại ngữ không tính trong điểm trung bình chung tích lũy nhưng vẫn tính vào tổng số tín chỉ của chương trình đào tạo.
+
+Các học phần có dấu * là các học phần có các hoạt động nghiên cứu khoa học.

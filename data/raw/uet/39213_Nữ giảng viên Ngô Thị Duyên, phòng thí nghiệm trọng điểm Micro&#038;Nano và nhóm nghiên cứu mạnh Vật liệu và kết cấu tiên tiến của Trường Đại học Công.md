@@ -1,0 +1,33 @@
+# Nữ giảng viên Ngô Thị Duyên, phòng thí nghiệm trọng điểm Micro&#038;Nano và nhóm nghiên cứu mạnh Vật liệu và kết cấu tiên tiến của Trường Đại học Công nghệ nhận các giải thưởng danh giá của ĐHQGHN
+
+- ID: 39213
+- Date: 2023-11-16T15:39:35
+- URL: https://uet.edu.vn/nu-giang-vien-ngo-thi-duyen-va-nhom-nghien-cuu-manh-vat-lieu-va-ket-cau-tien-tien-cua-truong-dai-hoc-cong-nghe-nhan-nhieu-giai-thuong-danh-gia-cua-dhqghn/
+- Categories: Tin Tổng Hợp
+- Tags: ngày nhà giáo việt nam, nhà giáo ĐHQGHN
+
+## Content
+
+Trong không khí đầm ấm, vui tươi và thân mật của Lễ Kỉ niệm 41 năm Ngày Nhà giáo Việt Nam 20/11, ngày 15/11/2023, tại buổi lễ gặp mặt các thế hệ lãnh đạo ĐHQGHN, TS. Ngô Thị Duyên – giảng viên Khoa Công nghệ thông tin (Trường Đại học Công nghệ – ĐHQGHN) đã vinh dự nhận giải thưởng “Nhà giáo ĐHQGHN của năm 2023″, phòng thí nghiệm trọng điểm Micro&Nano, nhóm nghiên cứu mạnh Vật liệu và kết cấu tiên tiến do GS.TSKH. Nguyễn Đình Đức – Chủ tịch Hội đồng Trường ĐH Công nghệ, Trưởng nhóm nghiên cứu nhận Bằng khen Giám đốc ĐHQGHN vì có thành tích nghiên cứu xuất sắc.
+
+Giải thưởng Nhà giáo ĐHQGHN của năm là giải thưởng nhằm ghi nhận, tôn vinh các nhà giáo có thành tích xuất sắc trong hoạt động dạy học, nghiên cứu khoa học, có đóng góp sáng kiến và nỗ lực góp phần nâng cao chất lượng đào tạo, thúc đẩy việc thực hiện vai trò tiên phong và nòng cột của ĐHQGHN trong đổi mới giáo dục đại học Việt Nam và phát triển kinh tế- xã hội của đất nước. Quy chế Giải thưởng Nhà giáo của năm và các giải thưởng về đổi mới giảng dạy tại ĐHQGHN được ban hành kèm theo QĐ số 4308/QĐ-ĐHQGHN về việc khen thưởng Giải thưởng Nhà giáo ĐHQGHN của năm 2023. Năm nay, ĐHQGHN đã bình xét và lựa chọn được 6 nhà giáo đạt dạnh hiệu Nhà giáo ĐHQGHN năm 2023. Trong đó, TS. Ngô Thị Duyên – giảng viên Khoa Công nghệ thông tin, Trường ĐH Công nghệ là 1 trong 6 nhà giáo vinh dự nhận được danh hiệu này.
+
+TS. Ngô Thị Duyên – giảng viên Khoa Công nghệ thông tin (đứng thứ ba, bên trái ảnh) nhận giải thưởng “Nhà giáo ĐHQGHN năm 2023”
+
+TS. Ngô Thị Duyên – Giảng viên Khoa Công nghệ thông tin với nhiều thành tích trong đào tạo và nghiên cứu khoa học theo các hướng nghiên cứu chính  bao gồm: nghiên cứu các bài toán trong lĩnh vực tương tác người – máy; nghiên cứu các bài toán và phát triển ứng dụng hỗ trợ người khuyết tật và trẻ em khiếm khuyết và ứng dụng công nghệ thông tin trong bảo tồn và phát huy di sản văn hóa dân tộc. Trong lĩnh vực khoa học và công nghệ, một trong những mục tiêu mà Tiến sĩ luôn hướng tới đó là “Công nghệ vị nhân sinh”. Các kết quả nghiên cứu khoa học của Tiến sĩ không chỉ có giá trị về mặt học thuật mà còn có giá trị thực tiễn, góp phần nâng cao chất lượng cuộc sống, xã hội. Về nghiên cứu khoa học, TS là tác giả chính/đồng tác giả của 07 công trình được đăng trên tạp chí và hội nghị quốc tế. Hiện nay, TS đang tham gia 07 đề tài gồm cấp Nhà nước, cấp ĐHQGHN, cấp Bộ, Quỹ VinIF và Nghị định thư, đồng tác giả 01 sáng chế và 06 đăng ký sáng chế.  Với các hướng nghiên cứu trên, TS. Ngô Thị Duyên và nhóm nghiên cứu đã phát triển một số sản phẩm hữu ích. Cụ thể là, BLife (My Beautiful Life) – hệ thống hỗ trợ giao tiếp cho người bị tổn thương chức năng vận động (
+
+http://blife.ai
+
+); SmallTalk – ứng dụng được phát triển nhằm hỗ trợ can thiệp cho trẻ em mắc chứng rối loạn phổ tự kỷ; Vitage (Vietnam Heritage) – hệ thống sử dụng công nghệ thực tế ảo mô phỏng lại các vở diễn nghệ thuật truyền thống của Việt Nam; Audio guide – ứng dụng thuyết minh tự động dành cho các bảo tàng; Multimedia Exploration – ứng dụng hỗ trợ khách thăm quan bảo tàng khám phá thông tin đa phương tiện (âm thanh, hình ảnh, video, text, 3D) với các ngôn ngữ tùy chọn khác nhau về hiện vật được trưng bày; Stepquest – ứng dụng thực tại trộn (MR – Mixed Reality) chạy trên thiết bị di động cá nhân giúp khách thăm quan tới bảo tàng trải nghiệm văn hóa các dân tộc dựa trên nền tảng dữ liệu đa phương tiện kết hợp không gian thực.
+
+Phòng thí nghiệm trọng điểm Micro&Nano do PGS. TS Đỗ Thị Hương Giang – Giám đốc và GS.TS Cheolgi Kim – đồng Giám đốc là một trong 4 phòng thí nghiệm trọng điểm được Giám đốc ĐHQGHN Lê Quân trao tặng Bằng khen vì có thành tích nghiên cứu xuất sắc. Với định hướng nghiên cứu về Vật liệu và cảm biến; Thiết kế và chế tạo cảm biến và thiết bị; Thiết kế và chế tạo nam châm, thiết bị. Đến nay, phòng thí nghiệm có khoảng 40 công trình nghiên cứu được công bố trên các tạp chí, ấn phẩm chuyên ngành trong nước và thế giới; 16 các sáng chế, sản phẩm khoa học và công nghệ được cấp văn bằng bảo hộ sở hữu trí tuệ. Năm 2020, PTN đã nghiên cứu thử nghiệm và đề xuất nhiệm vụ khoa học về chế tạo máy sát khuẩn tay và sát khuẩn buồng kín tự động dạng xách tay được, thực hiện chế tạo 50 máy sát khuẩn phục vụ công tác phòng chống dịch Covid-19 tại ĐHQGHN.
+
+Đại diện Phòng thí nghiệm trọng điểm Công nghệ micro và nano,TS. Vũ Nguyên Thức (thứ 2, từ phải sang) nhận Bằng khen của Giám đốc ĐHQGHN cho phòng thí nghiệm trọng điểm có thành tích nghiên cứu xuất sắc
+
+Cũng tại buổi gặp mặt, nhóm nghiên cứu mạnh nhóm nghiên cứu mạnh Vật liệu và kết cấu tiên tiến do GS.TSKH. Nguyễn Đình Đức – Chủ tịch Hội đồng Trường ĐH Công nghệ, Trưởng nhóm nghiên cứu nhận Bằng khen Giám đốc ĐHQGHN vì có thành tích nghiên cứu xuất sắc. Các hướng nghiên cứu chính của nhóm gồm Vật liệu composite 3 pha có cấu trúc không gian 3Dm, 4Dm; Kết cấu và vật liệu nano-composite; Ổn định tĩnh và động lực học của các kết cấu tấm và vỏ composite chức năng FGM, nano FG CNTRC; Kết cấu composite có vết nứt; Các công trình và kết cấu composite chịu các tải trọng đặc biệt; Vật liệu composite áp điện; Vật liệu và kết cấu auxetic; Phương pháp siêu âm xác định đặc tính cơ học của vật liệu composite; Truyền sóng trong cấu trúc composite và nano-composite; Vật liệu tiên tiến ứng dụng trong năng lượng xanh và năng lượng tái tạo; Nghiên cứu tính toán, thiết kế trong lĩnh vực hạ tầng giao thông và xây dựng; Các vật liệu và kết cấu tiên tiến ứng dụng trong các điều kiện khắc nghiệt. Đến nay, nhóm nghiên cứu có hơn 200 bài báo trên các tạp chí ISI/SCOPUS; 02 bằng chứng nhận sở hữu trí tuệ và nhiều đề tài cấp Nhà nước, cấp Bộ, cấp ĐHQGHN và Quỹ Nafosted.
+
+Đại diện cho nhóm nghiên cứu mạnh Vật liệu và kết cấu tiên tiến, GS.TSKH. Nguyễn Đình Đức – Trưởng nhóm nghiên cứu (đứng giữa) nhận Bằng khen Giám đốc ĐHQGHN
+
+Với những thành tích đào tạo, nghiên cứu khoa học được vun đắp với nền tảng những kết quả nghiên cứu của nhiều giảng viên, nhà khoa học và nhóm nghiên cứu đã góp phần đưa Trường ĐH Công nghệ trở thành một trường đại học kỹ thuật công nghệ hàng đầu trong nước, nằm trong nhóm các trường đại học tiên tiến ở Châu Á; một trung tâm xuất sắc, đi đầu trong đào tạo tài năng, nghiên cứu khoa học và chuyển giao công nghệ.
+
+(UET-News)

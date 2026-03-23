@@ -1,0 +1,17 @@
+# Mở bổ sung lớp học phần học kỳ II năm học 2023-2024 đợt 3 (khu vực Cầu Giấy)
+
+- ID: 41109
+- Date: 2024-03-12T09:36:53
+- URL: https://uet.edu.vn/mo-bo-sung-lop-hoc-phan-hoc-ky-ii-nam-hoc-2023-2024-dot-3-khu-vuc-cau-giay/
+- Categories: Tin Sinh Viên
+- Tags: 
+
+## Content
+
+Căn cứ nhu cầu học tập và hỗ trợ việc tăng cơhội tốt nghiệp đúng hạn cho sinh viên, phòng Đào tạo trân trọng gửi tới Thầy/Cô và toàn thể sinh viên học tại khu vực Cầu Giấy thời khóa biểu các lớp học phần (LHP) mở bổ sung đợt 3 trong học kỳ II năm học 2023-2024 như sau:
+
+Mã HP Học phần TC Mã LHP Giảng viên/ Trợ giảng Thứ Tiết Giảng đường Nhóm LHP dành cho chương trình đào tạo chuẩn EET2006 Truyền nhiệt và truyền khối 3 EET2006 1 TS. Lê Việt Cường 4 7-9 PTN VLKT CL EET2006 Truyền nhiệt và truyền khối 3 EET2006 1 TS. Lê Việt Cường 3 5-6 PTN VLKT CL EET2005 Vật liệu tiên tiến và composite 2 EET2005 1 TS. Phan Thế Long 3 1-4 307-GĐ2 CL EMA2050 Xác suất thống kê ứng dụng 3 EMA2050 1 TS. Nguyễn Đức Cường 3 7-9 PM202-G2 CL EMA2050 Xác suất thống kê ứng dụng 3 EMA2050 1 TS. Nguyễn Đức Cường 5 7-9 PM305-G2 CL CTE2018 Vẽ kỹ thuật 3 CTE2018 1 TS. Dương Tuấn Mạnh 7 1-3 PM208-G2 CL CTE2018 Vẽ kỹ thuật 3 CTE2018 1 TS. Dương Tuấn Mạnh 5 10-11 PM305-G2 CL CTE3051 Tin học xây dựng 3 CTE3051 1 ThS. Ngô Đình Đạt 7 7-9 303-GĐ2 CL CTE3051 Tin học xây dựng 3 CTE3051 1 ThS. Ngô Đình Đạt 3 10-11 303-GĐ2 CL CTE2010 Cơ học đất 3 CTE2010 1 TS. Nguyễn Văn Bắc 4 12-14 PM201-G2 CL CTE2010 Cơ học đất 3 CTE2010 1 TS. Nguyễn Văn Bắc 5 12-13 PM207-G2 CL INT3404 Xử lý ảnh 3 INT3404 1 TS. Ma Thị Châu 7 2-5 310-GĐ2 CL CTE3016 Phong thủy trong xây dựng 2 CTE3016 2 GS.TSKH. Nguyễn Đình Đức 2 10-13 408-E5 CL CTE2007 Hình họa – họa hình 2 CTE2007 1 ThS. Trần Tuấn Linh 6 10-13 408-E5 CL INT3227 Tích hợp dịch vụ 4 INT3227 1 TS. Nguyễn Thị Hậu 6 7-9 308-E3 CL INT3227 Tích hợp dịch vụ 4 INT3227 1 TS. Nguyễn Thị Hậu 5 1-3 308-E3 CL INT4001 Thực tập tốt nghiệp 3 INT4001 1 Khoa CNTT CN 1-5 Khoa CNTT CL LHP dành cho chương trình đào tạo Chất lượng cao ELT3047E Kiến trúc máy tính 3 ELT3047E 20 TS. Phạm Đức Quang 7 1-4 305-GĐ2 CL ELT3189 Kỹ thuật anten 3 ELT3189 20 TS. Trần Thị Thúy Quỳnh 5 10-13 101-G2 CL ELT3246 Lập trình DSP 3 ELT3246 20 TS. Nguyễn Hồng Thịnh 3 7-10 PM208-G2 CL ELT3246 Lập trình DSP 3 ELT3246 20 TS. Nguyễn Hồng Thịnh 5 2-5 PM207-G2 CL EMA2021E Linh kiện bán dẫn và vi mạch 2 EMA2021E 20 TS. Trần Cường Hưng 4 10-13 PM305-G2 CL INT2013 Kiến trúc máy tính và mạng truyền thông công nghiệp 3 INT2013 20 ThS. Đặng Anh Việt 5 1-4 312-GĐ2 CL INT2045E Quản lý dự án HTTT 4 INT2045E 20 TS. Nguyễn Thị Hậu 5 7-9 308-E3 CL INT2045E Quản lý dự án HTTT 4 INT2045E 20 TS. Nguyễn Thị Hậu 6 1-3 308-E3 CL INT3220E Các chủ đề hiện đại của HTTT 3 INT3220E 20 TS. Lê Hồng Hải 2 7-10 311-E3 CL Ghi chú: Các LHP trên bắt đầu triển khai từ tuần 6 của học kỳ (từ 18/03/2024). Sinh viên đăng ký học tại: https://forms.gle/ng6VuqShVW9owmPx5 đến 8h30 ngày 14/03/2024 . Kết quả đăng ký học chính thức được thông báo muộn nhất vào ngày 18/03/2024.
+
+Trong quá trình thực hiện, nếu gặp vướng mắc đề nghị liên hệ PĐT tại phòng 105-E3 hoặc qua các kênh sau để được hỗ trợ giải quyết:
+
+– Hotline: 024 3202 6858 – Email: daotao_dhcn@vnu.edu.vn Trân trọng thông báo!

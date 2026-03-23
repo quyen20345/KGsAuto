@@ -1,0 +1,51 @@
+# Nhiều sản phẩm AI của Trường Đại học Công nghệ tham gia triển lãm tại Ngày hội Trí tuệ Nhân tạo Việt Nam 2025
+
+- ID: 50517
+- Date: 2025-09-26T15:37:18
+- URL: https://uet.edu.vn/nhieu-san-pham-ai-cua-truong-dai-hoc-cong-nghe-tham-gia-trien-lam-tai-ngay-hoi-tri-tue-nhan-tao-viet-nam-2025/
+- Categories: API VNU, Tin Tổng Hợp
+- Tags: AI4VN, Ngày hội Trí tuệ nhân tạo
+
+## Content
+
+Ngày 26/9/2025, Trường Đại học Công nghệ – Đại học Quốc gia Hà Nội (VNU-UET) đã giới thiệu nhiều sản phẩm khoa học công nghệ tiêu biểu ứng dụng trí tuệ nhân tạo (AI) tại triển lãm AI Expo, trong khuôn khổ Ngày hội Trí tuệ Nhân tạo Việt Nam 2025 (AI4VN) diễn ra ở Trung tâm Hội nghị Quốc gia, Hà Nội.
+
+AI4VN là sự kiện thường niên từ năm 2018, do Bộ Khoa học và Công nghệ chỉ đạo, Báo VnExpress phối hợp tổ chức. Trường ĐH Công nghệ là đơn vị chủ trì tổ chức Hội nghị Trí tuệ nhân tạo AI4LIFE đầu tiên vào năm 2018. Đến năm 2022, các nhóm sinh viên của Nhà trường đạt giải thưởng cao tại AI4VN challenges.
+
+Năm 2025, sự kiện mang chủ đề “Vietnam in the Global AI Race – Việt Nam trong cuộc đua AI toàn cầu”, với chuỗi hoạt động: AI Summit, AI Workshop, AI Awards, AI Expo & AI Show. Tại đây, các diễn giả đã chia sẻ những góc nhìn thực tế về cơ hội của Việt Nam trong cơn sốt AI trên thế giới. Sự kiện là dịp để các nhà quản lý, doanh nghiệp cùng nhau nhìn nhận những thách thức, từ đó thể hiện quyết tâm của Việt Nam không đứng ngoài cuộc xu thế công nghệ. Các doanh nghiệp đã đưa ra các bài toán thực tế, giải pháp gắn kết với chiến lược quốc gia về chuyển đổi số và phát triển AI đến năm 2030, đưa Việt Nam trở thành trung tâm đổi mới sáng tạo của khu vực.
+
+GS.TS Chử Đức Trình (bìa trái ảnh) – Hiệu trưởng Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội và TS. Nguyễn Tuấn Khang (bìa phải ảnh) – Lãnh đạo khu vực, Khối Nền tảng dữ liệu và AI, IBM khu vực Đông Nam Á trao giải cho Top 3 Giải pháp AI xuất sắc của AI Awards 2025
+
+GS.TS Chử Đức Trình và TS. Nguyễn Tuấn Khang trao giải cho Top 5 Tài năng AI Việt của AI Awards 2025
+
+Trong khuôn khổ AI Expo, Trường ĐH Công nghệ mang tới 8 sản phẩm nổi bật đã được nghiên cứu, triển khai thực tiễn tại các Khoa/Viện. Với sự góp mặt của nhiều sản phẩm nghiên cứu và ứng dụng nổi bật, Trường ĐH Công nghệ khẳng định vai trò tiên phong trong nghiên cứu, ứng dụng và chuyển giao AI, đồng thời góp phần đưa Việt Nam tiến xa hơn trong cuộc đua AI toàn cầu.
+
+TS. Kim Wimbush – Tham tán CSIRO kiêm Giám đốc Chương trình Aus4Innovation tại Việt Nam tham quan gian trưng bày các sản phẩm nghiên cứu của Trường ĐH Công nghệ
+
+Các sản phẩm của Trường ĐH Công nghệ tại AI Expo : – Hệ thống dự báo chất lượng không khí GEOI ( https://geoi.com.vn/hanoiair#
+
+) – PGS.TS Nguyễn Thị Nhật Thanh. Hệ thống dự báo và cảnh báo sớm chất lượng không khí tại Việt Nam có khả năng dự báo Chất lượng không khí (dựa trên thông số PM2.5) cho 7 ngày tiếp theo, với độ phân giải 1km cho toàn bộ lãnh thổ Việt Nam. Hệ thống sử dụng thuật toán AI được huấn luyện khả năng dự báo dựa trên dữ liệu đa nguồn bao gồm trạm quan trắc, số liệu khí tượng, phát thải, sử dụng đất, và địa hình. Hệ thống đã được thử nghiệm chạy nghiệp vụ, cập nhật kết quả dự báo hàng ngày tại Sở Nông nghiệp và Môi trường Hà Nội từ tháng 7/2024 – nay. Theo kết quả đánh giá, hệ thống có chất lượng dự báo tốt, đặc biệt trong những khoảng thời gian ô nhiễm dài và nghiêm trọng. Hệ thống bao gồm ứng dụng trên di động tại
+
+http://geoi.com.vn/hanoiair
+
+cho Hà Nội, và các ứng dụng nghiệp vụ trên web phục vụ phân tích chuyên sâu. Bộ dữ liệu chất lượng không khí bao gồm các bản đồ hiện trạng PM2.5 và NO2 trung bình ngày với độ phân giải 1km, từ năm 2012 – 2024. Các bản đồ này được tính toán dùng thuật AI trên dữ liệu đa nguồn, cung cấp thông tin về các chất ô nhiễm ở cả những khu vực không có trạm đo. Bộ dữ liệu được khai thác rộng rãi bởi các nhà nghiên cứu, nhà quản lý, cộng đồng trong lĩnh vực môi trường, y tế, và kinh tế.
+
+– Phần mềm hỗ trợ phát hiện nhanh tổn thương ác tính trong nội soi phế quản ống mềm – GS. TS Lê Sỹ Vinh, TS. Lê Đức Trọng và CN. Nguyễn Duy Phúc. Phần mềm “Hỗ trợ phát hiện nhanh tổn thương ác tính trong nội soi phế quản ống mềm” được phát triển trong khuôn khổ dự án KC4.0 mang tên “Nghiên cứu ứng dụng trí tuệ nhân tạo trong chẩn đoán ung thư phổi qua phân tích ảnh CT lồng ngực, ảnh nội soi phế quản ống mềm và ảnh mô bệnh học”, do Trường Đại học Công nghệ phối hợp cùng Bệnh viện Bạch Mai triển khai thực hiện. Nội soi phế quản là bước thứ hai trong quy trình chẩn đoán ung thư phổi hương. Thủ thuật này cho phép bác sĩ quan sát trực tiếp đường thở, lấy mẫu mô (sinh thiết) từ khối u hoặc dịch phế quản để xét nghiệm tế bào học. Việc nghiên cứu và phát triển phần mềm ứng dụng trí tuệ nhân tạo hỗ trợ chẩn đoán nhanh tổn thương ác tính giúp tăng độ chính xác, giảm tỷ lệ bỏ sót tổn thương và tối ưu quy trình chẩn đoán, hỗ trợ ra quyết định lâm sàng.
+
+Phần mềm đạt độ nhạy và độ đặc hiệu >85% trong chẩn đoán ung thư phổi, đồng thời bảo đảm khả năng phát hiện nhanh khối u trong thời gian thực với độ chính xác >85%. Các chức năng chính bao gồm huấn luyện mô hình, chẩn đoán ung thư phổi trên hình ảnh nội soi, phát hiện nhanh khối u trong quá trình nội soi và quản lý hình ảnh cùng kết quả phân tích. Hệ thống được triển khai thực tế tại Bệnh viện Bạch Mai với định hướng không làm thay đổi quy trình chẩn đoán hiện tại của bác sĩ, mà chỉ đóng vai trò hỗ trợ, góp phần nâng cao chất lượng và hiệu quả trong thực hành lâm sàng. Cụ thể, máy tính trạm đã cài phần mềm sẽ được kết nối trực tiếp với hệ thống nội soi, hiện thị kết quả thời gian thực trên một màn hình được đặt song song với màn hình hiển thị hình ảnh theo quy trình nội soi truyền thống. Về mặt kỹ thuật, mô hình sử dụng cấu trúc ESFPNet đa nhiệm, trong đó một mạng chung trích xuất đặc trưng từ ảnh nội soi và được chia sẻ cho nhiều nhánh nhiệm vụ như phân vùng tổn thương, phân loại và đánh giá khả năng ác tính của khối u. Bên cạnh đó, các kỹ thuật xử lý nâng cao cũng được áp dụng để giảm thiểu nhiễu hình ảnh, giải quyết các vấn đề thường gặp trong nội soi như bong bóng hay ánh sáng phản xạ, từ đó đảm bảo chất lượng đầu vào cho mô hình và cải thiện hiệu suất toàn diện.
+
+– Blife: Hệ thống thay thế chức năng giao tiếp cho người bị tổn thương chức năng vận động ( http://blife.ai/
+
+) – PGS.TS Lê Thanh Hà. Hệ thống thay thế chức năng giao tiếp cho người bị tổn thương chức năng vận động được xây dựng nhằm mục đích hỗ trợ giao tiếp cho những người không may mắn bị rơi vào tình trạng không thể vận động và thậm chí không thể giao tiếp bằng lời nói. Các tính năng chính gồm nhanh chóng đưa ra yêu cầu cần hỗ trợ; thể hiện tình trạng sức khỏe của bản thân; dễ dàng giao tiếp với người thân và bạn bè; dễ dàng ghi nhớ thông tin; dễ dàng sử dụng Internet (Email, Web, mạng xã hội, …).
+
+– Hệ thống chẩn đoán sớm ung thư phổi – GS.TS Lê Sỹ Vinh và TS. Trần Quốc Long. Phần mềm “Hỗ trợ chẩn đoán ung thư phổi được phát triển” trong khuôn khổ dự án KC4.0 mang tên “Nghiên cứu ứng dụng trí tuệ nhân tạo trong chẩn đoán ung thư phổi qua phân tích ảnh CT lồng ngực, ảnh nội soi phế quản ống mềm và ảnh mô bệnh học”, do Trường Đại học Công nghệ phối hợp cùng Bệnh viện Bạch Mai triển khai. Xuất phát từ thực tế ung thư phổi là bệnh lý ác tính phổ biến và có tỷ lệ tử vong hàng đầu tại Việt Nam, dự án hướng đến ứng dụng công nghệ thông tin (CNTT) và trí tuệ nhân tạo để nâng cao hiệu quả chẩn đoán, giảm tải cho bác sĩ và đặc biệt hỗ trợ các tuyến cơ sở. Quy trình phát triển gồm 5 bước: thu thập – gán nhãn dữ liệu; huấn luyện mô hình AI trên ảnh CT, NSPQ, MBH; xây dựng phần mềm và tích hợp với hệ thống CNTT hiện có; thử nghiệm, đánh giá trên dữ liệu tiến cứu; triển khai mở rộng. Phần mềm có 4 module chính: huấn luyện mô hình; phát hiện ung thư phổi trên ảnh CT với độ nhạy >90%, đặc hiệu >85%; quản lý hình ảnh và kết quả phân tích; tìm kiếm, phân loại dữ liệu. Ý tưởng chẩn đoán theo quy trình hai bước: phân vùng tổn thương trước khi xác định loại và đánh giá khả năng ung thư, sử dụng mạng CaraNet cải tiến kết hợp Random Forest. Đặc biệt, việc tích hợp tại Bệnh viện Bạch Mai được thiết kế để không làm thay đổi quy trình chẩn đoán hiện có, mà đóng vai trò hỗ trợ, nâng cao chất lượng và độ chính xác trong thực hành lâm sàng.
+
+– Dual-X: Robot hình người thông minh – PGS.TS Hoàng Văn Xiêm, ThS. Nguyễn Cảnh Thanh. Sản phẩm là một nguyên mẫu Robot hình người với cơ cấu tay đôi 12 bậc tự do, cơ cấu khớp đầu cổ 2 bậc, kết hợp 01 màn hình LCD 7 inch. Hệ thống được phát triển trên nền tảng ROS sử dụng GPU Jetson. Tích hợp các công nghệ AI tiên tiến trong nhận diện khuôn mặt, cảm xúc, thao tác. Có khả năng hiểu ngôn ngữ và bắt chước.
+
+– Hệ thống kính hiển vi ứng dụng tự động timelapse quá trình trưởng thành của trứng trong ống nghiệm – GS.TS Chử Đức Trình, PGS.TS Bùi Thanh Tùng, TS. Đỗ Quang Lộc, ThS Phan Hoàng Anh. Là hệ thống time-lapse tiên tiến ứng dụng Trí tuệ nhân tạo trong việc nuôi cấy và theo dõi sự phát triển của phôi, noãn. Tích hợp công nghệ thị giác máy (Computer Vision) cho phép hệ thống tự động nhận diện, định vị phôi và lấy nét chính xác trên 10 mặt phẳng tiêu cự. Trang bị hệ thống hỗ trợ phân tích và đánh giá bằng AI, giúp sàng lọc, chấm điểm và tiên lượng tiềm năng phát triển của phôi dựa trên dữ liệu hình ảnh time-lapse. Tự động hóa hoàn toàn quy trình nuôi cấy bằng chip vi lỏng (microfluidics) và hệ thống kiểm soát môi trường thông minh (nhiệt độ, khí, độ vô trùng).
+
+– Hệ thống phát hiện đa tấn công sử dụng học sâu trong kiến trúc SDN – PGS.TS Đinh Thị Thái Mai, TS. Bùi Trung Ninh. Triển khai một mô hình mạng SDN trong phòng thí nghiệm, hệ thống giám sát lưu lượng mạng và các cuộc tấn công mạng bất thường. Ứng dụng các mô hình học sâu trong việc phân loại lưu lượng mạng, phát hiện và phân loại các cuộc tấn công mạng khác nhau cho hệ thống SDN với độ chính xác cao. Phân loại lưu lượng hỗ trợ phát hiện xâm nhập bất thường trong mạng đảm bảo thời gian thực
+
+– Công cụ xử lý ảnh phân tích nhiễm sắc thể đồ – TS. Lưu Mạnh Hà, ThS. Lê Quốc Anh. Công cụ phần mềm hỗ trợ xây dựng nhiễm sắc thể đồ và phân tích ảnh nhiễm sắc thể ở người. Ứng dụng hỗ trợ chẩn đoán các bệnh có tính di truyền. Áp dụng các thuật toán xử lý ảnh y sinh và học sâu nhằm nâng cao hiệu suất phân tích nhiễm sắc thể đồ
+
+Một số hình ảnh Trường Đại học Công nghệ tại triển lãm : (UET-News)

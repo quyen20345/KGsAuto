@@ -1,16 +1,27 @@
 # Environment variables
 .env
-.continue/ 
-.claude
+.env.local
+.continue/
+.claude/
 
-# logs
-*logs/ 
+# Logs
+*.log
+logs/
+*.tmp
+*logs/
 
+# Frontend
+node_modules/
+dist/
+
+# Data directories (generated)
+data/extracted/
+data/import_linked/
+# Keep raw data tracked
+!data/raw/
 
 # Directories
-/data
 kg-core/
-
 
 # Python
 __pycache__/
@@ -27,3 +38,10 @@ ENV/
 .idea/
 *.swp
 *.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid

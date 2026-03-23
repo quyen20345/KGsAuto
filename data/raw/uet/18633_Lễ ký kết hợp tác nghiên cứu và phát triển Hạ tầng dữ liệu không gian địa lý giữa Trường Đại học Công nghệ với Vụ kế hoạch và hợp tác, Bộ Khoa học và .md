@@ -1,0 +1,25 @@
+# Lễ ký kết hợp tác nghiên cứu và phát triển Hạ tầng dữ liệu không gian địa lý giữa Trường Đại học Công nghệ với Vụ kế hoạch và hợp tác, Bộ Khoa học và Công nghệ nước CHDCND Lào
+
+- ID: 18633
+- Date: 2019-11-18T09:17:28
+- URL: https://uet.edu.vn/le-ky-ket-hop-tac-nghien-cuu-va-phat-trien-ha-tang-du-lieu-khong-gian-dia-ly-giua-truong-dai-hoc-cong-nghe-voi-vu-ke-hoach-va-hop-tac-bo-khoa-hoc-va-cong-nghe-nuoc-chdcnd-lao/
+- Categories: Tin Tổng Hợp
+- Tags: hợp tác, ký kết
+
+## Content
+
+Chiều 15/11/2019, tại Trụ sở Bộ Khoa học Công nghệ nước Cộng hòa Dân chủ Nhân dân Lào đã diễn Lễ ký kết Biên bản ghi nhớ hợp tác Nghiên cứu và phát triển Hạ tầng dữ liệu không gian địa lý giữa Vụ kế hoạch và hợp tác, Bộ Khoa học và Công nghệ nước CHDCND Lào và Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội nước CHXHCN Việt Nam.
+
+Lễ ký kết Biên bản ghi nhớ hợp tác Nghiên cứu và phát triển Hạ tầng dữ liệu không gian địa lý giữa Vụ kế hoạch và hợp tác, Bộ Khoa học và Công nghệ nước CHDCND Lào và Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội.
+
+Tới dự buổi lễ, phía Lào có Bộ trưởng Bộ KHCN Lào Boviengkham Vongdara, Thứ trưởng Chansen PHIMMAVONG, Thứ trưởng Bounty Thamit, cùng các lãnh đạo Vụ, Viện thuộc Bộ KHCN Lào. Phía Việt Nam có PGS. TS. Nguyễn Việt Hà – Hiệu trưởng Trường Đại học Công nghệ – Đại học Quốc gia Hà Nội, TS. Bùi Quang Hưng – Giám đốc Trung tâm CNTHLN Giám sát hiện trường, và ThS. Đỗ Hoàng Kiên – Giám đốc Trung tâm máy tính. Đầu mối ký kết Biên bản ghi nhớ hợp tác phía Lào là TS. Khamphet Vongdala – Vụ trưởng Vụ Kế hoạch và Hợp tác quốc tế, hai đầu mối thực hiện hợp tác ban đầu sẽ là ông Soumana Choulamany – Vụ trưởng Vụ Công nghệ và Đổi mới, ông VilasalInthapatha – Viện trưởng Viện Máy tính và Điện tử.
+
+Phát biểu tại buổi lễ, đại diện phía Lào, TS. Khamphet Vongdala – Vụ trưởng Vụ Kế hoạch và Hợp tác quốc tế, chia sẻ tinh thần phấn khởi và sẵn sàng của Bộ KHCN với việc hợp tác với Trường ĐHCN trong không chỉ công tác đào tạo ngắn hạn, dài hạn, đào tạo từ xa mà còn trong nghiên cứu và phát triển Hạ tầng dữ liệu không gian địa lý quốc gia cho Lào nói chung và cho Thủ đô Viêngchăn nói riêng. Đại diện phía Việt Nam, PGS. TS. Nguyễn Việt Hà – Hiệu trưởng Trường ĐHCN cho biết Hạ tầng dữ liệu không gian địa lý được coi như là “xương sống” của Chính phủ điện tử. Nó chính là hạ tầng cơ bản nhất mà trên đó các dịch vụ Chính phủ điện tử được phát triển và cung cấp cho người dân, doanh nghiệp và các tổ chức trong và ngoài nước. Hạ tầng dữ liệu không gian địa lý đã và đang được phát triển mạnh mẽ  ở nhiều nơi trên thế giới, từ các nước phát triển đến các nước đang phát triển. Chính phủ Việt Nam rất coi trọng việc nghiên cứu phát triển Hạ tầng dữ liệu không gian quốc gia Việt Nam. Điều này được cụ thể hóa trong Luật đo đạc và Bản đồ Việt Nam ban hành ngày 14/6/2018 và có hiệu lực từ ngày 1/1/2019. Trong luật này định nghĩa Hạ tầng dữ liệu không gian địa lý quốc gia, các thành phần, các lợi ích của Hạ tầng dữ liệu không gian địa lý; đồng thời nêu rõ chiến lược, kế hoạch phát triển Hạ tầng dữ liệu không gian địa lý quốc gia Việt Nam từ cấp trung ương, các Bộ – Ngành tới các địa phương. Trường Đại học Công nghệ là Trường đại học hàng đầu Việt Nam trong lĩnh vực CNTT và Khoa học dữ liệu không gian địa lý, là nơi tập hợp được đội ngũ nhà khoa học và nhà phát triển công nghệ hàng đầu trong lĩnh vực Khoa học dữ liệu không gian địa lý. Với tình hữu nghị đặc biệt giữa hai đất nước, Trường ĐHCN muốn hỗ trợ đào tạo, chuyển giao tri thức – khoa học – công nghệ trong lĩnh vực Hạ tầng dữ liệu không gian địa lý tới các nhà khoa học, công nghệ Lào, để hai bên có thể cùng nhau nghiên cứu, phát triển thử nghiệm Hạ tầng dữ liệu không gian địa lý cho Thủ đô Viêng-chăn.
+
+PGS.TS. Nguyễn Việt Hà – Hiệu trưởng Nhà trường (bên trái ảnh) gặp mặt Bộ trưởng Bộ KHCN Lào Boviengkham Vongdara
+
+Trước khi diễn ra ra buổi lễ, PGS. TS. Nguyễn Việt Hà đã có cuộc diện kiến riêng với Bộ trưởng Bộ KHCN Lào Boviengkham Vongdara. Tại buổi tiếp đón, Bộ trưởng Bộ KHCN Lào chia sẻ Hạ tầng dữ liệu không gian địa lý có vai trò rất quan trọng trong bối cảnh nền Công nghiệp 4.0 đang diễn ra rất mạnh mẽ trên toàn thế giới. Bộ trưởng rất vui mừng khi Bộ KHCN Lào và Trường ĐHCN – ĐHQGHN hợp tác trên cả hai lĩnh vực đào tạo và nghiên cứu, từ các khóa học ngắn hạn, dài hạn, đào tạo từ xa và nghiên cứu phát triển trong lĩnh vực phát triển Hạ tầng dữ liệu không gian địa lý. Ngoài ra, hai bên cũng sẽ có những hợp tác trong lĩnh vực đánh giá và quản lý khoa học công nghệ.
+
+Bên lề sự kiện, sáng ngày 16/11/2019, PGS. TS. Nguyễn Việt Hà cũng có buổi làm việc với ông Sanya Praseuth – Phó Chủ nhiệm Ủy ban Kinh tế – Công nghệ – Môi trường thuộc Quốc hội Nước CHDCND Lào cùng các đại biểu quốc hội chuyên trách thuộc Ủy ban này. Hai bên đã thảo luận và chia sẻ về các vấn đề công nghệ – môi trường được quan tâm ở cả hai đất nước.
+
+(UET-News)

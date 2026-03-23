@@ -1,0 +1,11 @@
+# Kết Quả Thi Tuyển Sinh Sau Đại Học Đợt 1 Năm 2023
+
+- ID: 35781
+- Date: 2023-05-16T14:33:36
+- URL: https://uet.edu.vn/ket-qua-thi-tuyen-sinh-sau-dai-hoc-dot-1-nam-2023/
+- Categories: Sau Đại học, Tin tuyển sinh, Tuyển sinh
+- Tags: 
+
+## Content
+
+STT SBD Họ và tên thí sinh Ngày sinh Giới tính Nơi sinh Điểm đánh giá hồ sơ (1) Điểm phỏng vấn chuyên môn (2) Tổng điểm phỏng vấn (3) Tổng điểm dự thi của thí sinh (= 1 + 3) Ghi chú 1. Chuyên ngành An toàn thông tin 1. 0449993 Lê Tuấn Minh 14/08/1994 Nam Hà Nội 13 45 61.0 74.0 2. 0450013 Lê Thành Trung 02/02/1994 Nam Điện Biên 11 38.5 56.5 67.5 2. Hệ thống thông tin 1. 0450203 Nguyễn Phương Chi 31/10/1997 Nữ Hà Nội 11 33 49.5 60.5 2. 0450321 Bùi Văn Giang 12/06/1997 Nam Hải Phòng 11 32.5 49.0 60.0 3. Kỹ thuật phần mềm 1. 0450207 Phạm Văn Tuyên 22/03/1998 Nam Hà Nam 11 39 57.0 68.0 4. Mạng máy tính và truyền thông dữ liệu 1. 0449869 Nguyễn Văn Hoàng 10/12/1993 Nam Hà Nội 11 35 53.0 64.0 5. Khoa học máy tính 1. 0450099 Phan Quốc Anh 17/08/2000 Nam Hà Nội 11 47.5 65.0 76.0 2. 0451060 Trần Tiến Dũng 15/06/2000 Nam Thái Bình 11 48 67.5 78.5 3. 0450778 Giản Thị Linh Hiền 14/07/1997 Nữ Hà Nội 11 51 71.0 82.0 4. 0450547 Nguyễn Văn Hoàng 15/05/1997 Nam Thái Bình 11 49.5 68.0 79.0 5. 0450848 Nguyễn Văn Hoàng 30/07/2000 Nam Thái Bình 11 44.5 63.0 74.0 6. 0450791 Nguyễn Nghĩa Hùng 30/09/2000 Nam Bắc Ninh 11 46 63.0 74.0 7. 0450274 Vũ Văn Long 03/08/1996 Nam Bắc Ninh 11 47 66.0 77.0 8. 0450455 Bùi Chí Minh 13/02/1997 Nam Hà Nội 11 51.5 70.5 81.5 9. 0450141 Nguyễn Hữu Nam 27/09/1997 Nam Bắc Giang 15 44.5 63.0 78.0 10. 0450405 Kiều Thị Nhung 10/10/1988 Nữ Hà Nội 11 47 65.0 76.0 11. 0450042 Đình Văn Quân 09/10/2000 Nam Hà Nội 13 47.5 66.5 79.5 12. 0450093 Trần Quốc Tuấn 16/10/2000 Nam Nam Định 11 48 67.5 78.5 13. 0450520 Đỗ Thu Uyên 02/06/2000 Nữ Hưng Yên 13 53.5 73.5 86.5 14. 0450168 Nguyễn Tuấn Duy 07/03/2000 Nam Hải Phòng 11 Bỏ thi 6. Kỹ thuật điện tử 1. 0450815 Trần Đức Anh 26/08/2000 Nam Hà Nam 11 46.5 66.5 77.5 2. 0450028 Trần Đăng Huy 29/10/2000 Nam Hà Nam 13 51 71 84 7. Vật liệu và linh kiện nano 1. 0450167 Nguyễn Đức Hiếu 22/10/2000 Nam Thanh Hóa 15 50 70.0 85.0

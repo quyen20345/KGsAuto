@@ -1,0 +1,33 @@
+# UET Fastest: Xe tự hành gắn với trí tuệ nhân tạo
+
+- ID: 12459
+- Date: 2018-06-06T08:36:01
+- URL: https://uet.edu.vn/uet-fastest-xe-tu-hanh-gan-voi-tri-tue-nhan-tao/
+- Categories: Gương mặt sinh viên, Tin Tổng Hợp
+- Tags: 
+
+## Content
+
+Bằng nhiều sự cố gắng và nỗ lực, sau 5 tháng tham gia Cuộc đua số đội UET Fastest với sự hướng dẫn của ThS. Quách Công Hoàng đã vượt qua 08 đội của các trường đại học trên toàn quốc để giành chức vô địch với tiêu chí chậm chắc để hoàn thành trọn vẹn sa hình.
+
+Xe tự hành chạy trong môi trường giả lập là điểm đặc biệt của nhóm sinh viên tham dự Cuộc đua số Rèn luyện kỹ năng bản thân
+
+Trong suốt quá trình tham gia cuộc thi bốn sinh viên K61 khoa Công nghệ thông tin gồm Nguyễn Văn Tùng, Nguyễn Minh Châu, Nguyễn Minh Tuấn, Trần Anh Dũng đã vượt qua những thử thách ban đầu là làm quen với các bảng mạch và linh kiện điện tử. Nguyễn Minh Châu – đại diện của nhóm chia sẻ, mặc dù đây là cuộc thi lập trình công nghệ giúp sinh viên được nghiên cứu, sáng tạo, trải nghiệm công nghệ mới nhất trong các lĩnh vực xử lý ảnh, lập trình nhúng, trí tuệ nhân tạo…. nhưng để chế tạo được chiếc xe tự hành thì phần cơ khí, điện tử là thử thách lớn nhất đối với nhóm. Trong quá trình thiết kế, xe được cung cấp cảm biến gia tốc góc nhưng vì các thành viên trong nhóm không biết nhiều về điện tử nên ngay lần đầu tiên đã cắm nhầm và làm cháy cảm biến hoặc có lần nhóm sơ ý ngủ quên, để pin chạy qua đêm nên bị kiệt và không thể sạc lại. Tuy nhiên, những khó khăn này được nhóm khắc phục với sự hỗ trợ từ các thầy/cô và anh/chị tại phòng thí nghiệm của khoa Điện tử viễn thông về bảng mạch, linh kiện điện tử. Từ đó, nhóm yên tâm triển khai phần lập trình phần mềm cho xe tự hành. Khi đã hoàn thành được chiếc xe thì phần khó khăn tiếp theo của nhóm là không có địa điểm để chạy thử nghiệm xe theo yêu cầu của ban tổ chức. Vì vậy, thay vì tìm sân tập nhóm đã thay thế bằng phương án giả lập trên máy tính. Nếu trong môi trường giả lập đúng thì khả năng xe chạy thực tế cũng thành công, sau đó phương án nàyđược nhóm sử dụng để chạy thử xe trước khi chạy thực tế. Thử nghiệm trên môi trường giả lập lại trở thành thế mạnh và điểm đặc biệt của nhóm. Vì có ít thời gian luyện tập nên nhóm đề cao sự ổn định của xe trong quá trình thi, điều đó đã góp phần giúp nhóm giành được chức vô địch tại cuộc thi.
+
+Khi nhắc đến phương thức luyện tập đặc biệt của nhóm, Nguyễn Văn Tùng – đội trưởng của nhóm
+
+chia sẻ, mặc dù có cách khắc phục về cơ sở vật chất nhưng giữa hai môi trường vẫn có sự chênh lệch vì trong môi trường giả lập mọi thứ hoàn hảo và khi áp dụng thực tế đã xảy ra một số sự cố như camera rung, các chỉ số của xe khi chạy thực tế không đúng quy định…Để cả nhóm đạt được thành tích cao như ngày hôm nay, trong suốt quá trình tham gia cuộc thi nhà trường đã tạo điều kiện về cơ sở vật chất giúp nhóm có thể phát triển các thuật toán trên xe. Bên cạnh đó, nhóm còn nhận được sự hỗ trợ về phần cứng, cơ khí của xe bởi các anh/chị tại phòng thí nghiệm khoa ĐTVT nói riêng và các khoa trong trường nói chung.
+
+Dưới sự hướng dẫn của ThS. Quách Công Hoàng (Khoa ĐTVT) nhóm sinh viên đã có thêm những trải nghiệm mới về các kỹ năng, sự cố gắng của các thành viên trong nhóm cùng với nền tảng kiến thức và sự đoàn kết của các đơn vị trong trường đã tạo nên sự thành công của nhóm ngày hôm nay. Cả 04 thành viên trong nhóm đều là những bạn trẻ đến từ khoa CNTT nên các bạn có sự nhiệt tình, lạc quan, điều quan trọng là khi gặp vấn đề khó khăn cả nhóm có sự tỉnh táo để xử lý tình huống đã góp phần then chốt trong việc giành chức vô địch. Tuy các thành viên đều là sinh viên khoa CNTT nhưng các bạn lại ham học hỏi kiến thức trong robotics bao gồm các kiến thức tổng hợp về cơ khí, điện tử, trí tuệ nhân tạo… nên trong thời gian ngắn cả nhóm đã chế tạo được xe tự hành. ThS. Quách Công Hoàng nhấn mạnh phương án để xe tự hành chạy ổn định về đích an toàn do nhóm chọn lựa làm tôi thấy rất hài lòng, như thế có nghĩa là các thành viên trong nhóm đã hiểu ý nghĩa của cuộc thi. Giải thưởng này là sự động viên và cũng là kết quả bước đầu cho những cố gắng, nỗ lực của các thành viên trong nhóm.
+
+ThS. Quách Công Hoàng (thứ hai, bên phải ảnh sang) đang hướng dẫn cho sinh viên thực hiện chế tạo xe tự hành Xe tự hành với kỹ thuật trí tuệ nhân tạo
+
+Nhớ lại thời gian đầu tiên khi được ban tổ chức gửi các linh kiện để hoàn thành chiếc xe tự hành, Nguyễn Văn Tùng cho biết sau khi kết thúc vòng thi cấp trường nhóm được ban tổ chức cung cấp 01 chiếc xe về phần cứng bao gồm khung xe, động cơ, bánh lái, camera, cảm biến tiệm cận và 1 bảng mạch điều khiển chiếc xe. Sau khi được nhận xe, nhóm đã hào hứng tiến hành lập trình, dựa vào hình ảnh lấy từ camera dùng các thuật toán xử lý hình ảnh, học máy và các thuật toán tinh chỉnh sao cho lấy ra được tốc độ, góc quay bánh xe phù hợp với đường đi. Quan trọng là nhóm phải lập trình để điều khiển xe tự hành giúp xe nhận diện các biển báo, tránh các vật cản và đi đúng làn đường. Ngoài ra, năm nay ban tổ chức còncung cấp cho các nhóm một cảm biến gia tốc góc chín bậc tự do, để đo gia tốc và góc quayvà phương Bắc-Nam; có thêm màn hình và điều khiển để dễ dàng lắp đặt trong cuộc thi.
+
+Chiếc xe tự hành có bảng mạch chính là Nvidia Jetson TK1, sử dụng chip ARM 32bit, hệ điều hành Ubuntu khá giống máy tính. Bản mạch có các chân mở rộng cho camera, cảm biến, các bộ điều khiển động cơ.
+
+Nhắc đến nguyên tắc hoạt động của xe tự hành, Tùng cho biết thêmnhóm sử dụng kỹ thuật là nhận dạng hình ảnh trên camera, xử lý hình ảnh nhận diện hai bên làn đường và đưa ra tâm đường. Điều chỉnh xe đi về đúng tâm đường. Bắt đầu cuộc thi có barrier che ở bên cảm biến, ấn start thì barrier mở ra chạy theo hiệu lệnh phần mềm cài sẵn. Ban tổ chức cung cấp mã nguồn mở để có thể điều khiển chiếc xe một cách cơ bản, còn trong quá trình lập trình nhóm sử dụng ngôn ngữ lập trình C++. Vì vậy, công việc nhóm cần làm là lập trình và nâng cấp thuật toán cho xe chạy nhanh, ổn định và chính xác. Chiếc xe sẽ có 2 pin để sử dụng cho nguồn điện mạch và động cơ. Để chạy được chiếc xe thì mỗi pin phải sạc 1 tiếng mới đầy và sau khi sạc xong cắm vào xe chạy khoảng 2 tiếng. Nhưng phải sạc ngay khi gần hết pin nếu để pin kiệt quá có thể sẽ hỏng và không dùng được.
+
+Trong thời gian tới, nhóm định hướng phát triển xe tự hành hướng tới chuẩn ROS, với hệ thống mã nguồn mở dành cho nghiên cứu robotics, cố gắng tích hợp các công nghệ trí tuệ nhân tạo để chiếc xe chạy mượt mà trong điều kiện phức hợp hơn.
+
+Tuyết Nga (UET-News)

@@ -33,7 +33,7 @@ Mỗi Label dưới đây đi kèm danh sách các thuộc tính tiêu chuẩn. 
 """
 
 # ==========================================
-# PROMPT TEMPLATE (Tối ưu Token & Chi phí)
+# PROMPT TEMPLATE 
 # ==========================================
 EXTRACTION_PROMPT = '''Bạn là một chuyên gia Data Engineer xây dựng Knowledge Graph.
 Nhiệm vụ của bạn là trích xuất thực thể (nodes) và quan hệ (relationships) dưới dạng JSON object dựa trên VĂN BẢN đầu vào.
@@ -54,8 +54,7 @@ Nhiệm vụ của bạn là trích xuất thực thể (nodes) và quan hệ (r
 4. **Thuộc tính quan hệ (Rel Properties)**: Các Relationship cũng có thể có properties (ví dụ: `WORKS_AT` có thể có `start_year`, `role`; `STUDY_AT` có thể có `enrollment_year`).
 
 ## QUY TẮC CẤU TRÚC:
-1. **Bằng chứng nguồn**: Mọi node/relationship đều PHẢI có thuộc tính `source` mang giá trị `{doc_id}` để lưu vết nguồn gốc tài liệu.
-2. **Định dạng ID**: Sinh ID duy nhất, viết thường, loại bỏ dấu tiếng Việt, nối bằng underscore, có tiền tố nhãn. VD: `person_pham_bao_son`, `org_dai_hoc_cong_nghe`.
+1. **Định dạng ID**: Sinh ID duy nhất, viết thường, loại bỏ dấu tiếng Việt, nối bằng underscore, có tiền tố nhãn. VD: `person_pham_bao_son`, `org_dai_hoc_cong_nghe`.
 
 ## OUTPUT FORMAT (Chỉ trả về JSON hợp lệ):
 {{

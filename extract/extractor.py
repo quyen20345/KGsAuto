@@ -26,9 +26,15 @@ class KGExtractor:
         try:
             # Parse the cleaned string into a Json object.
             kg_data = json.loads(cleaned_content)
-            return kg_data  # should return content, model, tokens.
+            # return kg_data  # should return content, model, tokens.
+            return {
+                "doc_id": doc_id,
+                "model": model, 
+                "usage_tokens": usage_tokens,
+                "data": kg_data,
+            }
         except:
-            pass
+            return None
         
        
     
@@ -56,11 +62,14 @@ class KGExtractor:
         success_count = 0
 
         for md_file in md_files:
+            output_path = out_dir / f"{md_file.stem}_kg.json"
+            
+            if output_path.exists():
+                print(f"Skipped (already extracted) -> {output_path.name}")
+                continue
+            
             result = self.extract_from_markdown(md_file)
-
             if result:
-                output_path = out_dir / f"{md_file.stem}_kg.json"
-
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, ensure_ascii=False, indent=4)
                 success_count += 1

@@ -37,5 +37,44 @@ services:
       - ${HOME}/qdrant/data:/qdrant/storage
     restart: always
 
+  # backend:
+  #   build: 
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: backend
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - NEO4J_URI=bolt://neo4j:7687
+  #     - QDRANT_URL=http://qdrant:6333
+  #     - OLLAMA_URL=http://ollama:11434
+  #   depends_on:
+  #     - ollama
+  #     - neo4j
+  #     - qdrant
+  #   restart: always
+
+  # frontend:
+  #   build: 
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   restart: always
+
+  # frontend:
+  #   build: 
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:80" # <-- Đã sửa: Nginx chạy ở cổng 80 trong container
+  #   depends_on:
+  #     - backend
+  #   restart: always
+
 volumes:
   ollama_data:

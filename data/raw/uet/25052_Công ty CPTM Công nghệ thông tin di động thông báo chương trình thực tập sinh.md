@@ -1,0 +1,11 @@
+# Công ty CPTM Công nghệ thông tin di động thông báo chương trình thực tập sinh
+
+- ID: 25052
+- Date: 2021-08-27T10:13:15
+- URL: https://uet.edu.vn/cong-ty-cptm-cong-nghe-thong-tin-di-dong-thong-bao-chuong-trinh-thuc-tap-sinh/
+- Categories: Cơ hội việc làm, Tin Sinh Viên
+- Tags: 
+
+## Content
+
+Công ty CPTM Công nghệ thông tin di động (Conek Telecom) hoạt động trong lĩnh vực CNTT và Viễn thông. Conek Telecom một trong những doanh nghiệp dẫn đầu trong việc cung cấp giải pháp Mobile Marketing, ERP và các hệ thống quản lý tổ chức, doanh nghiệp trên nền tảng 3 kênh viễn thông di động cơ bản (Texting, Voice over và Mobile Data Sponsor) tại thị trường Việt Nam. 1. Vị trí: – Thực tập sinh: Data Clerk (số hóa dữ liệu). 3. Thời gian: a. Thời hạn tuyển dụng, nộp hồ sơ: 15/8/2021 đến 31/8/2021 b. Thời gian làm việc: – 4 giờ/ ngày, từ 16h – 20h hàng ngày (từ thứ 2 đến thứ 6, sáng thứ 7: từ 8h30 – 12h). c. Thời gian chương trình: Từ tháng 9 năm 2021 đến hết tháng 6 năm 2022 (9 Tháng). 4. Mô tả công việc chương trình thực tập sinh: – Data Clerk (số hóa dữ liệu) cho hệ thống Quản lý trường học và Sổ liên lạc điện tử cho phụ huynh học sinh. – Tham gia tư vấn, phối hợp với cán bộ giáo viên các trường học trong sử dụng hệ thống quản lý trường học. – Hỗ trợ, giải đáp thắc mắc của phụ huynh học sinh trong quá trình sử dụng dịch vụ Sổ liên lạc điện tử. 5. Quyền lợi: a. Đào tạo: – Training về các hệ thống CRM, ERP trong quản lý về tổ chức, doanh nghiệp, hành chính công. – Training về các kỹ năng chăm sóc khách hàng, hỗ trợ tư vấn khách hàng là tổ chức, doanh nghiệp. – Trải nghiệm thực hiện KPI trong doanh nghiệp. b. Chế độ đãi ngộ: – Hưởng chế độ: du lịch, team building và tham dự event do doanh nghiệp tổ chức. – Phụ cấp: từ 1,5 tr đến 2,5 tr + thưởng/tháng. – Cơ hội làm việc chính thức tại doanh nghiệp sau khi kết thúc chương trình thực tập sinh. 6. Thông tin liên hệ: Công ty CPTM Công Nghệ Thông Tin Di Động Tầng 9, tòa nhà Hội nhà báo Việt Nam, đường Dương Đình Nghệ, Yên Hòa, Cầu Giấy, HN. Contact: Ms Mai: 0949 603 298 / Ms. Hương: 0528 123 316 Email: tuyendung@conek.net (chi tiết về doanh nghiệp tham khảo tại website: https://conek.net )

@@ -155,6 +155,16 @@ def rewrite_kg_files(
                      filename, len(new_nodes), len(new_rels))
 
 
+# def run_pipeline(
+#     kg_dir: str | Path,
+#     output_dir: str | Path,
+#     llm,
+#     collection_name: str = "entity_linking",
+#     device: str = "cpu",
+#     max_iterations: int = 5,
+#     limit: int = 10,
+#     score_threshold: float = 0.5,
+# ) -> dict:
 def run_pipeline(
     kg_dir: str | Path,
     output_dir: str | Path,
@@ -163,7 +173,8 @@ def run_pipeline(
     device: str = "cpu",
     max_iterations: int = 5,
     limit: int = 10,
-    score_threshold: float = 0.5,
+    score_threshold: float = 0.85,
+    max_workers: int = 8,
 ) -> dict:
     """
     Full pipeline:
@@ -180,18 +191,25 @@ def run_pipeline(
     logger.info("Collected %d unique entities from %d files", len(entities), len(kg_files))
 
     store = EntityDB(collection_name=collection_name, device=device)
-    store.drop_collection()  # fresh start
-    store = EntityDB(collection_name=collection_name, device=device)
+    # store.drop_collection()  # fresh start
+    # store = EntityDB(collection_name=collection_name, device=device)
 
     count = store.upsert_entities(entities)
     logger.info("Upserted %d entities into Qdrant", count)
 
     # 3. Run entity linking
+    # stats = run_entity_linking(
+    #     store, llm,
+    #     max_iterations=max_iterations,
+    #     limit=limit,
+    #     score_threshold=score_threshold,
+    # )
     stats = run_entity_linking(
         store, llm,
         max_iterations=max_iterations,
         limit=limit,
         score_threshold=score_threshold,
+        max_workers=max_workers,
     )
     logger.info("Entity linking done: %s", stats)
 

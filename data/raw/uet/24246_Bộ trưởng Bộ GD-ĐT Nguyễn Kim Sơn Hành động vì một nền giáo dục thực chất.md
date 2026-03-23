@@ -1,0 +1,31 @@
+# Bộ trưởng Bộ GD-ĐT Nguyễn Kim Sơn: Hành động vì một nền giáo dục thực chất
+
+- ID: 24246
+- Date: 2021-05-20T11:08:36
+- URL: https://uet.edu.vn/bo-truong-bo-gd-dt-nguyen-kim-son-hanh-dong-vi-mot-nen-giao-duc-thuc-chat/
+- Categories: Tin Tổng Hợp
+- Tags: 
+
+## Content
+
+Bộ trưởng Nguyễn Kim Sơn khẳng định ngành giáo dục sẽ tập trung thực hiện tốt những định hướng quan trọng mà Thủ tướng Chính phủ đã chỉ đạo trong cuộc làm việc với Bộ GD&ĐT vừa qua. Trong đó, có yêu cầu giáo dục cần phải “học thật, thi thật, nhân tài thật”.
+
+Theo Bộ trưởng Nguyễn Kim Sơn, học thật, hay thực học, xét về phương diện nội dung, là nền giáo dục dạy người ta tri thức, kỹ năng, phẩm chất, đạo đức, tạo ra năng lực thực, tức những gì mà người học có thể dùng nó cho công việc, cho mưu sinh, cho đời, cho đất nước. Thực học là tránh việc học những cái ra đời không dùng vào việc gì, còn cái cần cho việc thì không được học. Thực học ở đây với nghĩa là nền giáo dục thiết thực, hữu dụng, có thực chất, giáo dục và đào tạo đáp ứng nhu cầu xã hội, gắn chặt với đời sống. Học thật là danh vị, học hàm, bằng cấp là phù hợp và phản ánh đúng cái thực lực của người học. Thực tế còn nhiều người nhiều nơi, học qua loa cho có, học chống đối, học cốt lấy bằng, học xong không thêm gì kiến thức năng lực. Có người nhiều bằng cấp, nhưng trước công việc thì không làm được, danh vị là hư danh… Do đó để học thật trước hết là là bỏ thói học vẹt, học thuộc, học nhồi nhét kiến thức, học cốt để thi, học theo bài mẫu, học không cần đào sâu suy nghĩ, không đi vào bản chất, học không gắn với thực tiễn. Học thật là kiểm tra đánh giá đúng, đáng bao nhiêu điểm thì cho bấy nhiêu, ai phải học lại thì cho học lại không “ngồi nhầm lớp”, luận án không chất lượng thì không cho qua…
+
+Tất nhiên, nói như thế không phải là toàn bộ nền giáo dục lúc này là hư rỗng. Vẫn có số đông, rất đông đang dạy thật, học thật, năng lực thật. Nhưng vẫn còn đó nhiều ngành nghề, nhiều trường, nhiều người học có danh mà không có thực, có bằng mà không có chất, “thực không xứng danh, danh không xứng thực”. Thủ tướng yêu cầu ngành giáo dục cần chất lượng hơn, thực chất hơn, bỏ đi những tiêu cực, bệnh hình thức gây nhức nhối. Để làm được điều đó ngành giáo dục cần có sự chuyển hóa về chất, nó không chỉ là vấn đề chất lượng giáo dục mà sâu xa hơn thế, nó là việc chất lượng con người để đáp ứng cho nhu cầu của cuộc sống, chất lượng để tạo ra sự phát triển của đất nước, của nhu cầu nhân lực chất lượng cao và đặc biệt là nhân tài…
+
+Để có được sự chuyển đổi lớn theo hướng thực chất trong giáo dục, theo như chỉ đạo của Thủ tướng, Bộ GD&ĐT có rất rất nhiều việc phải làm. Trước hết, Bộ sẽ phải xem xét điều chỉnh rà soát lại nội dung dạy và học, dạy cái thiết thực, cái thực nghiệp, giảm và tiến tới bỏ hẳn cái hình thức, phù phiếm, vô bổ.
+
+Bậc phổ thông thì chú trọng dạy người, biết tu dưỡng, sống có chí hướng, có đạo đức, dạy kiến thức cơ bản, khả năng tự thích ứng và phát triển bản thân.
+
+Bậc đại học thì từ khâu xây dựng chương trình, tới thiết kế chuẩn đầu ra, tới đặt từng môn học sao cho sát hợp thực tiễn. Học đi đôi với hành, thực tập thực tế cho đầy đủ, thực chất. Cần lấy nghiên cứu khoa học, đổi mới sáng tạo làm nền tảng để tạo ra chất lượng. Cần nuôi khát vọng, chí hướng và tinh thần khởi nghiệp. Cần thay đổi phương pháp để sao cho người học tiếp thu tốt nhất, thích học, biết học để làm gì, học ngành nghề phù hợp với năng lực sở trường của mình. Học để biết, học để làm việc, học để phát triển phẩm chất năng lực bản thân chứ không phải vì điểm số, không phải học chỉ để thi, học để có bằng cấp chứng chỉ. Cần nghiêm túc trong kiểm tra đánh giá, để sao cho đánh giá đúng cái thực chất người học có và tích lũy được, đạt được, không để nhân tố nào làm sai lệch kết quả đánh giá, thi không cốt quá nhiều và phiền hà mà thi cốt cho nghiêm, đánh giá đúng…
+
+Để có được nền giáo dục thực chất, tự ngành giáo dục phải hành động, có sự thay đổi, chuyển mình rất lớn từ trong tư duy, từ trong nếp dạy, từ trong thói quen đã hình thành nhiều năm nay được định hình bởi quan điểm xã hội. Ngành cũng cần phải có cơ sở vật chất tốt cho nhà trường, phòng thí nghiệm, phương tiện dạy và học đầy đủ, hiện đại để có thể tạo ra chất lượng giáo dục tốt nhất. Cần có đội ngũ giáo viên giỏi, năng lực thực và có thu nhập xứng đáng, yên tâm với nghề. Hai điều này chính là là THỰC LỰC của ngành giáo dục. Có tạo được cái THỰC đó mới vực được chất lượng lên, mới đề cao được thực học.
+
+Từ góc độ quản lý nhà nước trong lĩnh vực, Bộ Giáo dục và Đào tạo sẽ chuẩn bị kế hoạch cụ thể thực hiện chỉ đạo lớn này của Thủ tướng Chính phủ.
+
+Vẫn theo người đứng đầu ngành giáo dục đào tạo, thì một thực tế xã hội rất quan trọng khác đang trực tiếp triệt tiêu động lực của việc học thật, thi thật chính là việc nhiều đơn vị và tổ chức tuyển người, dùng người, đánh giá người còn dựa trên bằng cấp mà chưa chú ý đến trình độ thực chất.
+
+Nói cách khác, việc làm cho người học phải học thực, thi thực, thì một phần quan trọng lại nằm ở phía sử dụng sản phẩm đầu ra của giáo dục, đó là việc dùng người, tuyển người, đánh giá người. Nếu tuyển người chỉ dựa trên giấy tờ, theo quan hệ và bị chi phối bởi các yếu tố không thực chất, thì người học sẽ có xu hướng chỉ lo sao cho đẹp hồ sơ, chuẩn các điều kiện, mà không lo phần thực chất. Nếu việc tuyển người, dùng người, đánh giá người theo năng lực thật, ai có tài năng thực được trọng dụng, được đánh giá đúng… thì khi đó học sinh trong nhà trường sẽ đua nhau mà học thật thi thật. Dùng người chỉ căn cứ theo năng lực, theo phẩm chất thật, thì việc dạy và học sẽ chuyển động theo một cách nhanh chóng. Trên nền tảng của việc học thực chất, người được dùng đúng theo năng lực, khi đó người tài sẽ xuất hiện, người tài sẽ được bồi dưỡng. Khi việc dùng người đúng năng lực, đánh giá đúng phẩm chất, khi đó tài năng thực sẽ nở rộ.
+
+Học thật thi thật trước hết và luôn luôn là việc của ngành giáo dục, nhưng cũng là của toàn xã hội. Nếu tất cả mọi người cùng đồng lòng vì nền giáo dục thực chất, vì cuộc sống chất lượng và sự phát triển của đất nước, thì một trong những việc đầu tiên cả xã hội chung tay hành động là tất cả cùng vì thực học!

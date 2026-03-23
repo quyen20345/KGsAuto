@@ -1,5 +1,11 @@
+# import json
+# import logging
+# from entity_linking.entity_store import EntityDB
+# from llms import get_llm
+
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from entity_linking.entity_store import EntityDB
 from llms import get_llm
 
@@ -112,55 +118,172 @@ def _ask_llm(llm, seed: dict, candidates: list[dict]) -> dict | None:
         return None
 
 
-def entity_link_iteration(store: EntityDB, llm, limit: int = 10, score_threshold: float = 0.8) -> int:
+# def entity_link_iteration(store: EntityDB, llm, limit: int = 10, score_threshold: float = 0.8) -> int:
+#     """
+#     One pass: for each entity → search similar → LLM judges → apply merges.
+#     Returns number of merges.
+#     """
+#     all_ids = store.get_all_entity_ids()
+#     merges = 0
+#     processed = set()
+
+#     for entity_id in all_ids:
+#         if entity_id in processed:
+#             continue
+
+#         seed = store.get_entity_by_id(entity_id)
+#         if seed is None:
+#             continue
+
+#         seed_as_entity = {
+#             "id": seed.get("entity_id", ""),
+#             "labels": seed.get("labels", []),
+#             "properties": seed.get("properties", {}),
+#         }
+
+#         candidates = store.search_similar(seed_as_entity, limit=limit, score_threshold=score_threshold)
+#         candidates = [c for c in candidates if c.get("entity_id") not in processed]
+#         if not candidates:
+#             continue
+
+#         result = _ask_llm(llm, seed, candidates)
+#         if result is None:
+#             continue
+
+#         merge_ids = result.get("merge_ids", [])
+#         new_entity = result.get("new_entity")
+#         if not merge_ids or not new_entity:
+#             continue
+
+#         # Collect all merged_ids history
+#         prev_merged = seed.get("merged_ids", [])
+#         new_entity["merged_ids"] = list(set(prev_merged + merge_ids))
+
+#         # Apply: upsert new entity, delete merged ones
+#         store.upsert_entities([new_entity])
+#         store.delete_entities(merge_ids)
+
+#         processed.update(merge_ids)
+#         merges += len(merge_ids)
+#         logger.info("Merged %s <- %s", entity_id, merge_ids)
+
+#     return merges
+
+
+# def run_entity_linking(store: EntityDB, llm, max_iterations: int = 5, **kwargs) -> dict:
+#     """Run until convergence or max_iterations."""
+#     total = 0
+#     for i in range(1, max_iterations + 1):
+#         n = entity_link_iteration(store, llm, **kwargs)
+#         total += n
+#         logger.info("Iteration %d: %d merges", i, n)
+#         if n == 0:
+#             logger.info("Converged after %d iterations.", i)
+#             break
+
+#     remaining = len(store.get_all_entity_ids())
+#     return {"total_merges": total, "iterations": i, "remaining_entities": remaining}
+
+def _pair_key(a: str, b: str) -> tuple[str, str]:
+    return (a, b) if a <= b else (b, a)
+
+def entity_link_iteration(
+    store: EntityDB,
+    llm,
+    limit: int = 10,
+    score_threshold: float = 0.85,
+    max_workers: int = 8,
+    batch_size: int = 256,
+) -> int:
     """
-    One pass: for each entity → search similar → LLM judges → apply merges.
-    Returns number of merges.
+    One pass:
+    - Load entities by scroll payload (no N+1)
+    - Build candidate list with attempted_pairs cache
+    - Ask LLM concurrently
+    - Apply merges sequentially + log linked entities
     """
-    all_ids = store.get_all_entity_ids()
-    merges = 0
+    all_entities = [e for e in store.iter_entities(batch_size=batch_size) if e.get("entity_id")]
     processed = set()
+    attempted_pairs = set()
+    merges = 0
 
-    for entity_id in all_ids:
-        if entity_id in processed:
-            continue
+    future_map = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for seed in all_entities:
+            seed_id = seed.get("entity_id", "")
+            if not seed_id or seed_id in processed:
+                continue
 
-        seed = store.get_entity_by_id(entity_id)
-        if seed is None:
-            continue
+            seed_as_entity = {
+                "id": seed_id,
+                "labels": seed.get("labels", []),
+                "properties": seed.get("properties", {}),
+            }
 
-        seed_as_entity = {
-            "id": seed.get("entity_id", ""),
-            "labels": seed.get("labels", []),
-            "properties": seed.get("properties", {}),
-        }
+            candidates = store.search_similar(seed_as_entity, limit=limit, score_threshold=score_threshold)
+            filtered = []
+            for c in candidates:
+                cid = c.get("entity_id", "")
+                if not cid or cid == seed_id or cid in processed:
+                    continue
 
-        candidates = store.search_similar(seed_as_entity, limit=limit, score_threshold=score_threshold)
-        candidates = [c for c in candidates if c.get("entity_id") not in processed]
-        if not candidates:
-            continue
+                key = _pair_key(seed_id, cid)
+                if key in attempted_pairs:
+                    continue
+                attempted_pairs.add(key)
+                filtered.append(c)
 
-        result = _ask_llm(llm, seed, candidates)
-        if result is None:
-            continue
+            if not filtered:
+                continue
 
-        merge_ids = result.get("merge_ids", [])
-        new_entity = result.get("new_entity")
-        if not merge_ids or not new_entity:
-            continue
+            fut = executor.submit(_ask_llm, llm, seed, filtered)
+            future_map[fut] = (seed_id, filtered)
 
-        # Collect all merged_ids history
-        prev_merged = seed.get("merged_ids", [])
-        new_entity["merged_ids"] = list(set(prev_merged + merge_ids))
+        for fut in as_completed(future_map):
+            seed_id, _ = future_map[fut]
 
-        # Apply: upsert new entity, delete merged ones
-        store.upsert_entities([new_entity])
-        store.delete_entities(merge_ids)
+            try:
+                result = fut.result()
+            except Exception:
+                logger.exception("LLM call failed for seed=%s", seed_id)
+                continue
 
-        processed.update(merge_ids)
-        merges += len(merge_ids)
-        logger.info("Merged %s <- %s", entity_id, merge_ids)
+            if result is None:
+                continue
 
+            merge_ids = result.get("merge_ids", [])
+            new_entity = result.get("new_entity")
+            if not merge_ids or not new_entity:
+                continue
+
+            current_seed = store.get_entity_by_id(seed_id)
+            if current_seed is None:
+                continue
+
+            valid_merge_ids = [
+                mid for mid in merge_ids
+                if mid and mid != seed_id and store.get_entity_by_id(mid) is not None
+            ]
+            if not valid_merge_ids:
+                continue
+
+            new_entity["id"] = seed_id  # enforce canonical id = seed id
+            prev_merged = current_seed.get("merged_ids", [])
+            new_entity["merged_ids"] = sorted(set(prev_merged + valid_merge_ids))
+
+            store.upsert_entities([new_entity])
+            store.delete_entities(valid_merge_ids)
+
+            processed.add(seed_id)
+            processed.update(valid_merge_ids)
+            merges += len(valid_merge_ids)
+
+            logger.info("[LINKED] canonical=%s merged=%s", seed_id, valid_merge_ids)
+
+    logger.info(
+        "Iteration summary: merges=%d, attempted_pairs=%d, seeds=%d",
+        merges, len(attempted_pairs), len(all_entities)
+    )
     return merges
 
 

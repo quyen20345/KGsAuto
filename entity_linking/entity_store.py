@@ -96,24 +96,50 @@ class EntityDB:
             collection_name=self.collection_name,
             points_selector=models.PointIdsList(points=point_ids),
         )
-
-    def get_all_entity_ids(self) -> list[str]:
-        entity_ids = []
+        
+    def iter_entities(self, batch_size):
         offset = None
         while True:
             points, next_offset = self.qdrant_client.scroll(
                 collection_name=self.collection_name,
-                limit=100,
+                limit=batch_size,
                 offset=offset,
                 with_payload=True,
-                with_vectors=False,
+                with_vectors=False
             )
             for point in points:
-                entity_ids.append(point.payload.get("entity_id", ""))
+                payload = point.payload or {}
+                if payload.get("entity_id"):
+                    yield payload 
+                    
             if next_offset is None:
                 break
+            
             offset = next_offset
+            
+    def get_all_entity_ids(self) -> list[str]:
+        entity_ids = []
+        for entity in self.iter_entities(batch_size=256):
+            entity_ids.append(entity.get("entity_id", ""))
         return entity_ids
+
+    # def get_all_entity_ids(self) -> list[str]:
+    #     entity_ids = []
+    #     offset = None
+    #     while True:
+    #         points, next_offset = self.qdrant_client.scroll(
+    #             collection_name=self.collection_name,
+    #             limit=100,
+    #             offset=offset,
+    #             with_payload=True,
+    #             with_vectors=False,
+    #         )
+    #         for point in points:
+    #             entity_ids.append(point.payload.get("entity_id", ""))
+    #         if next_offset is None:
+    #             break
+    #         offset = next_offset
+    #     return entity_ids
 
     def get_entity_by_id(self, entity_id: str) -> dict | None:
         point_id = self._make_point_id(entity_id)

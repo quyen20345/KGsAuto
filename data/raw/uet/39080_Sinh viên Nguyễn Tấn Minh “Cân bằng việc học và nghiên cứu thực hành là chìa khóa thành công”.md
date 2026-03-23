@@ -1,0 +1,43 @@
+# Sinh viên Nguyễn Tấn Minh: “Cân bằng việc học và nghiên cứu thực hành là chìa khóa thành công”
+
+- ID: 39080
+- Date: 2023-11-08T16:17:24
+- URL: https://uet.edu.vn/sinh-vien-nguyen-tan-minh-can-bang-viec-hoc-va-nghien-cuu-thuc-hanh-la-chia-khoa-thanh-cong/
+- Categories: Tin Tổng Hợp
+- Tags: sinh viên nghiên cứu
+
+## Content
+
+Nguyễn Tấn Minh, chàng sinh viên năm 4 ngành Khoa học Máy tính, khoa Công nghệ thông tin, Trường Đại học Công Nghệ, Đại học Quốc gia Hà Nội (VNU-UET) là một gương mặt sáng điển hình với bảng thành tích “khủng”: “Giải nhất Hội nghị sinh viên nghiên cứu khoa học cấp ĐHQGHN năm học 2022-2023; giải Nhất trong shared task Vietnamese Abstractive multi document summarization tại Hội thảo VLSP 2022; Top 5% toàn cầu, giải Khuyến khích cuộc thi Women in Data Science Datathon 2023; giải Nhì task Legal Document Retrieval và giải Ba task Legal Question Answering tại cuộc thi ALQAC 2023; đồng tác giả các công trình nghiên cứu được trình bày tại các hội nghị quốc tế (KSE 2022, VLSP 2022, KSE 2023), học bổng khuyến khích học tập 3 kì, học bổng ADG 2021-2022, Vietcombank 2022 – 2023”.
+
+Từ chàng học sinh không giỏi công nghệ ….
+
+Từ những năm cuối cấp 3, Tấn Minh đã tìm hiểu các ngành liên quan đến công nghệ thông tin và khoa học máy tính.“Qua tìm hiểu thì em biết đến và lựa chọn Trường ĐH Công Nghệ – ĐHQGHN ngành Khoa học máy tính vì nhận thấy trường có các chương trình đào tạo chất lượng cao, môi trường trẻ trung và năng động, đội ngũ giảng viên giỏi”. Thời gian đầu khi mới nhập học, Minh khá lo lắng và còn nhiều bỡ ngỡ. “Khi lên đại học em mới bắt đầu học lập trình, nên vẫn chưa quen ngay được”.
+
+Mặc dù Khoa học máy tính là ngành học tương đối “khó nhằn”, nhiều lí thuyết và yêu cầu sinh viên có một nền tảng toán học tốt, nhưng nhờ chương trình học tiên tiến và đội ngũ giảng viên trình độ cao, luôn sẵn sàng giúp đỡ, hỗ trợ sinh viên nên Minh đã dần bắt kịp và làm quen với môi trường mới. Minh cũng quen nhiều bạn mới hơn, thậm chí còn có một nhóm bạn cùng nhau học tập và trải qua các năm đại học.
+
+“Sau 3 năm học tập, em cảm thấy rất may mắn vì đã chọn đúng ngành học mà bản thân thấy hứng thú và môi trường học tập đã giúp em trưởng thành hơn. Các thầy cô tại trường đã tạo không khí thoải mái, gần gũi để giúp chúng em dần làm quen với môi trường đại học. Ngoài ra, chúng em được sinh hoạt và học tập trong một môi trường chuyên nghiệp, khoa học, cầu tiến. Nhờ vậy, chúng em không chỉ được trang bị những kiến thức chuyên ngành mà còn có văn hóa làm việc, thái độ chuyên nghiệp. Đây là những bài học, tri thức quý giá trên con đường sau này” Minh chia sẻ.
+
+Tại hội nghị sinh viên nghiên cứu khoa học cấp Trường, Công ty Korea IT Cooperation Center – Hanoi trao giải thưởng cho đề tài: “Retrieving legal document and extracting answer with BERT-based model”
+
+Trường cũng có rất nhiều chính sách học bổng nhằm hỗ trợ và thúc đẩy các sinh viên xuất sắc như học bổng khuyến khích học tập, học bổng ngoài ngân sách từ các tổ chức, doanh nghiệp. Có thể kể đến các học bổng lớn như học bổng sinh viên tài năng IMG – ĐHQGHN, học bổng Toshiba, Yamada, Posco, Vietcombank, BIDV… Các học bổng này đến từ những trường đại học, doanh nghiệp lớn trong nước và quốc tế – là đối tác nhiều năm với Nhà trường. Minh cho biết “Bản thân em cũng đã nhận được nhiều học bổng của nhà trường trong 3 năm học vừa qua như học bổng ADG, Vietcombank, học bổng khuyến khích học tập. Đây là một nguồn động viên, khích lệ to lớn đối với em, giúp em bước tiếp trên con đường học tập và nghiên cứu”.
+
+Một lợi thế khác khi học tại trường là sinh viên sẽ được cung cấp các kiến thức vững chắc, hiện đại về khoa học máy tính, có kỹ năng nghề nghiệp cao. Chương trình học tiên tiến với 50% các môn chuyên ngành được dạy bằng tiếng anh cũng giúp các bạn nâng cao kiến thức, vốn từ vựng chuyên ngành, phục vụ cho công việc và nghiên cứu sau này. Sinh viên UET hoàn toàn có đủ năng lực để học lên các bậc cao hơn như Thạc sĩ, Tiến sĩ tại các trường đại học trong và ngoài nước. Khoa học máy tính là một ngành có yêu cầu cao về mặt học thuật, song song với đó cũng là “chìa khóa” để bứt phá trong Cách mạng Công nghiệp 4.0, Chuyển đổi số, Đô thị thông minh bền vững trên thế giới và ở Việt Nam. Đây là một ngành học hứa hẹn mang lại nhiều cơ hội việc làm sau tốt nghiệp.
+
+“Ở khoa Công nghệ thông tin, chúng em sẽ có cơ hội được thực hành tại các phòng thí nghiệm của nhà trường, với trang thiết bị hiện đại trong lĩnh vực Công nghệ thông tin. Ngoài ra, trong thời gian thực tập, em cũng có cơ hội được thực tập trong những tập đoàn công nghệ lớn có liên kết với nhà trường” Minh chia sẻ.
+
+… tới sinh viên có nhiều nghiên cứu khoa học về trí tuệ nhân tạo.
+
+Sau một thời gian học tập tại UET, Tấn Minh nhận thấy bản thân rất hứng thú với hướng khoa học dữ liệu và trí tuệ nhân tạo. Vì vậy, Minh đã tham gia học tập và nghiên cứu tại DS&KT Lab từ năm thứ hai dưới sự hướng dẫn của PGS.TS Phan Xuân Hiếu, TS. Nguyễn Hà Thanh và Ths. Vương Thị Hải Yến. Mặc dù thời gian đầu còn nhiều khó khăn, bỡ ngỡ, nhưng các thầy cô tại DS&KT Lab đã động viên, hỗ trợ bạn nghiên cứu khoa học. Ngoài các giờ học trên lớp, hay những hôm trống tiết là Minh sẽ tìm ngay xuống phòng thí nghiệm để trao đổi cùng thầy cô. “Em nghĩ sự chủ động và khả năng sắp xếp thời gian, cân bằng giữa việc học trên trường và nghiên cứu là hai yếu tố quan trọng quyết định sự thành công của em. Chủ động trong học tập và nghiên cứu cùng với thầy cô giúp em tích lũy được nhiều kiến thức mới, kĩ năng nghiên cứu, tư duy, trình bày. Giảng viên và bạn bè là những người đồng hành với em trong suốt quá trình nghiên cứu và cũng là “lợi thế” giúp em đạt được kết quả như hiện nay”.
+
+Hiện tại, Minh đã có nhiều nghiên cứu khoa học đạt giải các cấp, tham gia hội nghị quốc gia và quốc tế. Có thể kể đến như Giải nhất Hội nghị sinh viên NCKH cấp ĐHQGHN năm học 2022-2023; giải Nhất trong shared task Vietnamese Abstractive multi document summarization tại Hội thảo VLSP 2022; Top 5% toàn cầu, giải Khuyến khích cuộc thi Women in Data Science Datathon 2023; giải Nhì task Legal Document Retrieval và giải Ba task Legal Question Answering tại cuộc thi ALQAC 2023; đồng tác giả các công trình nghiên cứu được trình bày tại các hội nghị quốc tế (KSE 2022, VLSP 2022, KSE 2023).
+
+Tấn Minh cho rằng kết quả mà bạn đạt được là nhờ việc ứng dụng thực hành song song cùng lý thuyết. “Thầy cô ở các phòng thí nghiệm, khoa luôn chào đón các bạn sinh viên có tinh thần học tập tốt, cầu tiến, đam mê nghiên cứu. Các bạn sinh viên có thể tìm hiểu và tham gia vào các lab nghiên cứu có chủ đề mà các bạn hứng thú. Khi ở môi trường như vậy, mình học thể học hỏi từ thầy cô, anh chị đi trước, cập nhập những hướng đi, phát minh mới trong công đồng. Ngoài ra, các bạn sinh viên còn được tham gia vào các dự án, nghiên cứu cùng thầy cô. Từ đó, các bạn có thể tích lũy kiến thức ngoài chương trình học trên lớp”. Đây chính là bí quyết giúp chàng sinh viên này có nhiều công bố khoa học và đạt nhiều thành tích cao.
+
+Hiện nay, ngoài các phòng thí nghiệm, thực hành của các khoa, Trường ĐH Công Nghệ, ĐHQGHN có 5 viện, trung tâm và phòng thí nghiệm thuộc/trực thuộc trường phục vụ cho sinh viên và giảng viên học tập nghiên cứu. Với hệ thống và trang thiết bị hiện đại, cập nhật theo xu thế, cùng với đội ngũ giảng viên ưu tú, giàu kinh nghiệm,sinh viên tại trường sẽ được học tập trong một môi trường đào tạo chuyên sâu, phục vụ kiến thức từ lý thuyết tới thực tiễn, nắm bắt xu thế thị trường việc làm cũng như triển khai các nghiên cứu khoa học cấp quốc gia và quốc tế. Đây là một trong những lợi thế giúp sinh viên của trường có nhiều nghiên cứu cũng như công bố khoa học ngay từ khi còn ngồi trên ghế nhà trường. – Tấn Minh bộc bạch.
+
+Hiện tại, chàng sinh viên năm 4, Tấn Minh cũng đang vạch rõ lộ trình tương lai. “Sau khi tốt nghiệp, em dự định tiếp tục theo đuổi hướng nghiên cứu áp dụng trí tuệ nhân tạo trong lĩnh vực pháp luật. Đây là một hướng nghiên cứu có nhiều tiềm năng và ứng dụng trong thực tế”. Minh cũng bày tỏ mong muốn sau khi học tập và tu nghiệp tại nước ngoài, bạn sẽ quay lại trường để làm việc như một giảng viên hoặc nghiên cứu sinh, giống như các thế hệ thầy cô đi trước đã hướng dẫn bạn.
+
+Từ năm 2004 đến nay, Trường ĐH Công nghệ, ĐHQGHN ngày càng phát triển và giữ vững thương hiệu để đạt mục tiêu “trở thành một trường đại học kỹ thuật công nghệ hàng đầu trong nước, nằm trong nhóm các trường đại học tiên tiến của Châu Á; một trung tâm xuất sắc, đi đầu trong đào tạo tài năng, nghiên cứu khoa học và chuyển giao công nghệ” với khẩu hiệu hành động “Sáng tạo – Tiên phong – Chất lượng cao” và giá trị cốt lõi: “Đổi mới sáng tạo, Hợp tác, Chất lượng cao, Nhân văn”.
+
+(UET-News)

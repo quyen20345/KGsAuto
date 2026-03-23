@@ -1,0 +1,11 @@
+# Thông báo mức điểm nhận hồ sơ xét tuyển vào đại học chính quy năm 2017
+
+- ID: 4644
+- Date: 2017-07-24T10:21:18
+- URL: https://uet.edu.vn/thong-bao-muc-diem-nhan-ho-xet-tuyen-vao-dai-hoc-chinh-quy-nam-2017/
+- Categories: Đại học, Tin tuyển sinh, Tuyển sinh
+- Tags: 
+
+## Content
+
+1. Các chương trình đào tạo chuẩn trình độ đại học Ngành học Mã ngành Chỉ tiêu Tổ hợp môn xét tuyển Mức điểm nhận hồ sơ Nhóm ngành Công nghệ thông tin và Công nghệ kỹ thuật điện, điện tử và viễn thông 600 Khoa học máy tính 52480101 50 A00, A02 20 Công nghệ thông tin 52480201 240 A00, A02 20 Công nghệ thông tin định hướng thị trường Nhật Bản 52480201NB 50 A00, A02 20 Hệ thống thông tin 52480104 60 A00, A02 20 Truyền thông và mạng máy tính 52480102 60 A00, A02 20 Công nghệ kỹ thuật điện tử, truyền thông 52510302 80 A00, A02 20 Kỹ thuật máy tính 52520214 60 A00, A02 20 Nhóm ngành Vật lí kĩ thuật 110 A00, A02 Kỹ thuật năng lượng QHITD1 50 A00, A02 16 Vật lý kỹ thuật 52520401 60 A00, A02 16 Nhóm ngành Công nghê kỹ thuật Cơ điện tử và Cơ kỹ thuật 260 Cơ kỹ thuật 52520101 80 A00, A02 16 Công nghệ kỹ thuật cơ điện tử 52510203 120 A00, A02 16 Công nghệ kỹ thuật xây dựng – giao thông QHITD2 60 A00, A02 16 2. Các chương trình đào tạo chất lượng cao trình độ đại học đáp ứng thông tư 23 của Bộ GD&ĐT Ngành học Mã ngành Chỉ tiêu Tổ hợp môn xét tuyển Mức điểm nhận hồ sơ Cách thức tính điểm xét tuyển Khoa học Máy tính (CLC) 52480101CLC 90 A01, D07, D08 16 (Toán + Anh)*2 + Lý/Hóa/Sinh Công nghệ kỹ thuật điện tử, truyền thông (CLC) 52510302CLC 60 A01, D07, D08 16 Đối với các thí sinh muốn tìm hiểu thêm thông tin về các ngành học của trường ĐHCN, vui lòng liên hệ: – Chương trình đào tạo chất lượng cao: 0912.463.889 (Cô Thoa) – Nhóm ngành Công nghệ thông tin: 0913.507.435 (Thầy Minh) 0981.115.228 (Thầy Thăng) 0943.250.430 (Thầy Thành) 0906.369.388 (Thầy Sơn) – Nhóm ngành Công nghệ kỹ thuật điện, điện tử và truyền thông: 0243.7549.338 (Văn phòng Khoa); 0912.720.780 (Cô Vân) – Nhóm ngành Công nghệ kỹ thuật cơ điện tử và cơ kỹ thuật: 0243.7549.431 (Văn phòng Khoa); 0989.991.529 (Thầy Ba) – Nhóm ngành Vật lý kỹ thuật : 0243.7549.429 (Văn phòng Khoa) Trường Đại học Công nghệ trân trọng thông báo . (UET-News)

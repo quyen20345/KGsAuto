@@ -1,0 +1,41 @@
+# Hội thảo khoa học “Đối sánh chất lượng giáo dục đại học”
+
+- ID: 21142
+- Date: 2020-08-12T16:07:34
+- URL: https://uet.edu.vn/hoi-thao-khoa-hoc-doi-sanh-chat-luong-giao-duc-dai-hoc/
+- Categories: Tin Tổng Hợp
+- Tags: hội thảo
+
+## Content
+
+Ngày 18/08/2020, Hội thảo khoa học “Đối sánh chất lượng giáo dục đại học” (tên tiếng Anh: Conference on University Performance Metrics) sẽ được Đại học Quốc gia Hà Nội (ĐHQGHN) và Ban thư ký Mạng lưới Đại học ASEAN (AUN) đồng phối hợp tổ chức tại Hội trường Sunwah.
+
+Tại Hội thảo, Hệ thống đối sánh xếp hạng UPM do các nhà khoa học ĐHQGHN thực hiện với sự tài trợ của Chương trình Khoa học Giáo dục cấp Quốc gia sẽ thông báo kết quả xếp hạng đối sánh và gắn sao lần đầu tiên cho 30 cơ sở giáo dục đại học (CSGDĐH) Việt Nam và ASEAN.
+
+Bộ trưởng Bộ Giáo dục và Đào tạo, Giám đốc ĐHQGHN, Giám đốc điều hành mạng lưới AUN và lãnh đạo của 30 cơ sở giáo dục đại học được gắn sao lần này sẽ tham gia hội nghị theo hình thức kết hợp trực tiếp và trực tuyến.
+
+Hội nghị nghe và thảo luận 3 báo cáo khoa học: “Đối sánh chất lượng giáo dục đại học trong bối cảnh cách mạng công nghiệp lần thứ tư” (GS.TS. Nguyễn Hữu Đức – ĐHQGHN); “Tiếp cận của hệ thống đảm bảo chất lượng ASEAN đến kỷ nguyên 4.0” (PGS.TS. Phạm Văn Tuấn – ĐH Đại học Đà Nẵng và PGS. Tan Kay Chuan – ĐHQG Singapore) và báo cáo “Mô hình đại học định hướng đổi mới sáng tạo” (TS. Punwalai Kewara – ĐH Burapha, Thái Lan). Đây là các nội dung liên quan đến định hướng đổi mới căn bản giáo dục đại học.
+
+Chương trình hội thảo: Địa điểm: Tầng 1 Hội trường Sunwah, ĐHQGHN Thời gian: Thứ 3 ngày 18/8/2020 8:00 – 8:30 Đăng ký đại biểu 8:30 – 8:45 Phát biểu chào mừng và giới thiệu về Hội thảo 8:45 – 9:00 Đại diện Đại học Quốc gia Hà Nội phát biểu khai mạc PGS.TS. Nguyễn Kim Sơn, Giám đốc 9:00 – 9:15 Đại diện Hệ thống Đại học ASEAN (AUN) phát biểu chào mừng TS. Choltis Dhirathiti, Tổng Giám đốc 9:15 – 9:40 Đối sánh chất lượng giáo dục đại học – UPM trong bối cảnh Cách mạng Công nghiệp 4.0 Công bố Kết quả Xếp hạng Đối sánh chất lượng giáo dục đại học khu vực ASEAN 2020 GS.TS. Nguyễn Hữu Đức, ĐHQG Hà Nội 9:40 – 10:00 Tiếp cận của hệ thống đảm bảo chất lượng ASEAN đến kỷ nguyên 4.0 GS. TS. Phạm Văn Tuấn, Đại học Đà Nẵng, GS. Tan Kay Chuan, Đại học Quốc gia Singapore 10:00 – 10:20 Mô hình đại học định hướng đổi mới sáng tạo GS. Punwalai Kewara, Đại học Burapha (Thái Lan) 10:20 – 10:30 Phát biểu của Bộ Giáo dục và Đào tạo GS.TS. Phùng Xuân Nhạ, Bộ trưởng 10:30 – 11:15 Thảo luận 11:15 – 11:30 Phát biểu bế mạc Hội thảo PGS.TS. Nguyễn Việt Hà, Hiệu trưởng Trường Đại học Công nghệ, ĐHQGHN Chụp ảnh kỷ niệm Thông tin về Hệ thống đối sánh xếp hạng UPM
+
+Trong những năm qua, giáo dục đại học Việt Nam đã có những bước tiến mạnh mẽ nhờ việc thực hiện tự chủ và triển khai kiểm định, công khai chất lượng giáo dục. Hơn 153 cơ sở giáo dục đại học (CSGDĐH) và 135 chương trình đào tạo (CTĐT) đã thực hiện kiểm định chất lượng bởi các tổ chức trong nước và quốc tế. Các CSGDĐH đã tiếp cận với các công cụ quản trị đại học để nhận diện năng lực của mình. Việt Nam đã có 4 CSGDĐH có tên trong TOP 1000 đại học hàng đầu thế giới và giáo dục đại học Việt Nam nói chung đã xếp hạng thứ 68 trên gần 200 quốc gia, vùng lãnh thổ. Tuy nhiên, mô hình và cách vận hành của các trường đại học Việt Nam vẫn đang rất truyền thống. Ảnh hưởng của nền giáo dục từ chương khoa cử vẫn còn phổ biến, định hướng nghiên cứu vẫn còn mới mẻ.
+
+Trong lúc đó, đại học thế giới đang phát triển vào thế hệ thứ ba với hai đặc điểm căn bản là: (i) trường ĐH không chỉ còn là nơi cung cấp nguồn nhân lực, dạy cho sinh viên lập nghiệp, làm thuê, mà còn đào tạo ra những nhà khởi nghiệp sáng tạo, có khả năng tạo ra nhiều việc làm và gia tăng giá trị cho xã hội; (ii) từ chỗ chỉ là những tháp ngà hàn lâm, sáng tạo và chuyển giao tri thức, trường đại học trở thành nơi vừa sáng tạo vừa thực thi, khai thác và vốn hóa tri thức. Hơn thế nữa, các yêu cầu của cuộc cách mạng công nghiệp (CMCN) 4.0 cũng buộc giáo dục đại học phải đổi mới, hướng tới 5 tiếp cận cốt lõi: nêu cao tinh thần khởi nghiệp; thúc đẩy hoạt động đổi mới sáng tạo; thực hiện chuyển đổi số; tổ chức đào tạo linh hoạt, cá thể hóa và bảo vệ những giá trị đạo đức mới. Trong bối cảnh đó, việc đánh giá, đối sánh chất lượng giáo dục đại học cần phải thể hiện tinh thần đổi mới sáng tạo và tính toàn diện.
+
+Với sự cần thiết đó, trong khuôn khổ Chương trình KHGD cấp Nhà nước 2016-2020, Bộ trưởng Bộ GD-ĐT Phùng Xuân Nhạ đã đặt hàng và giao nhiệm vụ cho nhóm nghiên cứu của ĐHQGHN nghiên cứu các đặc trưng của đại học thích ứng với CMCN 4.0 và xây dựng bộ tiêu chí để đánh giá mức độ thích ứng đó.
+
+Tiếp cận đổi mới giáo dục từ việc nghiên cứu, xây dựng bộ công cụ quản trị và đánh giá chất lượng sẽ thực hiện được đa mục tiêu: vừa định hướng và gợi ý các loại hình hoạt động cần có; vừa đưa ra các định mức, chỉ tiêu cần thiết; vừa giúp thống kê, phân tích và quản lý chất lượng.
+
+Nhóm nghiên cứu đã xây dựng và vận hành thành công Hệ thống xếp hạng đối sánh chất lượng giáo dục đại học UPM (University Performance Metrics) bằng cách tích hợp cả tiếp cận xếp hạng và kiểm định chất lượng truyền thống.
+
+Không như các bảng xếp hạng thế giới hiện nay chỉ quan tâm đến 1000 đại học xuất sắc, hàng đầu của thế giới (chỉ chiếm 3%), UPM quan tâm đến số đông 97% (khoảng 28.000 trường còn lại), đến đông đảo các CSGDĐH Việt Nam và khu vực, phục vụ cho các trường đại học xác định và quản trị mục tiêu chiến lược để hướng tới đạt chuẩn của 100 đại học hàng đầu Châu Á. Đặc biệt, nhiều tiêu chí của UPM gắn rất cụ thể với các mốc chuẩn của đại học định hướng nghiên cứu quy định tại Nghị định 99/2019/ NĐ-CP của Việt Nam hướng dẫn thi hành Luật Giáo dục đại học.
+
+Theo UPM, các trường đại học (đặc biệt là các đại học định hướng nghiên cứu) đạt chuẩn 5 sao là các trường đã có khả năng tiếp cận nhóm 100 châu Á, có chất lượng hàng đầu quốc gia và bắt đầu có uy tín quốc tế. Các đại học 4 sao là các trường có uy tín trong nước và khu vực. Các trường đại học 3 sao thực hiện tốt chức năng đào tạo theo phân khúc thị trường và có thể tham gia vào việc trao đổi sinh viên trong khu vực.
+
+Bộ tiêu chí của UPM đã được một số trường đại học chủ động sử dụng để phân tích SWOT tình hình thực tế của nhà trường, trong đó có trường đã sử dụng để làm bộ chỉ số cho các chỉ tiêu phát triển chiến lược. UPM đã hỗ trợ, tư vấn cho các trường đại học Việt Nam và khu vực ASEAN để thu thập và thẩm định cơ sở dữ liệu từ nhiều nguồn, trong đó có cả dữ liệu kiểm định chất lượng. Kết quả ban đầu đạt được là ĐHQGHN và hai trường thành viên là ĐH Khoa học Tự nhiên và ĐH Công nghệ, cùng Trường Đại học Bách khoa Hà Nội và Trường ĐH Kasetsart (Thái Lan) đã đạt tiêu chuẩn 5 sao. Nhóm CSGDĐH đạt 4 sao định hướng nghiên cứu gồm ĐH Huế (cùng các trường thành viên là ĐH Y – Dược, ĐH Khoa học, ĐH Sư phạm) và các trường ĐH Sư phạm Hà Nội, ĐH Dược Hà Nội, ĐH Vinh, ĐH Thủy Lợi, ĐH Mỏ – Địa chất, ĐH Giao thông Vận tải, ĐH Phenikaa và ĐH Burapha (Thái Lan), ĐH Malang (Indonesia). Trường ĐH Kinh tế thuộc ĐH Huế là trường ĐH khối khoa học xã hội đầu tiên đánh giá theo định hướng nghiên cứu đạt chuẩn 3 sao. Theo định hướng ứng dụng, đạt chuẩn 4 sao có các trường ĐH Ngoại Thương, Học viện Ngoại giao, ĐH Thủ Dầu Một, ĐH Quy Nhơn, ĐH Nguyễn Tất Thành. Nhóm 3 sao có các trường ĐH Thành Đô, ĐH Nam Cần Thơ, ĐH Tây Đô, ĐH Phan Thiết, ĐH Centro Escalar và ĐH West Visayas (Philippines).
+
+Bộ tiêu chuẩn của UPM có 8 tiêu chuẩn gồm 54 tiêu chí, tương ứng với 8 lĩnh vực. Do đó, ngoài việc xếp hạng tổng thể, UPM cũng đối sánh và gắn sao cho từng lĩnh vực (Quản trị chiến lược, Đào tạo, Nghiên cứu, Đổi mới sáng tạo, Hệ sinh thái đổi mới sáng tạo, Công nghệ thông tin và tài nguyên số, Phục vụ cộng đồng).
+
+Ban thư ký Mạng lưới các trường đại học ASEAN (AUN) đánh giá cao sáng kiến và kết quả của ĐHQGHN. Với sự hỗ trợ, đồng hành tích cực của Ban thư ký AUN, đã có gần 30 trường ĐH Việt Nam và ASEAN tự nguyện tham gia sử dụng bộ tiêu chí UPM để đối sánh chất lượng. Đây là các CSGDĐH có các vị trí khác nhau trong hệ thống giáo dục đại học của quốc gia và bao gồm cả các trường có định hướng nghiên cứu và các trường có định hướng ứng dụng. Kết quả đối sánh chất lượng và gắn sao các trường ĐH nói trên đã cho một bức tranh chân thực, nhiều màu sắc, sinh động và tích cực về các trường ĐH Việt Nam và khu vực.
+
+(UET-News)
