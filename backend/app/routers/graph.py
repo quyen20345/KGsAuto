@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from app.db.neo4j import get_driver
-from app.schemas.entity import QueryModel
+from ..db.neo4j import get_driver
+from ..schemas.entity import QueryModel
 
 router = APIRouter(prefix="/api", tags=["graph"])
 

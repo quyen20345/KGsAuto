@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import entity, graph, health
+from .routers import entity, graph, health
 
 app = FastAPI(title="KGsAuto API")
 

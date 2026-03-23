@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.db.neo4j import get_driver
+from ..db.neo4j import get_driver
 
 router = APIRouter(prefix="/api", tags=["entity"])
 

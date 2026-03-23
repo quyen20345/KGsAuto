@@ -1,5 +1,5 @@
 from neo4j import GraphDatabase
-from app.core.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+from ..core.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 
 _driver = None
 
