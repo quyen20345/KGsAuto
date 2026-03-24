@@ -62,26 +62,195 @@ def safe_filename(name: str) -> str:
     name = name.replace("\t", "").replace("\n", "")
     return name.strip()[:150]
 
-def clean_content(html: str) -> str:
-    soup = BeautifulSoup(html or "", "html.parser")
-    for s in soup(["script", "style", "noscript"]):
-        s.decompose()
-    text = soup.get_text("\n")
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    # group short lines into paragraphs
-    paragraphs = []
-    buffer = []
-    for line in lines:
-        if len(line) < 120:
-            buffer.append(line)
+def convert_table_to_markdown(table_soup) -> str:
+    """Convert HTML table to Markdown table format."""
+    rows = table_soup.find_all('tr')
+    if not rows:
+        return ""
+
+    markdown_lines = []
+
+    # Check if first row is header
+    first_row = rows[0]
+    has_header = bool(first_row.find_all('th'))
+
+    if has_header:
+        # Process header row
+        headers = first_row.find_all(['th', 'td'])
+        header_texts = [cell.get_text(strip=True) for cell in headers]
+        markdown_lines.append('| ' + ' | '.join(header_texts) + ' |')
+        markdown_lines.append('|' + '|'.join(['-----'] * len(header_texts)) + '|')
+        start_idx = 1
+    else:
+        # No header, create generic one
+        first_cells = first_row.find_all(['td', 'th'])
+        num_cols = len(first_cells)
+        markdown_lines.append('| ' + ' | '.join([f'Col{i+1}' for i in range(num_cols)]) + ' |')
+        markdown_lines.append('|' + '|'.join(['-----'] * num_cols) + '|')
+        start_idx = 0
+
+    # Process data rows
+    for row in rows[start_idx:]:
+        cells = row.find_all(['td', 'th'])
+        cell_texts = [cell.get_text(strip=True) for cell in cells]
+        markdown_lines.append('| ' + ' | '.join(cell_texts) + ' |')
+
+    return '\n'.join(markdown_lines)
+
+def convert_list_to_markdown(list_soup, ordered=False, indent_level=0) -> str:
+    """Convert HTML list (ul/ol) to Markdown list format."""
+    items = list_soup.find_all('li', recursive=False)
+    markdown_lines = []
+    indent = '  ' * indent_level
+
+    for i, item in enumerate(items, 1):
+        # Get direct text content (not from nested lists)
+        text_parts = []
+        for content in item.children:
+            if isinstance(content, str):
+                text = content.strip()
+                if text:
+                    text_parts.append(text)
+            elif content.name not in ['ul', 'ol']:
+                text = content.get_text(strip=True)
+                if text:
+                    text_parts.append(text)
+
+        item_text = ' '.join(text_parts)
+
+        # Create list marker
+        if ordered:
+            marker = f"{i}."
         else:
-            if buffer:
-                paragraphs.append(" ".join(buffer))
-                buffer = []
-            paragraphs.append(line)
-    if buffer:
-        paragraphs.append(" ".join(buffer))
-    return "\n\n".join(paragraphs)
+            marker = "-"
+
+        if item_text:
+            markdown_lines.append(f"{indent}{marker} {item_text}")
+
+        # Process nested lists
+        nested_ul = item.find('ul', recursive=False)
+        nested_ol = item.find('ol', recursive=False)
+
+        if nested_ul:
+            nested_md = convert_list_to_markdown(nested_ul, ordered=False, indent_level=indent_level+1)
+            markdown_lines.append(nested_md)
+
+        if nested_ol:
+            nested_md = convert_list_to_markdown(nested_ol, ordered=True, indent_level=indent_level+1)
+            markdown_lines.append(nested_md)
+
+    return '\n'.join(markdown_lines)
+
+def convert_heading_to_markdown(heading_soup) -> str:
+    """Convert HTML heading (h1-h6) to Markdown heading."""
+    level = int(heading_soup.name[1])  # Extract number from h1, h2, etc.
+    text = heading_soup.get_text(strip=True)
+    return '#' * level + ' ' + text
+
+def process_element_recursively(element) -> str:
+    """Process element and its children, converting structure to Markdown."""
+    parts = []
+
+    for child in element.children:
+        if isinstance(child, str):
+            text = child.strip()
+            if text:
+                parts.append(text)
+        elif child.name == 'table':
+            parts.append(convert_table_to_markdown(child))
+        elif child.name in ['ul', 'ol']:
+            ordered = child.name == 'ol'
+            parts.append(convert_list_to_markdown(child, ordered=ordered))
+        elif child.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            parts.append(convert_heading_to_markdown(child))
+        elif child.name in ['p', 'div', 'section', 'article']:
+            nested = process_element_recursively(child)
+            if nested:
+                parts.append(nested)
+        else:
+            text = child.get_text(strip=True)
+            if text:
+                parts.append(text)
+
+    return '\n\n'.join(parts)
+
+def normalize_whitespace(text: str) -> str:
+    """Clean up excessive whitespace while preserving structure."""
+    lines = text.split('\n')
+    cleaned = []
+    blank_count = 0
+
+    for line in lines:
+        # Preserve indentation for lists
+        if line.strip():
+            cleaned.append(line.rstrip())
+            blank_count = 0
+        else:
+            blank_count += 1
+            # Allow max 2 consecutive blank lines
+            if blank_count <= 2:
+                cleaned.append('')
+
+    # Remove trailing blank lines
+    while cleaned and not cleaned[-1]:
+        cleaned.pop()
+
+    return '\n'.join(cleaned)
+
+def clean_content(html: str) -> str:
+    """
+    Convert HTML to well-structured Markdown.
+    Preserves tables, headings, lists, and paragraph structure.
+    """
+    soup = BeautifulSoup(html or "", "html.parser")
+
+    # Remove unwanted elements
+    for tag in soup(["script", "style", "noscript", "iframe"]):
+        tag.decompose()
+
+    parts = []
+
+    # Process top-level elements
+    for element in soup.children:
+        if isinstance(element, str):
+            text = element.strip()
+            if text:
+                parts.append(text)
+            continue
+
+        if not hasattr(element, 'name'):
+            continue
+
+        # Handle different element types
+        if element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            parts.append(convert_heading_to_markdown(element))
+
+        elif element.name == 'table':
+            parts.append(convert_table_to_markdown(element))
+
+        elif element.name == 'ul':
+            parts.append(convert_list_to_markdown(element, ordered=False))
+
+        elif element.name == 'ol':
+            parts.append(convert_list_to_markdown(element, ordered=True))
+
+        elif element.name in ['p', 'div', 'section', 'article', 'main']:
+            nested = process_element_recursively(element)
+            if nested:
+                parts.append(nested)
+
+        else:
+            text = element.get_text(strip=True)
+            if text:
+                parts.append(text)
+
+    # Join parts with double newlines
+    result = '\n\n'.join(parts)
+
+    # Normalize whitespace
+    result = normalize_whitespace(result)
+
+    return result
 
 def save_markdown(out_dir: Path, post: Dict[str, Any], content_text: str) -> None:
     post_id = post.get("id", "unknown")
