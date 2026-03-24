@@ -1,8 +1,3 @@
-# import json
-# import logging
-# from entity_linking.entity_store import EntityDB
-# from llms import get_llm
-
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,77 +5,6 @@ from entity_linking.entity_store import EntityDB
 from llms import get_llm
 
 logger = logging.getLogger(__name__)
-
-
-ENTITY_LINK_PROMPT = '''Bạn là một chuyên gia Giải quyết Thực thể (Entity Resolution) cho Đồ thị Tri thức VNU Knowledge Graph.
-
-## NHIỆM VỤ:
-So sánh THỰC THỂ GỐC (seed) với danh sách CÁC ỨNG VIÊN (candidates).
-Xác định chính xác ứng viên nào là **cùng một thực thể trong thế giới thực** với thực thể gốc.
-Nếu có ứng viên trùng lặp, hãy tạo một thực thể mới hợp nhất toàn vẹn thông tin từ seed và các ứng viên đó.
-
-## SCHEMA THAM CHIẾU (Labels & Properties hợp lệ):
-Thực thể hợp nhất PHẢI tuân thủ schema sau. KHÔNG được tự bịa label hay property key mới ngoài schema.
-- PERSON: name, aliases, title, role, email, phone, birth_date, gender, hometown, research_interests
-- ORGANIZATION: name, aliases, org_type, founded_year, website, address, employee_count, student_capacity
-- PUBLICATION: name, pub_type, year, publisher, doi, journal_name
-- RESEARCH_PROJECT: name, level, start_year, end_year, status, budget
-- MAJOR: name, code, degree_level, duration_years
-- COURSE: name, code, credits, course_type
-- PARTNER: name, partner_type, country, website
-- EVENT: name, date, scope
-- AWARD: name, issuer, year, prize_money
-- FACILITY: name, location, facility_type, capacity
-
-## QUY TẮC QUYẾT ĐỊNH (MATCHING RULES):
-1. **CHỈ MERGE KHI CHẮC CHẮN** là cùng một thực thể:
-   - Cùng tên hoặc tên là alias/viết tắt của nhau (VD: "Trí tuệ nhân tạo" ↔ "Artificial Intelligence").
-   - Cùng ID pattern trùng khớp (VD: `person_nguyen_van_a` ↔ `person_nguyen_van_a_1`).
-   - Cùng label VÀ các thuộc tính định danh (name, code, email) khớp nhau.
-2. **TUYỆT ĐỐI KHÔNG MERGE khi**:
-   - Khác tên định danh cá nhân: "Trần Xuân Tú" vs "Phạm Bảo Sơn" (dù cùng tổ chức).
-   - Quan hệ bao hàm/cha-con: "ĐHQGHN" vs "UET" (đây là quan hệ PART_OF, không phải cùng thực thể).
-   - Khác label cơ bản: PERSON vs ORGANIZATION, COURSE vs MAJOR.
-   - Tương đồng ngữ nghĩa nhưng khác thực thể: "Machine Learning" vs "Deep Learning", "Khoa CNTT" vs "Khoa Điện tử".
-3. **Nguyên tắc Thận trọng**: Thiếu ngữ cảnh để khẳng định 100% → KHÔNG MERGE.
-
-## QUY TẮC HỢP NHẤT DỮ LIỆU (MERGING RULES):
-Nếu quyết định merge, thực thể `new_entity` PHẢI tuân thủ:
-- **id**: Giữ nguyên `id` của THỰC THỂ GỐC (seed). KHÔNG tự tạo ID mới.
-- **labels**: Gộp (union) tất cả labels, loại bỏ trùng lặp. CHỈ dùng labels có trong Schema.
-- **name**: Chọn tên đầy đủ, chính thức nhất. Đưa mọi tên khác (viết tắt, alias, tên cũ) vào `aliases`.
-- **properties**: Gộp tất cả thuộc tính. CHỈ dùng property keys có trong Schema (theo label tương ứng). Giữ lại `source` dưới dạng mảng gộp tất cả nguồn. Nếu xung đột mô tả, kết hợp thành mô tả chi tiết nhất.
-- **Phẳng hóa**: Mọi giá trị phải là string, number, boolean hoặc array of strings. KHÔNG object lồng nhau.
-
-## DỮ LIỆU ĐẦU VÀO:
-[THỰC THỂ GỐC]:
-{seed_json}
-
-[CÁC ỨNG VIÊN]:
-{candidates_text}
-
-## OUTPUT FORMAT:
-Chỉ trả về MỘT chuỗi JSON hợp lệ duy nhất. KHÔNG bọc markdown, KHÔNG giải thích.
-- Nếu CÓ merge:
-{{
-  "merge_ids": ["<id_ứng_viên_1>", "<id_ứng_viên_2>"],
-  "new_entity": {{
-    "id": "<id_seed>",
-    "labels": ["<label_từ_schema>"],
-    "properties": {{
-      "name": "<tên đầy đủ nhất>",
-      "aliases": ["<tên khác>"],
-      "description": "<mô tả tổng hợp>",
-      "source": ["<doc_id_1>", "<doc_id_2>"]
-    }}
-  }}
-}}
-- Nếu KHÔNG merge:
-{{
-  "merge_ids": [],
-  "new_entity": null
-}}
-'''
 
 
 def _format_candidates(candidates: list[dict]) -> str:
@@ -95,13 +19,95 @@ def _format_candidates(candidates: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _prepare_seed_for_prompt(entity: dict) -> dict:
+    """
+    Prepare seed entity for LLM prompt by extracting lifecycle context
+    into separate _current_* keys so LLM can read them without confusion.
+
+    Returns a new dict with:
+    - _current_version: current version number
+    - _existing_absorbed_ids: list of previously absorbed IDs
+    - _existing_merge_history: list of previous merge events
+    - properties: all other properties (excluding lifecycle fields)
+    """
+    props = entity.get("properties", {})
+
+    # Extract lifecycle context
+    prepared = {
+        "entity_id": entity.get("entity_id", ""),
+        "labels": entity.get("labels", []),
+        "_current_version": props.get("version", 0),
+        "_existing_absorbed_ids": props.get("absorbed_ids", []),
+        "_existing_merge_history": props.get("merge_history", []),
+        "properties": {}
+    }
+
+    # Copy all properties except lifecycle fields
+    lifecycle_keys = {"version", "status", "merge_history", "absorbed_ids"}
+    for key, value in props.items():
+        if key not in lifecycle_keys:
+            prepared["properties"][key] = value
+
+    return prepared
+
+
+def _inject_timestamps(result: dict) -> dict:
+    """
+    Replace all "__INJECT__" placeholders in LLM response with actual values:
+    - event_id: uuid4()[:8]
+    - merged_at: current UTC timestamp (ISO-8601)
+    - updated_at: current UTC timestamp (ISO-8601)
+
+    Now handles merge_history as array of strings (not objects).
+    """
+    from datetime import datetime, timezone
+    from uuid import uuid4
+
+    # Process result - deep copy
+    result_copy = json.loads(json.dumps(result))
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Inject timestamps in new_entity.properties.merge_history (array of strings)
+    if result_copy.get("new_entity") and result_copy["new_entity"].get("properties"):
+        props = result_copy["new_entity"]["properties"]
+        if "merge_history" in props and isinstance(props["merge_history"], list):
+            updated_history = []
+            for item in props["merge_history"]:
+                if isinstance(item, str):
+                    # Replace __INJECT__ placeholders in string
+                    # First occurrence (in [__INJECT__]) is event_id
+                    # Second occurrence (merged_at=__INJECT__) is timestamp
+                    updated_item = item
+                    if "__INJECT__" in updated_item:
+                        # Replace first __INJECT__ with event_id
+                        updated_item = updated_item.replace("__INJECT__", str(uuid4())[:8], 1)
+                    if "__INJECT__" in updated_item:
+                        # Replace second __INJECT__ with timestamp
+                        updated_item = updated_item.replace("__INJECT__", now, 1)
+                    updated_history.append(updated_item)
+                else:
+                    # Keep non-string items as-is (shouldn't happen)
+                    updated_history.append(item)
+            props["merge_history"] = updated_history
+
+    # Inject timestamps in ghost_updates
+    if "ghost_updates" in result_copy and isinstance(result_copy["ghost_updates"], list):
+        for ghost in result_copy["ghost_updates"]:
+            if isinstance(ghost, dict) and ghost.get("updated_at") == "__INJECT__":
+                ghost["updated_at"] = now
+
+    return result_copy
+
+
 def _ask_llm(llm, seed: dict, candidates: list[dict]) -> dict | None:
     """Send seed + candidates to LLM. Returns parsed response or None."""
-    seed_json = json.dumps({
-        "id": seed.get("entity_id", ""),
-        "labels": seed.get("labels", []),
-        "properties": seed.get("properties", {}),
-    }, ensure_ascii=False, indent=2)
+
+    # Prepare seed with lifecycle context separated
+    prepared_seed = _prepare_seed_for_prompt(seed)
+    seed_json = json.dumps(prepared_seed, ensure_ascii=False, indent=2)
+
+    # Import from entity_linking.prompt (not the inline ENTITY_LINK_PROMPT)
+    from entity_linking.prompt import ENTITY_LINK_PROMPT
 
     prompt = ENTITY_LINK_PROMPT.format(
         seed_json=seed_json,
@@ -112,7 +118,10 @@ def _ask_llm(llm, seed: dict, candidates: list[dict]) -> dict | None:
     raw = response.content.replace("```json", "").replace("```", "").strip()
 
     try:
-        return json.loads(raw)
+        result = json.loads(raw)
+        # Inject timestamps after parsing
+        result = _inject_timestamps(result)
+        return result
     except json.JSONDecodeError:
         logger.warning("Failed to parse LLM response for seed=%s", seed.get("entity_id"))
         return None
@@ -205,6 +214,36 @@ def entity_link_iteration(
             new_entity["merged_ids"] = sorted(set(prev_merged + valid_merge_ids))
 
             store.upsert_entities([new_entity])
+
+            # Process ghost_updates before hard-delete
+            ghost_updates = result.get("ghost_updates", [])
+            for ghost in ghost_updates:
+                ghost_id = ghost.get("id")
+                if not ghost_id:
+                    continue
+
+                # Get existing entity
+                existing = store.get_entity_by_id(ghost_id)
+                if existing is None:
+                    logger.warning("Ghost entity not found: %s", ghost_id)
+                    continue
+
+                # Update properties with ghost metadata
+                existing_props = existing.get("properties", {})
+                existing_props["status"] = ghost.get("status", "merged")
+                existing_props["merged_into"] = ghost.get("merged_into")
+                existing_props["updated_at"] = ghost.get("updated_at")
+
+                # Upsert the ghost entity with updated metadata
+                ghost_entity = {
+                    "id": ghost_id,
+                    "labels": existing.get("labels", []),
+                    "properties": existing_props
+                }
+                store.upsert_entities([ghost_entity])
+                logger.info("[GHOST] Updated %s → merged_into=%s", ghost_id, ghost.get("merged_into"))
+
+            # Then hard-delete
             store.delete_entities(valid_merge_ids)
 
             processed.add(seed_id)

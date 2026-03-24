@@ -41,15 +41,13 @@ Nếu có, tạo thực thể hợp nhất từ seed + các ứng viên đó, ba
   absorbed_ids : Gộp `_existing_absorbed_ids` của seed (nếu có) + merge_ids mới.
                  Loại bỏ trùng lặp, sắp xếp tăng dần.
   merge_history: Giữ nguyên `_existing_merge_history` của seed (nếu có),
-                 sau đó APPEND thêm một event mới vào cuối:
-                 {{
-                   "event_id":   "__INJECT__",   ← giữ nguyên chuỗi này, code sẽ thay
-                   "merged_at":  "__INJECT__",   ← giữ nguyên chuỗi này, code sẽ thay
-                   "absorbed":   ["<id_1>", "<id_2>"],   ← điền các merge_ids
-                   "reason":     "<string>",     ← lý do bạn quyết định merge
-                   "confidence": <0.0–1.0>,      ← độ chắc chắn của quyết định
-                   "notes":      "<string|null>"  ← ghi chú thêm nếu cần
-                 }}
+                 sau đó APPEND thêm một chuỗi mô tả merge event mới.
+
+                 Format: "[__INJECT__] merged_at=__INJECT__ | absorbed=[id1,id2] | reason=<lý do> | confidence=<0.0-1.0>"
+
+                 Ví dụ: "[abc12345] merged_at=2026-03-24T16:54:48+00:00 | absorbed=[university_a,university_b] | reason=Cùng tên chính thức | confidence=0.97"
+
+                 Lưu ý: merge_history là ARRAY OF STRINGS, không phải array of objects.
 
 ### Lifecycle — ghost_updates (các node bị hấp thụ)
   Với mỗi ID trong merge_ids, tạo một ghost record:
@@ -88,14 +86,7 @@ Nếu CÓ merge:
       "absorbed_ids":  ["<id_1>", "<id_2>"],
       "merge_history": [
         // ... giữ nguyên history cũ (nếu có) ...
-        {{
-          "event_id":   "__INJECT__",
-          "merged_at":  "__INJECT__",
-          "absorbed":   ["<id_1>"],
-          "reason":     "<lý do merge>",
-          "confidence": <0.0–1.0>,
-          "notes":      "<null hoặc ghi chú>"
-        }}
+        "[__INJECT__] merged_at=__INJECT__ | absorbed=[<id_1>,<id_2>] | reason=<lý do merge> | confidence=<0.0-1.0>"
       ]
     }}
   }},
