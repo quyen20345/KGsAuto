@@ -18,12 +18,13 @@ export default function Header() {
       <Link to="/" className="logo">KGsAuto KB</Link>
       <nav>
         <Link to="/">Browse</Link>
+        <Link to="/visualize">Visualize Graph</Link>
         <Link to="/query">Query Cypher</Link>
       </nav>
       <div className="search-bar">
-        <input 
-          type="text" 
-          placeholder="Search entity..." 
+        <input
+          type="text"
+          placeholder="Search entity..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && doSearch()}

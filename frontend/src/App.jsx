@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Entity from './pages/Entity';
 import Query from './pages/Query';
+import Visualize from './pages/Visualize';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/search/:query" element={<Search />} />
         <Route path="/entity/:id" element={<Entity />} />
         <Route path="/query" element={<Query />} />
+        <Route path="/visualize" element={<Visualize />} />
       </Routes>
     </BrowserRouter>
   );

@@ -21,5 +21,16 @@ export const api = {
       body: JSON.stringify({ cypher })
     });
     return res.json();
+  },
+  getGraphVisualization: async (mode, labels, relationships, limit) => {
+    const params = new URLSearchParams({ mode, limit });
+    if (labels) params.append('labels', labels);
+    if (relationships) params.append('relationships', relationships);
+    const res = await fetch(`${API_BASE}/api/graph/visualize?${params}`);
+    return res.json();
+  },
+  getGraphMetadata: async () => {
+    const res = await fetch(`${API_BASE}/api/graph/metadata`);
+    return res.json();
   }
 };
