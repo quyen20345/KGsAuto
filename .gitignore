@@ -17,11 +17,10 @@ dist/
 # Data directories (generated)
 data/extracted/
 data/import_linked/
-# Keep raw data tracked
-!data/raw/
 
 # Directories
 kg-core/
+data/
 
 # Python
 __pycache__/
