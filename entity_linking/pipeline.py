@@ -154,17 +154,6 @@ def rewrite_kg_files(
         logger.info("Wrote %s: %d nodes, %d rels",
                      filename, len(new_nodes), len(new_rels))
 
-
-# def run_pipeline(
-#     kg_dir: str | Path,
-#     output_dir: str | Path,
-#     llm,
-#     collection_name: str = "entity_linking",
-#     device: str = "cpu",
-#     max_iterations: int = 5,
-#     limit: int = 10,
-#     score_threshold: float = 0.5,
-# ) -> dict:
 def run_pipeline(
     kg_dir: str | Path,
     output_dir: str | Path,
@@ -197,13 +186,6 @@ def run_pipeline(
     count = store.upsert_entities(entities)
     logger.info("Upserted %d entities into Qdrant", count)
 
-    # 3. Run entity linking
-    # stats = run_entity_linking(
-    #     store, llm,
-    #     max_iterations=max_iterations,
-    #     limit=limit,
-    #     score_threshold=score_threshold,
-    # )
     stats = run_entity_linking(
         store, llm,
         max_iterations=max_iterations,

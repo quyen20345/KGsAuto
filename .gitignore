@@ -21,6 +21,7 @@ data/import_linked/
 # Directories
 kg-core/
 data/
+docs/
 
 # Python
 __pycache__/
