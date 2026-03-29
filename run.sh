@@ -5,7 +5,7 @@ set -euo pipefail
 RAW_DIR="${RAW_DIR:-data/raw/uet}"
 EXTRACTED_DIR="${EXTRACTED_DIR:-data/extracted}"
 LINKED_DIR="${LINKED_DIR:-data/import_linked}"
-# LINKED_DIR="${LINKED_DIR:-data/extracted}"
+# LINKED_DIR="${LINKED_DIR:-data/extracted_v2}"
 
 echo "Starting Docker services..."
 docker compose up -d
@@ -21,12 +21,6 @@ do_extract() {
     python3 -m extract.extractor
 }
 
-# do_entity_link() {
-#     echo "[*] Linking entities: $EXTRACTED_DIR -> $LINKED_DIR"
-#     EL_KG_DIR="$EXTRACTED_DIR" \
-#     EL_OUTPUT_DIR="$LINKED_DIR" \
-#     python3 -m entity_linking.cli
-# }
 do_entity_link() {
     echo "[*] Linking entities: $EXTRACTED_DIR -> $LINKED_DIR"
     EL_KG_DIR="$EXTRACTED_DIR" \

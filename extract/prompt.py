@@ -56,21 +56,38 @@ EXTRACT_RULES = """
 
 ENTITY_RULES = """
 1. STRICT LABELS: Use ONLY the 11 labels defined in the Ontology.
-2. ID FORMAT: Lowercase, no accents/diacritics, underscore-separated, with label prefix. Use acronyms to ensure deterministic auto-linking. E.g.: `university_vnu_uet`, `study_program_ktpm_uet`.
-3. CANONICALIZATION: Actively map aliases, abbreviations, and different surface forms to the EXACT SAME ID. Keep the "name" property as the full formal name and add variations to the "aliases" array.
-4. OUT-OF-KB: If an entity CANNOT be mapped to one of the 11 allowed labels -> IGNORE IT entirely. Do not force incorrect mappings (e.g., do not force a "city" into an INSTITUTION label).
+
+2. ID GENERATION (3-TIER DETERMINISTIC ALGORITHM):
+   - TIER-1 (Preferred): Use official abbreviation → `<label_prefix>_<abbr_lowercase>`
+     Example: "VNU University of Engineering and Technology" → `university_uet`
+
+   - TIER-2 (If abbreviation not unique): Add parent context → `<label_prefix>_<child_abbr>_<parent_abbr>`
+     Example: "Faculty of IT - UET" → `institution_fit_uet`
+
+   - TIER-3 (Fallback): Strip diacritics, lowercase, max 4 content words
+     Example: "Hanoi University of Science" → `university_hanoi_science`
+
+   CRITICAL: Same real-world entity MUST have same ID across different chunks.
+
+3. CANONICALIZATION:
+   - "name" = full official name
+   - "aliases" = all surface forms found in chunk (abbreviations, variations, etc.)
+
+4. OUT-OF-KB: If entity cannot map to allowed labels → IGNORE entirely.
 """
 
 # ref: https://en.wikipedia.org/wiki/Property_graph
 RELATIONSHIP_RULES = """
-1. STRICT RELATIONSHIPS: Only use the "HAS_..." relationships defined in the ontology. Absolutely do not create new relationship types.
-2. DOMAIN/RANGE: The Subject (start node) and Object (end node) must be valid for the specific relationship according to the Ontology.
+1. STRICT RELATIONSHIPS: Only use "HAS_..." relationships from ontology.
+2. DOMAIN/RANGE: Subject and Object must match ontology constraints.
+3. TEMPORAL SCOPE: Use valid_from/valid_to (ISO-8601, null if open-ended).
 """
 
 PROPERTY_RULES = """
-1. DYNAMIC PROPERTIES (FALLBACK): Only when a standard property key is missing, you may create a new key in English using snake_case.
-2. FLATTENING: Values must be String, Number, Boolean, or Array. Nested Objects are strictly prohibited.
-3. DATA TYPE STANDARDIZATION: Dates -> ISO 8601 format (e.g., 2024-08-15). Numbers -> pure numeric format (e.g., 4, 1500.5). Do not leave them as raw natural language text ("October this year").
+1. TYPES: string | number | boolean | array. NO nested objects.
+2. DATES: ISO-8601 format (e.g., 2024-08-15).
+3. DYNAMIC KEYS (fallback): snake_case English when standard key missing.
+4. ZERO HALLUCINATION: Only extract explicitly present information.
 """
 
 # ── 3. FEW-SHOT EXAMPLE ───────────────────────────────────────────────────────
@@ -118,37 +135,36 @@ OUTPUT:
 
 OUTPUT_SCHEMA = """
 {
-  "LLM": "<model_name>",
-  "File": "<file_path>",
-  "Processing Time": "<time>",
-  "Node count": <int>,
-  "Relation count": <int>,
   "nodes": [
     {
-      "id":         "<label_slug>",
-      "labels":     ["LABEL"],
+      "id": "<label_slug>",
+      "labels": ["LABEL"],
       "properties": {
-        "name":        "<string>",
-        "aliases":     [<string>],
-        "description": "<optional_short_text>",
-        "source":      "<doc_id>",
-        "<key_others>":  "<string | number | boolean | array>"
+        "name": "<string>",
+        "aliases": [<string>],
+        "source": "<doc_id>",
+        "<key_others>": "<string | number | boolean | array>"
       }
+    }
   ],
   "relationships": [
     {
-      "id":        "<start_id>_<type>_<end_id>",
-      "type":      "HAS_RELATIONSHIP_TYPE",
-      "start_id":  "<node_id>",
-      "end_id":    "<node_id>",
+      "id": "<start_id>_<type>_<end_id>",
+      "type": "HAS_RELATIONSHIP_TYPE",
+      "start_id": "<node_id>",
+      "end_id": "<node_id>",
       "properties": {
         "source": "<doc_id>",
-        "description" : "<optional_short_text>",
-        "<key_others>":  "<string | number | boolean | array>"
+        "valid_from": "<ISO-8601 | null>",
+        "valid_to": "<ISO-8601 | null>",
+        "<key_others>": "<string | number | boolean | array>"
       }
     }
   ]
 }
+
+NOTE: NO lifecycle fields (status, version, merge_history, absorbed_ids, created_at, updated_at).
+These are injected by EntityDB after upsert.
 """
 
 # ── 5. PROMPT TEMPLATE ────────────────────────────────────────────────────────

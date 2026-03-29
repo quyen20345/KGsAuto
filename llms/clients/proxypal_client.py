@@ -1,7 +1,7 @@
 from llms import BaseLLM
 from typing import Optional, List, Dict
 from openai import OpenAI
-from config import Config
+import os
 from llms.factory import register_llm 
 from llms import LLMResponse, Message
 
@@ -11,7 +11,7 @@ class ProxypalClient(BaseLLM):
         self.model_name = model_name
         self.host = kwargs.get("host", "http://localhost:8317/v1")
         self.client = OpenAI(
-            api_key = Config.PROXYPAL_KEY or 'proxypal-local',
+            api_key = os.getenv("PROXYPAL_KEY",'proxypal-local'),
             base_url = self.host,
             timeout = None,
         )
@@ -50,6 +50,6 @@ class ProxypalClient(BaseLLM):
             )
             
             
-# if __name__=="__main__":
-#   client = ProxypalClient("gemini-2.5-flash") # gemini-2.5-flash gemini-claude-sonnet-4-5
-#   print(client.generate("why is the sky blue?"))
+if __name__=="__main__":
+  client = ProxypalClient("gpt-5") # gemini-2.5-flash gemini-claude-sonnet-4-5
+  print(client.generate("why is the sky blue?"))

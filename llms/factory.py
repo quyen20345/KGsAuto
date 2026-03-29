@@ -18,7 +18,3 @@ def get_llm(provider: str, **kwargs) -> BaseLLM:
     if provider not in REGISTRY:
         raise ValueError(f"Unsupported provider: {provider}. Available: {list(REGISTRY.keys())}")
     return REGISTRY[provider](**kwargs)
-
-
-# Alias for backward compatibility
-LLMClient = get_llm

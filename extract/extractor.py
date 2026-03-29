@@ -170,5 +170,6 @@ if __name__ == "__main__":
     # extractor = KGExtractor(provider="gemini", model_name="gemma-3-27b-it")
     # extractor = KGExtractor(provider="gemini", model_name="gemini-2.5-flash")
     extractor = KGExtractor(provider="proxypal", model_name="gpt-5")
+    # extractor = KGExtractor(provider="proxypal", model_name="qwen3-coder-plus")
     extractor.extract_from_dir(input_dir=args.dir, output_dir=args.out)
         

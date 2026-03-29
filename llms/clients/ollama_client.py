@@ -3,7 +3,7 @@ from ollama import Client
 from llms.base import BaseLLM
 from llms.factory import register_llm 
 from llms.types import LLMResponse, Message
-from config import Config 
+import os
 
 @register_llm("ollama")
 class OllamaClient(BaseLLM):

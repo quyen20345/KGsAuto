@@ -71,8 +71,8 @@ class KGImporter:
             for rel in relationships:
                 rel_id = rel.get("id")
                 rel_type = sanitize_label(rel.get("type", "RELATED_TO"))
-                start_id = rel.get("start_id")
-                end_id = rel.get("end_id")
+                start_id = rel.get("source")
+                end_id = rel.get("target")
 
                 props = rel.get("properties", {}) or {}
                 props_with_meta = dict(props)

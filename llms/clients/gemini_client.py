@@ -4,20 +4,16 @@ from google import genai
 from llms.base import BaseLLM
 from llms.factory import register_llm
 from llms.types import LLMResponse
-from config import Config
+import os
 
 
 @register_llm("gemini")
 class GeminiClient(BaseLLM):
     def __init__(self, model_name: Optional[str] = None, **kwargs):
-        self.model_name = model_name or Config.DEFAULT_MODEL
-        # self.temperature = kwargs.get("temperature", Config.DEFAULT_TEMPERATURE)
-        # self.top_p = kwargs.get("top_p", Config.DEFAULT_TOP_P)
-        # self.max_tokens = kwargs.get("max_tokens", Config.DEFAULT_MAX_TOKENS)
-
-        if not Config.GOOGLE_API_KEY:
+        self.model_name = model_name or os.getenv("DEFAULT_MODEL")
+        if not os.getenv("GOOGLE_API_KEY"):
             raise ValueError("GOOGLE_API_KEY not set in .env file")
-        self.client = genai.Client(api_key=Config.GOOGLE_API_KEY)
+        self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
         try:
