@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import entity, graph, health
+from .routers import entity, graph, health, linking_v3
 
 app = FastAPI(title="KGsAuto API")
 
@@ -14,4 +14,5 @@ app.add_middleware(
 
 app.include_router(entity.router)
 app.include_router(graph.router)
+app.include_router(linking_v3.router)
 app.include_router(health.router, prefix="/api")

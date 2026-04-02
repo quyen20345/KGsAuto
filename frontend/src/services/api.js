@@ -32,5 +32,52 @@ export const api = {
   getGraphMetadata: async () => {
     const res = await fetch(`${API_BASE}/api/graph/metadata`);
     return res.json();
+  },
+
+  // --- Linking v3 ---
+  initLinkingV3Run: async (payload) => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/init`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+  getLinkingV3State: async () => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/state`);
+    return res.json();
+  },
+  listLinkingV3Pairs: async (limit = 50, offset = 0) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    const res = await fetch(`${API_BASE}/api/linking/v3/pairs?${params.toString()}`);
+    return res.json();
+  },
+  getLinkingV3Pair: async (pairId) => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/pairs/${pairId}`);
+    return res.json();
+  },
+  decideLinkingV3Pair: async (pairId, payload) => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/pairs/${pairId}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+  applyLinkingV3: async (payload) => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+  resetLinkingV3: async (payload = { drop_collection: true }) => {
+    const res = await fetch(`${API_BASE}/api/linking/v3/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
   }
 };

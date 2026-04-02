@@ -20,6 +20,7 @@ export default function Header() {
         <Link to="/">Browse</Link>
         <Link to="/visualize">Visualize Graph</Link>
         <Link to="/query">Query Cypher</Link>
+        <Link to="/linking-v3">Linking v3</Link>
       </nav>
       <div className="search-bar">
         <input

@@ -3,6 +3,8 @@
 .env.local
 .continue/
 .claude/
+.codex
+CLAUDE.md
 
 # Logs
 *.log
@@ -13,6 +15,9 @@ logs/
 # Frontend
 node_modules/
 dist/
+
+# backend
+backend/tests
 
 # Data directories (generated)
 data/*
