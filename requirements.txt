@@ -13,9 +13,13 @@ neo4j>=5.10.0
 
 # Utilities
 python-dotenv>=1.0.0
+numpy>=1.24.0
 # requests>=2.31.0
 
 # For crawler
-requests==2.32.5 
-beautifulsoup4==4.12.2 
+requests==2.32.5
+beautifulsoup4==4.12.2
 lxml==4.9.3
+
+# Entity linking enhancements
+python-Levenshtein>=0.21.0

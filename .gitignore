@@ -1,53 +1,83 @@
-# Environment variables
-.env
-.env.local
+# ==============================================================================
+# 1. DOCUMENTATION & AI AGENT CONFIG (The "AGENTS.md" fix)
+# ==============================================================================
+*.md
+!AGENTS.md
+!AGENTS.md
+!README.md
+!CLAUDE.md
+!docs/
+
+# AI Tools context
 .continue/
 .claude/
 .codex
-CLAUDE.md
 
-# Logs
-*.log
-logs/
-*.tmp
-*logs/
+# ==============================================================================
+# 2. ENVIRONMENTS & SECRETS
+# ==============================================================================
+.env
+.env.*
+!.env.example
+venv/
+env/
+ENV/
+.python-version
 
-# Frontend
-node_modules/
-dist/
-
-# backend
-backend/tests
-
-# Data directories (generated)
-data/*
-uet_*
-
-# Directories
-# keep the agents directory to allow users to add their own agents without worrying about .gitignore
-docs/*
-!data/agents/
-test/*
-
-# Python
+# ==============================================================================
+# 3. PYTHON / BACKEND (FastAPI & ER Pipeline)
+# ==============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
-env/
-ENV/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# IDE
+# Ignore legacy backend tests if they are stale
+# backend/tests  # Uncomment nếu bạn muốn bỏ qua hoàn toàn suite cũ
+
+# ER Artifacts (Tránh đẩy hàng GB cluster/HDBSCAN data lên Git)
+legacy/ 
+services/entity_resolution/artifacts/
+**/stage1/
+**/stage2/
+**/stage3/
+
+# ==============================================================================
+# 4. FRONTEND (React)
+# ==============================================================================
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/build/
+.eslintcache
+
+# ==============================================================================
+# 5. DATA & INFRASTRUCTURE (Neo4j, Qdrant, UET Data)
+# ==============================================================================
+data/*
+!data/agents/  # Giữ lại folder này để user thêm agent thủ công
+uet_*
+*.log
+logs/
+*.tmp
+
+# Docker & Databases
+*.pid
+.docker/
+neo4j/data/
+neo4j/logs/
+qdrant/storage/
+
+# ==============================================================================
+# 6. IDE & OS
+# ==============================================================================
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Docker
-*.pid
