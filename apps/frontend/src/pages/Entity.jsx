@@ -36,13 +36,6 @@ export default function Entity() {
     return acc;
   }, {});
 
-  // Gom nhóm quan hệ Incoming
-  const inGroups = entity.incoming.reduce((acc, rel) => {
-    acc[rel.type] = acc[rel.type] || [];
-    acc[rel.type].push(rel);
-    return acc;
-  }, {});
-
   return (
     <main>
       <h1 className="entity-title">{entity.name || entity.id}</h1>
@@ -67,24 +60,10 @@ export default function Entity() {
             </tr>
           ))}
 
-          {/* Outgoing */}
+          {/* Outgoing relationships only (directed graph) */}
           {Object.entries(outGroups).map(([type, rels]) => (
             <tr key={`out-${type}`}>
               <td className="predicate">rel:{type}</td>
-              <td className="object">
-                {rels.map((r, i) => (
-                  <Link key={i} className="internal-link" to={`/entity/${r.target_id}`}>
-                    {r.target_name || r.target_id}
-                  </Link>
-                ))}
-              </td>
-            </tr>
-          ))}
-
-          {/* Incoming */}
-          {Object.entries(inGroups).map(([type, rels]) => (
-            <tr key={`in-${type}`}>
-              <td className="predicate">rel:is_{type}_of</td>
               <td className="object">
                 {rels.map((r, i) => (
                   <Link key={i} className="internal-link" to={`/entity/${r.target_id}`}>

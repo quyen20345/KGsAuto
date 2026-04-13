@@ -160,32 +160,17 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     logger.info("=== Starting Stage 3 ===")
     logger.info(f"Stage 3 directory: {stage_dir}")
 
-    # Initialize LLM-CER components
-    logger.info("Initializing LLM-CER components...")
-    record_set_builder = RecordSetBuilder(
-        optimal_set_size=config.llm_set_size,
-        target_diversity=config.llm_diversity,
-        max_variation=config.llm_max_variation,
-    )
-    logger.info("RecordSetBuilder created")
+    # Initialize 2-Pass LLM Resolver
+    logger.info("Initializing 2-Pass LLM Resolver...")
+    from ..matching.two_pass_llm import TwoPassLLMResolver
 
-    llm_clusterer = LLMClusterer(
+    two_pass_resolver = TwoPassLLMResolver(
         llm_provider=config.llm_provider,
         llm_model=config.llm_model,
         llm_api_key=config.llm_api_key,
+        conservative_threshold=config.conservative_merge_threshold,
     )
-    logger.info("LLMClusterer created")
-
-    mdg_validator = MDGValidator(
-        similarity_threshold=config.mdg_similarity_threshold,
-        max_regenerations=config.mdg_max_regenerations,
-    )
-    logger.info("MDGValidator created")
-
-    cluster_merger = HierarchicalClusterMerger(
-        merge_threshold=config.cmr_merge_threshold,
-    )
-    logger.info("Components initialized")
+    logger.info("2-Pass LLM Resolver initialized")
 
     # Load Stage 2 clusters
     logger.info("Loading Stage 2 clusters...")
@@ -204,15 +189,11 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     entities = collect_entities(kg_files)
     logger.info(f"Loaded {len(entities)} entities")
 
-    # Process each cluster
-    all_final_clusters = []
-    llm_stats = {"total_calls": 0, "total_tokens": 0, "total_cost": 0.0}
+    # Process each cluster with 2-Pass LLM
+    all_canonical_entities = []
+    llm_stats = {"total_calls": 0, "pass1_success": 0, "pass2_success": 0, "fallback": 0}
 
-    # Prepare data for review dashboard
-    cluster_items_for_ui = []
-    cluster_decisions_for_ui = []
-
-    logger.info(f"Starting to process {len(groups)} clusters")
+    logger.info(f"Starting to process {len(groups)} clusters with 2-Pass LLM")
 
     for cluster_id, node_ids in sorted(groups.items()):
         if cluster_id == "noise":
@@ -236,235 +217,49 @@ def run_stage3(config: RunConfig) -> Stage3Result:
 
         logger.info(f"Processing cluster {cluster_id} with {len(cluster_items)} entities (type: {ptype})")
 
-        # Step 1: NRS - Build record sets
-        record_sets = record_set_builder.build_record_sets(cluster_items, embeddings)
-        logger.info(f"  Created {len(record_sets)} record sets")
+        # 2-Pass LLM resolution
+        canonical_entities = two_pass_resolver.resolve_cluster(
+            cluster_entities=cluster_items,
+            embeddings=embeddings,
+            entity_type=ptype,
+        )
 
-        # Step 2 & 3: LLM clustering + MDG validation
-        round_results = []
+        all_canonical_entities.extend(canonical_entities)
 
-        for i, record_set in enumerate(record_sets):
-            logger.info(f"  Processing record set {i+1}/{len(record_sets)} ({len(record_set)} entities)")
-
-            # Try up to max_regenerations times
-            for attempt in range(config.mdg_max_regenerations):
-                try:
-                    # LLM clustering
-                    logger.info(f"    Calling LLM for clustering (attempt {attempt+1})")
-                    clustering_result = llm_clusterer.cluster_record_set(
-                        record_set, ptype, embeddings=embeddings
-                    )
-                    llm_stats["total_calls"] += 1
-
-                    # MDG validation
-                    logger.info(f"    Validating with MDG")
-                    is_valid, reason = mdg_validator.validate_clustering(
-                        clustering_result,
-                        embeddings,
-                    )
-
-                    if is_valid:
-                        round_results.append(clustering_result)
-                        logger.info(f"    MDG passed: {len(clustering_result['groups'])} groups")
-                        break
-                    else:
-                        logger.warning(f"    MDG rejected: {reason}, attempt {attempt+1}/{config.mdg_max_regenerations}")
-
-                except Exception as e:
-                    logger.error(f"    LLM clustering failed: {e}")
-                    if attempt == config.mdg_max_regenerations - 1:
-                        # Use conservative fallback
-                        if config.enable_conservative_fallback:
-                            logger.info(f"    Using conservative fallback clustering")
-                            fallback_result = llm_clusterer._build_conservative_fallback(
-                                record_set=record_set,
-                                embeddings=embeddings,
-                                similarity_threshold=config.conservative_merge_threshold,
-                            )
-                            round_results.append(fallback_result)
-                        else:
-                            logger.info(f"    Using all-singleton fallback")
-                            round_results.append(_build_fallback_clustering(record_set))
-            else:
-                # All attempts failed, use fallback
-                if config.enable_conservative_fallback:
-                    logger.warning(f"    All MDG attempts failed, using conservative fallback")
-                    fallback_result = llm_clusterer._build_conservative_fallback(
-                        record_set=record_set,
-                        embeddings=embeddings,
-                        similarity_threshold=config.conservative_merge_threshold,
-                    )
-                    round_results.append(fallback_result)
-                else:
-                    print(f"    All MDG attempts failed, using all-singleton fallback")
-                    round_results.append(_build_fallback_clustering(record_set))
-
-        # Step 4: CMR - Hierarchical merge
-        if len(round_results) > 1:
-            print(f"  Merging {len(round_results)} round results")
-            merged_clusters = cluster_merger.merge_clusters(round_results, embeddings)
-        else:
-            merged_clusters = round_results[0]["groups"] if round_results else []
-
-        print(f"  Final: {len(merged_clusters)} clusters")
-
-        # Add cluster_id to each group
-        for group in merged_clusters:
-            group["original_cluster_id"] = cluster_id
-            group["primary_type"] = ptype
-
-        all_final_clusters.extend(merged_clusters)
-
-        # Prepare cluster item for UI
-        cluster_candidates = []
-        for node_id in node_ids:
-            payload = entities.get(node_id, {"labels": [], "properties": {}})
-            cluster_candidates.append({
-                "node_id": node_id,
-                "labels": payload.get("labels", []),
-                "properties": payload.get("properties", {}),
-            })
-
-        cluster_items_for_ui.append({
-            "cluster_id": cluster_id,
-            "primary_type": ptype,
-            "node_ids": node_ids,
-            "candidates": cluster_candidates,
-            "cluster_hint": {
-                "decision": "MERGE",
-                "confidence": 0.8,
-                "reasoning": f"LLM-CER processed {len(record_sets)} record sets, produced {len(merged_clusters)} final clusters",
-                "suggestion_source": "llm_cer",
-                "risk_flags": [],
-                "split_groups": [],
-            }
-        })
-
-        cluster_decisions_for_ui.append({
-            "cluster_id": cluster_id,
-            "decision": "MERGE",
-            "approved": True,
-            "split_groups": [],
-        })
-
-    # Step 5: Canonical entity synthesis
-    print("Synthesizing canonical entities...")
-    synthesis_decisions = []
-    synthesis_items_for_ui = []
-    singleton_skip_total = 0
-    merge_decision_total = 0
-
-    for cluster in all_final_clusters:
-        node_ids = cluster.get("node_ids", [])
-
-        # Build candidates
-        candidates = []
-        for node_id in node_ids:
-            payload = entities.get(node_id, {"labels": [], "properties": {}})
-            candidates.append({
-                "node_id": node_id,
-                "labels": payload.get("labels", []),
-                "properties": payload.get("properties", {}),
-            })
-
-        # Use rule-based synthesis (can be replaced with LLM later)
-        canonical_entity = build_draft_without_llm(candidates)
-
-        is_singleton = len(node_ids) <= 1
-        decision = "SKIP_SINGLETON" if is_singleton else "MERGE"
-        approved = not is_singleton
-        if is_singleton:
-            singleton_skip_total += 1
-        else:
-            merge_decision_total += 1
-
-        synthesis_decisions.append({
-            "proposal_id": cluster.get("group_id", "unknown"),
-            "cluster_id": cluster.get("original_cluster_id", "unknown"),
-            "decision": decision,
-            "canonical_id": canonical_entity.get("canonical_id"),
-            "canonical_entity": {
-                "labels": canonical_entity.get("labels", []),
-                "merged_properties": canonical_entity.get("merged_properties", {}),
-            },
-            "node_ids": node_ids,
-            "by": "llm_cer",
-            "confidence": canonical_entity.get("confidence", 0.7),
-            "approved": approved,
-        })
-
-        # Prepare synthesis item for UI
-        synthesis_items_for_ui.append({
-            "proposal_id": cluster.get("group_id", "unknown"),
-            "cluster_id": cluster.get("original_cluster_id", "unknown"),
-            "primary_type": cluster.get("primary_type", "UNKNOWN"),
-            "node_ids": node_ids,
-            "candidates": candidates,
-            "llm_suggestion": {
-                "canonical_id": canonical_entity.get("canonical_id"),
-                "labels": canonical_entity.get("labels", []),
-                "merged_properties": canonical_entity.get("merged_properties", {}),
-                "confidence": canonical_entity.get("confidence", 0.7),
-                "reasoning": cluster.get("reasoning", "Rule-based synthesis"),
-                "suggestion_source": "llm_cer",
-                "risk_flags": [],
-            }
-        })
-
-    # Build approved proposals
-    approved_proposals = []
-    for d in synthesis_decisions:
-        if d.get("decision") == "MERGE" and d.get("approved") and len(d.get("node_ids", [])) > 1:
-            approved_proposals.append({
-                "proposal_id": d["proposal_id"],
-                "cluster_id": d["cluster_id"],
-                "node_ids": d["node_ids"],
-                "canonical_id": d.get("canonical_id"),
-            })
-
-    # Step 6: Graph rewiring
-    print("Rewiring graph...")
-    canonical_map = build_id_remap_from_proposals(approved_proposals)
-
-    # Build canonical overrides
+    # Build id_remap and canonical_map from canonical entities
+    logger.info("Building ID remap and canonical map...")
+    canonical_map = {}
     canonical_overrides = {}
-    for d in synthesis_decisions:
-        if d.get("decision") != "MERGE" or not d.get("approved"):
-            continue
 
-        canonical_id = d.get("canonical_id")
-        if not canonical_id:
-            continue
+    for canonical_entity in all_canonical_entities:
+        canonical_id = canonical_entity.get("canonical_id")
+        merged_from = canonical_entity.get("merged_from", [])
+        labels = canonical_entity.get("labels", [])
+        properties = canonical_entity.get("properties", {})
 
-        ce = d.get("canonical_entity", {})
-        props = ce.get("merged_properties", {})
-        labels = ce.get("labels", [])
+        # Map all merged IDs to canonical ID
+        for node_id in merged_from:
+            canonical_map[node_id] = canonical_id
 
-        prev = canonical_overrides.get(canonical_id)
-        if prev:
-            prev["properties"] = merge_properties(prev.get("properties", {}), props)
-            for lbl in labels:
-                if lbl not in prev["labels"]:
-                    prev["labels"].append(lbl)
-            for node_id in d["node_ids"]:
-                if node_id != canonical_id and node_id not in prev["merged_ids"]:
-                    prev["merged_ids"].append(node_id)
-        else:
+        # Store canonical entity properties
+        if len(merged_from) > 1:
+            # Only store overrides for merged entities
             canonical_overrides[canonical_id] = {
-                "labels": list(labels),
-                "properties": dict(props),
-                "merged_ids": [node_id for node_id in d["node_ids"] if node_id != canonical_id],
+                "labels": labels,
+                "properties": properties,
+                "merged_ids": [nid for nid in merged_from if nid != canonical_id],
             }
+
+    logger.info(f"ID remap: {len(canonical_map)} mappings")
+    logger.info(f"Canonical overrides: {len(canonical_overrides)} entities")
 
     # Save outputs
-    synthesis_decisions_path = stage_dir / "synthesis_decisions.json"
-    with open(synthesis_decisions_path, "w", encoding="utf-8") as f:
-        json.dump(synthesis_decisions, f, ensure_ascii=False, indent=2)
-
     remap_path = stage_dir / "id_remap.json"
     with open(remap_path, "w", encoding="utf-8") as f:
         json.dump(canonical_map, f, ensure_ascii=False, indent=2)
 
+    # Rewire graph
+    logger.info("Rewiring graph...")
     output_dir = stage_dir / "output_graph"
     rewrite_stats = rewire_graph(
         config.input_dir,
@@ -477,37 +272,21 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     with open(audit_path, "w", encoding="utf-8") as f:
         json.dump({
             "run_id": config.run_id,
-            "synthesis_decisions_total": len(synthesis_decisions),
+            "canonical_entities_total": len(all_canonical_entities),
             "canonical_map_size": len(canonical_map),
-                "rewrite_stats": rewrite_stats,
-                "llm_stats": llm_stats,
-                "merge_decisions_total": merge_decision_total,
-                "singleton_skips_total": singleton_skip_total,
-                "effective_merges_total": len(canonical_map),
-            }, f, ensure_ascii=False, indent=2)
+            "canonical_overrides_size": len(canonical_overrides),
+            "rewrite_stats": rewrite_stats,
+        }, f, ensure_ascii=False, indent=2)
 
-    # Generate review dashboard
-    print("Generating review dashboard...")
-    synthesis_decisions_for_ui = [
-        {
-            "proposal_id": d["proposal_id"],
-            "cluster_id": d["cluster_id"],
-            "decision": d["decision"],
-            "approved": d["approved"],
-        }
-        for d in synthesis_decisions
-    ]
+    logger.info(f"Stage 3 completed successfully")
+    logger.info(f"Output directory: {output_dir}")
+    logger.info(f"ID remap: {remap_path}")
+    logger.info(f"Audit: {audit_path}")
 
-    dashboard_path = write_review_dashboard(
-        stage_dir,
-        cluster_items_for_ui,
-        cluster_decisions_for_ui,
-        synthesis_items_for_ui,
-        synthesis_decisions_for_ui,
-    )
-    print(f"Review dashboard: {dashboard_path}")
-
-    print(f"LLM-CER Stats: {llm_stats['total_calls']} calls")
+    # Create dummy synthesis_decisions for compatibility
+    synthesis_decisions_path = stage_dir / "synthesis_decisions.json"
+    with open(synthesis_decisions_path, "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
 
     return Stage3Result(
         run_id=config.run_id,

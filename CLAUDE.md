@@ -9,7 +9,7 @@ KGsAuto is a Knowledge Graph Automation System that extracts, links, and visuali
 **Tech Stack:**
 - Backend: FastAPI + Neo4j (graph database) + Qdrant (vector database)
 - Frontend: React 19 + Vite 8 + React Router
-- LLM Integration: Multi-provider abstraction (Proxypal/OpenAI-compatible, Google Gemini, Ollama)
+- LLM Integration: Multi-provider abstraction (9Router, Proxypal/OpenAI-compatible, Google Gemini, Ollama)
 - Python 3.10+
 
 ## Common Development Commands
@@ -91,8 +91,8 @@ python -m services.entity_resolution.cli \
 ```
 
 **Key CLI Options:**
-- `--llm-provider`: `proxypal` (default), `9router`, `openai`, `anthropic`
-- `--llm-model`: Model name (default: `gpt-5` for proxypal, `cx/gpt-5.3-codex` for 9router)
+- `--llm-provider`: `9router` (default), `proxypal`, `openai`, `anthropic`
+- `--llm-model`: Model name (default: `cx/gpt-5.3-codex` for 9router, `gpt-5` for proxypal)
 - `--embedding-model`: Sentence transformer model (default: `paraphrase-multilingual-mpnet-base-v2`)
 - `--cluster-threshold`: Cosine similarity threshold for clustering (default: 0.72)
 - `--min-cluster-size`: Minimum entities per cluster (default: 2)

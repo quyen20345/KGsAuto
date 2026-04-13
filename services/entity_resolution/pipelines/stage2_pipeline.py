@@ -51,7 +51,6 @@ def run_stage2(config: RunConfig) -> Stage2Result:
         from ..matching.fuzzy_validation import (
             validate_person_cluster,
             split_person_cluster_by_similarity,
-            validate_source_constraint,
         )
 
         # Group by cluster
@@ -62,10 +61,9 @@ def run_stage2(config: RunConfig) -> Stage2Result:
                 item = next(x for x in items if x["node_id"] == a.node_id)
                 clusters[a.cluster_id].append(item)
 
-        # Validate and split clusters (all types for source, PERSON for fuzzy)
+        # Validate and split clusters (PERSON fuzzy validation only)
         validated_assignments = []
         person_split_count = 0
-        source_violation_count = 0
 
         # Initialize cluster_counter with max existing IDs for each type
         cluster_counter = defaultdict(int)
@@ -84,46 +82,10 @@ def run_stage2(config: RunConfig) -> Stage2Result:
         for cluster_id, cluster_items in clusters.items():
             ptype = cluster_items[0]["payload"]["primary_type"]
 
-            # Step 1: Check source constraint for ALL types
-            source_valid, source_reason = validate_source_constraint(cluster_items)
+            # REMOVED: Source constraint validation
+            # Let Stage 3 (2-Pass LLM) handle entities from same source
 
-            if not source_valid:
-                # Source constraint violated - split by source
-                logger.warning(f"{ptype} cluster {cluster_id}: {source_reason}")
-                source_violation_count += 1
-
-                # Split by source_document_id
-                from ..matching.fuzzy_validation import split_cluster_by_source
-                sub_clusters = split_cluster_by_source(cluster_items)
-
-                # Assign new cluster IDs for each sub-cluster
-                for sub_cluster in sub_clusters:
-                    if len(sub_cluster) >= config.min_cluster_size:
-                        # Create new cluster with type-specific ID
-                        type_key = ptype.lower()
-                        new_cluster_id = f"{type_key}_{cluster_counter[ptype]:04d}"
-                        cluster_counter[ptype] += 1
-
-                        for item in sub_cluster:
-                            orig = next(a for a in assignments if a.node_id == item["node_id"])
-                            validated_assignments.append(ClusterAssignment(
-                                node_id=orig.node_id,
-                                cluster_id=new_cluster_id,
-                                probability=orig.probability,
-                                primary_type=orig.primary_type,
-                            ))
-                    else:
-                        # Too small, reassign to noise
-                        for item in sub_cluster:
-                            validated_assignments.append(ClusterAssignment(
-                                node_id=item["node_id"],
-                                cluster_id="noise",
-                                probability=0.0,
-                                primary_type=ptype,
-                            ))
-                continue
-
-            # Step 2: Source valid - check PERSON-specific fuzzy validation
+            # Check PERSON-specific fuzzy validation
             if ptype == "PERSON":
                 # Check fuzzy similarity for PERSON
                 fuzzy_valid, fuzzy_reason = validate_person_cluster(
@@ -184,7 +146,7 @@ def run_stage2(config: RunConfig) -> Stage2Result:
         # Replace assignments with validated ones
         assignments = validated_assignments
 
-        logger.info(f"Validation completed: {source_violation_count} source violations, {person_split_count} PERSON clusters split")
+        logger.info(f"Validation completed: {person_split_count} PERSON clusters split")
     else:
         logger.info("Fuzzy validation disabled, skipping...")
 

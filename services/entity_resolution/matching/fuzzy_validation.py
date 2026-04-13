@@ -134,13 +134,9 @@ def split_person_cluster_by_similarity(
             item_a = cluster_items[i]
             item_b = cluster_items[j]
 
-            # Check source constraint first - never connect same source
-            source_a = item_a["payload"]["properties"].get("source_document_id", "")
-            source_b = item_b["payload"]["properties"].get("source_document_id", "")
-
-            if source_a == source_b:
-                # Same source, don't connect
-                continue
+            # REMOVED: Source constraint check
+            # Allow entities from same source to be connected
+            # Stage 3 (2-Pass LLM) will handle this better
 
             name_a = item_a["payload"]["properties"].get("name", "")
             name_b = item_b["payload"]["properties"].get("name", "")

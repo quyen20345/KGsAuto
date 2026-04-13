@@ -12,6 +12,7 @@ debug_split.py
 test_prompt_comparison.py
 test_proxypal_direct.py
 test_source_validation.py
+*.zip
 
 # AI Tools context
 .continue/
