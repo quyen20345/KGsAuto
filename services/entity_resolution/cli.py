@@ -31,9 +31,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--cluster-threshold", type=float, default=0.72)
 
     # LLM Configuration
-    p.add_argument("--llm-provider", default="proxypal", choices=["openai", "anthropic", "proxypal"])
-    p.add_argument("--llm-model", default="gpt-5")
-    p.add_argument("--llm-api-key", default=None, help="API key for LLM provider")
+    p.add_argument("--llm-provider", default="9router", choices=["openai", "anthropic", "proxypal", "9router"])
+    p.add_argument("--llm-model", default="cx/gpt-5.3-codex")
+    p.add_argument("--llm-api-key", default="sk-2c8a5a86cb957baf-oo8f99-366bc10b", help="API key for LLM provider")
     p.add_argument("--llm-set-size", type=int, default=9, help="Optimal record set size")
     p.add_argument("--mdg-threshold", type=float, default=0.1, help="MDG similarity threshold")
     p.add_argument("--cmr-threshold", type=float, default=0.80, help="CMR merge threshold")

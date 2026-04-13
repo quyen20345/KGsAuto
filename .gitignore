@@ -7,6 +7,11 @@
 !README.md
 !CLAUDE.md
 !docs/
+*.txt
+debug_split.py
+test_prompt_comparison.py
+test_proxypal_direct.py
+test_source_validation.py
 
 # AI Tools context
 .continue/

@@ -213,3 +213,26 @@ def validate_source_constraint(
         return False, f"Source constraint violated: {violations[0]} has {source_counts[violations[0]]} entities"
 
     return True, "valid"
+
+
+def split_cluster_by_source(
+    cluster_items: list[dict],
+) -> list[list[dict]]:
+    """
+    Split cluster by source_document_id to resolve violations.
+
+    When a cluster contains multiple entities from the same source,
+    we cannot determine which entities should stay together.
+    Therefore, we split ALL entities into singletons.
+
+    Args:
+        cluster_items: List of items in cluster
+
+    Returns:
+        List of singleton sub-clusters (one entity per sub-cluster)
+    """
+    if len(cluster_items) <= 1:
+        return [cluster_items]
+
+    # Split into singletons - each entity becomes its own sub-cluster
+    return [[item] for item in cluster_items]

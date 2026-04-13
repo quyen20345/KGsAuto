@@ -151,42 +151,58 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     3. Synthesize canonical entities
     4. Rewire graph
     """
-    # Setup
+    # Setup logging
+    from ..preprocessing.logger import setup_stage_logger
     stage_dir = config.stage_dir("stage3")
     stage_dir.mkdir(parents=True, exist_ok=True)
+    logger = setup_stage_logger("stage3", stage_dir / "stage3.log")
+
+    logger.info("=== Starting Stage 3 ===")
+    logger.info(f"Stage 3 directory: {stage_dir}")
 
     # Initialize LLM-CER components
+    logger.info("Initializing LLM-CER components...")
     record_set_builder = RecordSetBuilder(
         optimal_set_size=config.llm_set_size,
         target_diversity=config.llm_diversity,
         max_variation=config.llm_max_variation,
     )
+    logger.info("RecordSetBuilder created")
 
     llm_clusterer = LLMClusterer(
         llm_provider=config.llm_provider,
         llm_model=config.llm_model,
         llm_api_key=config.llm_api_key,
     )
+    logger.info("LLMClusterer created")
 
     mdg_validator = MDGValidator(
         similarity_threshold=config.mdg_similarity_threshold,
         max_regenerations=config.mdg_max_regenerations,
     )
+    logger.info("MDGValidator created")
 
     cluster_merger = HierarchicalClusterMerger(
         merge_threshold=config.cmr_merge_threshold,
     )
+    logger.info("Components initialized")
 
     # Load Stage 2 clusters
+    logger.info("Loading Stage 2 clusters...")
     assignments = load_stage2_assignments(config)
     groups = build_cluster_groups(assignments)
+    logger.info(f"Loaded {len(groups)} clusters")
 
     # Load Stage 1 embeddings (reuse)
+    logger.info("Loading Stage 1 embeddings...")
     embeddings = _load_stage1_embeddings(config)
+    logger.info(f"Loaded {len(embeddings)} embeddings")
 
     # Load entities
+    logger.info("Loading entities from input files...")
     kg_files = load_kg_files(config.input_dir)
     entities = collect_entities(kg_files)
+    logger.info(f"Loaded {len(entities)} entities")
 
     # Process each cluster
     all_final_clusters = []
@@ -195,6 +211,8 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     # Prepare data for review dashboard
     cluster_items_for_ui = []
     cluster_decisions_for_ui = []
+
+    logger.info(f"Starting to process {len(groups)} clusters")
 
     for cluster_id, node_ids in sorted(groups.items()):
         if cluster_id == "noise":
@@ -216,26 +234,30 @@ def run_stage3(config: RunConfig) -> Stage3Result:
                 "payload": payload,
             })
 
-        print(f"Processing cluster {cluster_id} with {len(cluster_items)} entities (type: {ptype})")
+        logger.info(f"Processing cluster {cluster_id} with {len(cluster_items)} entities (type: {ptype})")
 
         # Step 1: NRS - Build record sets
         record_sets = record_set_builder.build_record_sets(cluster_items, embeddings)
-        print(f"  Created {len(record_sets)} record sets")
+        logger.info(f"  Created {len(record_sets)} record sets")
 
         # Step 2 & 3: LLM clustering + MDG validation
         round_results = []
 
         for i, record_set in enumerate(record_sets):
-            print(f"  Processing record set {i+1}/{len(record_sets)} ({len(record_set)} entities)")
+            logger.info(f"  Processing record set {i+1}/{len(record_sets)} ({len(record_set)} entities)")
 
             # Try up to max_regenerations times
             for attempt in range(config.mdg_max_regenerations):
                 try:
                     # LLM clustering
-                    clustering_result = llm_clusterer.cluster_record_set(record_set, ptype)
+                    logger.info(f"    Calling LLM for clustering (attempt {attempt+1})")
+                    clustering_result = llm_clusterer.cluster_record_set(
+                        record_set, ptype, embeddings=embeddings
+                    )
                     llm_stats["total_calls"] += 1
 
                     # MDG validation
+                    logger.info(f"    Validating with MDG")
                     is_valid, reason = mdg_validator.validate_clustering(
                         clustering_result,
                         embeddings,
@@ -243,21 +265,39 @@ def run_stage3(config: RunConfig) -> Stage3Result:
 
                     if is_valid:
                         round_results.append(clustering_result)
-                        print(f"    MDG passed: {len(clustering_result['groups'])} groups")
+                        logger.info(f"    MDG passed: {len(clustering_result['groups'])} groups")
                         break
                     else:
-                        print(f"    MDG rejected: {reason}, attempt {attempt+1}/{config.mdg_max_regenerations}")
+                        logger.warning(f"    MDG rejected: {reason}, attempt {attempt+1}/{config.mdg_max_regenerations}")
 
                 except Exception as e:
-                    print(f"    LLM clustering failed: {e}")
+                    logger.error(f"    LLM clustering failed: {e}")
                     if attempt == config.mdg_max_regenerations - 1:
-                        # Fallback
-                        print(f"    Using fallback clustering")
-                        round_results.append(_build_fallback_clustering(record_set))
+                        # Use conservative fallback
+                        if config.enable_conservative_fallback:
+                            logger.info(f"    Using conservative fallback clustering")
+                            fallback_result = llm_clusterer._build_conservative_fallback(
+                                record_set=record_set,
+                                embeddings=embeddings,
+                                similarity_threshold=config.conservative_merge_threshold,
+                            )
+                            round_results.append(fallback_result)
+                        else:
+                            logger.info(f"    Using all-singleton fallback")
+                            round_results.append(_build_fallback_clustering(record_set))
             else:
                 # All attempts failed, use fallback
-                print(f"    All MDG attempts failed, using fallback")
-                round_results.append(_build_fallback_clustering(record_set))
+                if config.enable_conservative_fallback:
+                    logger.warning(f"    All MDG attempts failed, using conservative fallback")
+                    fallback_result = llm_clusterer._build_conservative_fallback(
+                        record_set=record_set,
+                        embeddings=embeddings,
+                        similarity_threshold=config.conservative_merge_threshold,
+                    )
+                    round_results.append(fallback_result)
+                else:
+                    print(f"    All MDG attempts failed, using all-singleton fallback")
+                    round_results.append(_build_fallback_clustering(record_set))
 
         # Step 4: CMR - Hierarchical merge
         if len(round_results) > 1:

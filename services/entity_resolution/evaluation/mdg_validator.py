@@ -65,9 +65,16 @@ class MDGValidator:
         # Filter out singleton groups for similarity computation
         multi_node_groups = [g for g in groups if len(g.get("node_ids", [])) > 1]
 
-        # If no multi-node groups, check is trivial
+        # If no multi-node groups, check if this is suspicious
         if len(multi_node_groups) == 0:
-            return True, "All singleton groups"
+            # Check if input had multiple entities
+            total_entities = sum(len(g.get("node_ids", [])) for g in groups)
+            if total_entities > 1:
+                # Suspicious: multiple entities but all separated
+                return False, f"All singleton groups suspicious (input={total_entities} entities)"
+            else:
+                # Legitimate single entity
+                return True, "Single entity cluster"
 
         # Compute intra-cluster similarity
         intra_sim = self._compute_intra_similarity(groups, embeddings)

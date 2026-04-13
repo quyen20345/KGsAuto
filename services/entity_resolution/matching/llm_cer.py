@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import numpy as np
 from typing import Any
 
 
@@ -19,28 +20,30 @@ Task: Group these {n} {entity_type} records into clusters where each cluster rep
 Records:
 {records_formatted}
 
-Guidelines:
-1. Same entity → same group
-2. Different entities → different groups
-3. Consider: name similarity, aliases, evidence text, source document
-4. Important rules:
-   - Same source_document_id → different groups (same entity unlikely to appear twice in one document)
-   - Ignore academic titles when comparing: "GS.TS Nguyễn Văn A" = "Nguyễn Văn A" = "Prof. Nguyễn Văn A"
-   - Vietnamese names are sensitive: "Nguyễn Văn A" ≠ "Nguyễn Văn B"
-   - Use aliases and evidence text to help decide
+Guidelines for merging:
+1. **MERGE if**: Different source documents + name/alias overlap + refer to same real-world entity
+   - Name variations (abbreviations, full names, with/without prefixes/suffixes) are NORMAL for same entity
+   - Example patterns: "Công ty A" vs "Công ty TNHH A", "TS. Nguyễn Văn B" vs "Nguyễn Văn B"
+   - Cross-document duplicates with similar names → LIKELY same entity
+
+2. **DO NOT MERGE if**: Same source_document_id (one document rarely mentions same entity multiple times)
+
+3. **DO NOT MERGE if**: Clearly different entities despite similar names
+   - Check context clues: different roles, different time periods, different locations
+
+Decision strategy:
+- Primary question: Does this refer to the SAME real-world entity?
+- Name variations are EXPECTED and should NOT prevent merging
+- Be confident in merging when names overlap significantly
+- Only separate if there's clear evidence they are different entities
 
 Output JSON format:
 {{
   "groups": [
     {{
       "group_id": "g0",
-      "node_ids": ["node_1", "node_2"],
+      "node_ids": ["node_1", "node_2", "node_3"],
       "reasoning": "Brief explanation why these belong together"
-    }},
-    {{
-      "group_id": "g1",
-      "node_ids": ["node_3"],
-      "reasoning": "Brief explanation"
     }}
   ],
   "confidence": 0.95
@@ -87,6 +90,7 @@ class LLMClusterer:
         self,
         record_set: list[dict],
         entity_type: str,
+        embeddings: dict[str, list[float]] | None = None,
     ) -> dict:
         """
         Cluster record set using LLM.
@@ -94,6 +98,7 @@ class LLMClusterer:
         Args:
             record_set: List of entity items to cluster
             entity_type: Entity type (PERSON, ORGANIZATIONAL_UNIT, etc.)
+            embeddings: Optional embeddings for conservative fallback
 
         Returns:
             Dictionary with:
@@ -114,25 +119,26 @@ class LLMClusterer:
             # Extract content
             content = response.content if hasattr(response, "content") else str(response)
 
+            # Debug: log raw response
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"LLM raw response: {content[:500]}")
+
             # Parse response
             result = self._parse_response(content, record_set)
 
             return result
 
         except Exception as e:
-            # Fallback: each entity in separate group
-            return {
-                "groups": [
-                    {
-                        "group_id": f"g{i}",
-                        "node_ids": [item["node_id"]],
-                        "reasoning": f"LLM error: {str(e)}",
-                    }
-                    for i, item in enumerate(record_set)
-                ],
-                "confidence": 0.0,
-                "error": str(e),
-            }
+            # Use conservative fallback instead of all-singleton
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"LLM call failed: {e}")
+            return self._build_conservative_fallback(
+                record_set=record_set,
+                embeddings=embeddings or {},
+                similarity_threshold=0.88,
+            )
 
     def _build_prompt(self, record_set: list[dict], entity_type: str) -> str:
         """
@@ -191,7 +197,7 @@ class LLMClusterer:
         parsed = self._extract_json(response)
 
         if not parsed:
-            # Fallback: each entity in separate group
+            # Fallback: each entity in separate group (parse failed)
             return {
                 "groups": [
                     {
@@ -300,3 +306,126 @@ class LLMClusterer:
             return parsed if isinstance(parsed, dict) else None
         except json.JSONDecodeError:
             return None
+
+    def _build_conservative_fallback(
+        self,
+        record_set: list[dict],
+        embeddings: dict[str, list[float]],
+        similarity_threshold: float = 0.88,
+    ) -> dict:
+        """
+        Conservative fallback: merge only high-confidence pairs.
+
+        Rules:
+        1. Only merge if cosine similarity >= threshold (default 0.88)
+        2. Only merge if name/alias overlap exists
+        3. Never merge same source_document_id
+        4. If no pairs meet criteria, return singletons
+
+        Args:
+            record_set: List of entity items to cluster
+            embeddings: Dictionary mapping node_id to embedding vector
+            similarity_threshold: Minimum cosine similarity for merge (default 0.88)
+
+        Returns:
+            Clustering result with conservative merges
+        """
+        # Extract node info
+        nodes = []
+        for item in record_set:
+            node_id = item["node_id"]
+            props = item.get("payload", {}).get("properties", {})
+            aliases = props.get("aliases") or []
+            nodes.append({
+                "node_id": node_id,
+                "name": props.get("name", "").lower().strip(),
+                "aliases": [a.lower().strip() for a in aliases],
+                "source_doc": props.get("source_document_id", ""),
+                "vector": embeddings.get(node_id, []),
+            })
+
+        # Find high-confidence pairs
+        merged_groups = []
+        used_nodes = set()
+
+        for i in range(len(nodes)):
+            if nodes[i]["node_id"] in used_nodes:
+                continue
+
+            group = [nodes[i]["node_id"]]
+
+            for j in range(i + 1, len(nodes)):
+                if nodes[j]["node_id"] in used_nodes:
+                    continue
+
+                # Rule 1: Different source documents
+                if nodes[i]["source_doc"] == nodes[j]["source_doc"]:
+                    continue
+
+                # Rule 2: High similarity
+                if nodes[i]["vector"] and nodes[j]["vector"]:
+                    vec_i = np.array(nodes[i]["vector"])
+                    vec_j = np.array(nodes[j]["vector"])
+                    norm_i = np.linalg.norm(vec_i)
+                    norm_j = np.linalg.norm(vec_j)
+
+                    if norm_i == 0 or norm_j == 0:
+                        continue
+
+                    sim = np.dot(vec_i, vec_j) / (norm_i * norm_j)
+
+                    if sim < similarity_threshold:
+                        continue
+                else:
+                    continue
+
+                # Rule 3: Name/alias overlap (improved with substring matching)
+                names_i = {nodes[i]["name"]} | set(nodes[i]["aliases"])
+                names_j = {nodes[j]["name"]} | set(nodes[j]["aliases"])
+
+                # Remove empty strings
+                names_i = {n for n in names_i if n}
+                names_j = {n for n in names_j if n}
+
+                # Check for overlap: exact match OR substring match
+                has_overlap = False
+
+                # Check exact match first
+                if names_i & names_j:
+                    has_overlap = True
+                else:
+                    # Check substring match (one name contains another)
+                    for name_i in names_i:
+                        for name_j in names_j:
+                            # Check if one is substring of another (case-insensitive)
+                            if name_i in name_j or name_j in name_i:
+                                has_overlap = True
+                                break
+                        if has_overlap:
+                            break
+
+                if not has_overlap:
+                    continue
+
+                # All rules passed: merge
+                group.append(nodes[j]["node_id"])
+                used_nodes.add(nodes[j]["node_id"])
+
+            used_nodes.add(nodes[i]["node_id"])
+            merged_groups.append(group)
+
+        # Build result
+        groups = []
+        for idx, node_ids in enumerate(merged_groups):
+            reasoning = "Conservative fallback merge" if len(node_ids) > 1 else "Conservative fallback singleton"
+            groups.append({
+                "group_id": f"g{idx}",
+                "node_ids": node_ids,
+                "reasoning": reasoning,
+            })
+
+        return {
+            "groups": groups,
+            "confidence": 0.6,  # Lower confidence for fallback
+            "fallback": "conservative",
+        }

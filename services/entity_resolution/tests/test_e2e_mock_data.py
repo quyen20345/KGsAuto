@@ -37,4 +37,15 @@ def test_e2e_pipeline_mock_data(tmp_path: Path) -> None:
 
     with open(s3.id_remap_path, "r", encoding="utf-8") as f:
         actual = json.load(f)
-    assert actual == {}
+
+    # Baseline data has clear duplicates, should produce merges
+    assert len(actual) > 0, "Expected merges for baseline duplicate data"
+
+    # Verify specific expected merges
+    # "Tran Huu Quyen" appears in doc_001 and doc_002
+    person_nodes = [k for k in actual.keys() if "quyen" in k.lower()]
+    assert len(person_nodes) >= 1, "Expected person merge"
+
+    # "VNU-UET" / "University of Engineering and Technology"
+    org_nodes = [k for k in actual.keys() if "university" in k.lower() or "uet" in k.lower()]
+    assert len(org_nodes) >= 1, "Expected organization merge"

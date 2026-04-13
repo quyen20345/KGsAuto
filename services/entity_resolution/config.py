@@ -50,14 +50,15 @@ class RunConfig:
     llm_max_variation: float = 0.3  # Max size variation
 
     # MDG parameters
-    mdg_similarity_threshold: float = 0.1  # From paper
+    mdg_similarity_threshold: float = 0.15  # Increased from 0.1 to reduce false rejections
     mdg_max_regenerations: int = 3  # Max retry attempts
 
     # CMR parameters
     cmr_merge_threshold: float = 0.80  # Similarity threshold for merging
 
-    # Fallback strategy
-    fallback_on_llm_failure: str = "skip"  # skip|merge_conservative
+    # Conservative fallback settings
+    conservative_merge_threshold: float = 0.88  # High threshold for fallback merges
+    enable_conservative_fallback: bool = True  # Use conservative fallback instead of all-singleton
 
     def resolve_collection_name(self) -> str:
         if self.collection_name:

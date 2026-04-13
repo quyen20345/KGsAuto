@@ -227,6 +227,171 @@ class TestLLMClusterer:
         assert "groups" in result
         assert result["confidence"] == 0.8
 
+    def test_conservative_fallback_merges_high_similarity_pairs(self):
+        """Conservative fallback should merge only high-confidence pairs."""
+        from services.entity_resolution.matching.llm_cer import LLMClusterer
+
+        clusterer = LLMClusterer("mock", "mock-model")
+
+        # Two similar entities from different documents
+        record_set = [
+            {
+                "node_id": "node_1",
+                "payload": {
+                    "properties": {
+                        "name": "Tran Huu Quyen",
+                        "aliases": ["T. H. Quyen"],
+                        "source_document_id": "doc_001",
+                    }
+                }
+            },
+            {
+                "node_id": "node_2",
+                "payload": {
+                    "properties": {
+                        "name": "Tran Huu Quyen",
+                        "aliases": ["Tran H. Quyen"],
+                        "source_document_id": "doc_002",
+                    }
+                }
+            },
+        ]
+
+        # High similarity embeddings
+        embeddings = {
+            "node_1": [0.9] * 64,
+            "node_2": [0.91] * 64,  # Very similar
+        }
+
+        result = clusterer._build_conservative_fallback(record_set, embeddings, 0.88)
+
+        assert len(result["groups"]) == 1  # Should merge into 1 group
+        assert len(result["groups"][0]["node_ids"]) == 2
+        assert "node_1" in result["groups"][0]["node_ids"]
+        assert "node_2" in result["groups"][0]["node_ids"]
+
+    def test_conservative_fallback_keeps_singletons_for_low_similarity(self):
+        """Conservative fallback should keep singletons when similarity is low."""
+        from services.entity_resolution.matching.llm_cer import LLMClusterer
+
+        clusterer = LLMClusterer("mock", "mock-model")
+
+        record_set = [
+            {
+                "node_id": "node_1",
+                "payload": {
+                    "properties": {
+                        "name": "Person A",
+                        "aliases": [],
+                        "source_document_id": "doc_001",
+                    }
+                }
+            },
+            {
+                "node_id": "node_2",
+                "payload": {
+                    "properties": {
+                        "name": "Person B",
+                        "aliases": [],
+                        "source_document_id": "doc_002",
+                    }
+                }
+            },
+        ]
+
+        # Low similarity embeddings
+        embeddings = {
+            "node_1": [1.0, 0.0] * 32,
+            "node_2": [0.0, 1.0] * 32,
+        }
+
+        result = clusterer._build_conservative_fallback(record_set, embeddings, 0.88)
+
+        assert len(result["groups"]) == 2  # Should keep separate
+        assert all(len(g["node_ids"]) == 1 for g in result["groups"])
+
+    def test_conservative_fallback_respects_source_document_rule(self):
+        """Conservative fallback should not merge entities from same source document."""
+        from services.entity_resolution.matching.llm_cer import LLMClusterer
+
+        clusterer = LLMClusterer("mock", "mock-model")
+
+        record_set = [
+            {
+                "node_id": "node_1",
+                "payload": {
+                    "properties": {
+                        "name": "Tran Huu Quyen",
+                        "aliases": [],
+                        "source_document_id": "doc_001",  # Same document
+                    }
+                }
+            },
+            {
+                "node_id": "node_2",
+                "payload": {
+                    "properties": {
+                        "name": "Tran Huu Quyen",
+                        "aliases": [],
+                        "source_document_id": "doc_001",  # Same document
+                    }
+                }
+            },
+        ]
+
+        # High similarity embeddings
+        embeddings = {
+            "node_1": [0.9] * 64,
+            "node_2": [0.91] * 64,
+        }
+
+        result = clusterer._build_conservative_fallback(record_set, embeddings, 0.88)
+
+        # Should NOT merge because same source document
+        assert len(result["groups"]) == 2
+        assert all(len(g["node_ids"]) == 1 for g in result["groups"])
+
+    def test_conservative_fallback_requires_name_overlap(self):
+        """Conservative fallback should require name/alias overlap."""
+        from services.entity_resolution.matching.llm_cer import LLMClusterer
+
+        clusterer = LLMClusterer("mock", "mock-model")
+
+        record_set = [
+            {
+                "node_id": "node_1",
+                "payload": {
+                    "properties": {
+                        "name": "Person A",
+                        "aliases": ["A"],
+                        "source_document_id": "doc_001",
+                    }
+                }
+            },
+            {
+                "node_id": "node_2",
+                "payload": {
+                    "properties": {
+                        "name": "Person B",
+                        "aliases": ["B"],
+                        "source_document_id": "doc_002",
+                    }
+                }
+            },
+        ]
+
+        # High similarity embeddings but different names
+        embeddings = {
+            "node_1": [0.9] * 64,
+            "node_2": [0.91] * 64,
+        }
+
+        result = clusterer._build_conservative_fallback(record_set, embeddings, 0.88)
+
+        # Should NOT merge because no name overlap
+        assert len(result["groups"]) == 2
+        assert all(len(g["node_ids"]) == 1 for g in result["groups"])
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -41,10 +41,12 @@ python -m pytest apps/backend/tests -q
 # Entity resolution tests (from repo root)
 python -m pytest services/entity_resolution/tests/ -q
 
-# Run specific stage tests
-python -m pytest services/entity_resolution/tests/stage1 -q
-python -m pytest services/entity_resolution/tests/stage2 -q
-python -m pytest services/entity_resolution/tests/stage3 -q
+# Run specific test files
+python -m pytest services/entity_resolution/tests/test_llm_cer.py -v
+python -m pytest services/entity_resolution/tests/test_e2e_mock_data.py -v
+
+# Run with verbose output
+python -m pytest services/entity_resolution/tests/ -v
 ```
 
 ### Knowledge Graph Extraction
@@ -54,21 +56,48 @@ python3 -m services.extraction.extract
 ```
 Reads `*.md` from input directory, uses LLM to extract structured knowledge graphs into JSON files.
 
+**Extraction Process:**
+- Uses `KGExtractorV2` class with configurable LLM provider and model
+- Generates JSON with `nodes` and `relationships` arrays
+- Includes metadata: processing time, node/relation counts, model info, token usage
+- Failed extractions saved to `data/failed_responses/` for debugging
+- Supports retry logic (default: 3 attempts)
+
 ### Entity Resolution Pipeline
 ```bash
-# Run full 3-stage pipeline
+# Run full 3-stage pipeline (memory backend - fast, non-persistent)
 python -m services.entity_resolution.cli \
   --stage all \
   --input-dir data/extracted \
   --store-backend memory \
-  --run-id demo_run \
-  --review-mode human_required
+  --run-id demo_run
 
-# Run individual stages (requires qdrant backend)
-python -m services.entity_resolution.cli --stage stage1 --input-dir data/extracted --store-backend qdrant --run-id my_run
-python -m services.entity_resolution.cli --stage stage2 --store-backend qdrant --run-id my_run
-python -m services.entity_resolution.cli --stage stage3 --store-backend qdrant --run-id my_run --review-mode human_required
+# Run individual stages (qdrant backend - persistent)
+python -m services.entity_resolution.cli \
+  --stage stage1 \
+  --input-dir data/extracted \
+  --store-backend qdrant \
+  --run-id my_run
+
+python -m services.entity_resolution.cli \
+  --stage stage2 \
+  --store-backend qdrant \
+  --run-id my_run
+
+python -m services.entity_resolution.cli \
+  --stage stage3 \
+  --store-backend qdrant \
+  --run-id my_run
 ```
+
+**Key CLI Options:**
+- `--llm-provider`: `proxypal` (default), `9router`, `openai`, `anthropic`
+- `--llm-model`: Model name (default: `gpt-5` for proxypal, `cx/gpt-5.3-codex` for 9router)
+- `--embedding-model`: Sentence transformer model (default: `paraphrase-multilingual-mpnet-base-v2`)
+- `--cluster-threshold`: Cosine similarity threshold for clustering (default: 0.72)
+- `--min-cluster-size`: Minimum entities per cluster (default: 2)
+- `--cmr-threshold`: Merge threshold for canonical entity synthesis (default: 0.80)
+- `--mdg-threshold`: MDG similarity threshold (default: 0.1)
 
 **Important:** When using `--store-backend memory`, you must run `--stage all` in a single command. Memory backend does not persist between separate CLI invocations. Use `qdrant` backend to run stages separately.
 
@@ -153,34 +182,42 @@ React SPA with client-side routing:
 - Fetches vectors from storage
 - Clusters by `primary_type` using HDBSCAN or cosine threshold
 - Outputs cluster assignments and HTML dashboard for visualization
+- Dashboard saved to `artifacts/<run_id>/stage2/cluster_dashboard.html`
 
-**Stage 3 - Resolution Pipeline (2-pass):**
-- Pass 1: Cluster validation (MERGE/SKIP/SPLIT decisions)
-- Pass 2: Canonical entity synthesis (LLM suggests merged entity, human approves)
-- Generates `id_remap.json` and rewrites graph files with merged entities
-
-**Human Review Workflow:**
-1. Run stage3 with `--review-mode human_required`
-2. Open `artifacts/<run_id>/stage3/review_dashboard.html`
-3. Copy `human_cluster_decisions.template.json` → `human_cluster_decisions.json`, edit decisions
-4. Re-run stage3 (same run_id) to generate synthesis proposals
-5. Copy `human_synthesis_decisions.template.json` → `human_synthesis_decisions.json`, approve proposals
-6. Re-run stage3 to apply merges and rewrite output files
+**Stage 3 - Resolution Pipeline (LLM-CER):**
+- Uses LLM-based Collective Entity Resolution with three algorithms:
+  - **NRS (Near-optimal Record Selection)**: Selects optimal record sets for LLM processing
+  - **MDG (Merge Decision Generation)**: LLM generates merge decisions with validation
+  - **CMR (Canonical Merged Record)**: Synthesizes canonical entities from clusters
+- Outputs `id_remap.json` and rewrites graph files with merged entities
+- Artifacts saved to `data/entity_resolution/artifacts/<run_id>/stage3/`
 
 ### LLM Integration (`services/llms/`)
 
-Multi-provider abstraction layer:
-- `get_llm(provider, model_name)` returns unified interface
-- Supported providers: `proxypal` (OpenAI-compatible), `gemini`, `ollama`
+Multi-provider abstraction layer with factory pattern:
+- `get_llm(provider, **kwargs)` returns unified `BaseLLM` interface
+- Supported providers: `proxypal`, `9router`, `gemini`, `ollama`
 - All providers return response with `.content`, `.model`, `.usage_tokens`
+- Registry-based client loading via `@register_llm` decorator
+
+**Provider Details:**
+- `proxypal`: OpenAI-compatible proxy (default base URL: `http://localhost:8317/v1`)
+- `9router`: Router9 client for model routing
+- `gemini`: Google Gemini API
+- `ollama`: Local Ollama instance
 
 Used in:
 - Extraction pipeline (converts markdown to structured KG)
-- Entity resolution stage 3 (cluster hints and canonical entity synthesis)
+- Entity resolution stage 3 (LLM-CER: MDG and CMR algorithms)
 
 ## Key Configuration Files
 
-- `.env` - LLM API keys, Neo4j credentials, Qdrant settings
+- `.env` - LLM API keys, Neo4j credentials, Qdrant settings, model configuration
+  - `PROXYPAL_KEY` and `PROXYPAL_BASE_URL` for Proxypal provider
+  - `GOOGLE_API_KEY` for Gemini provider
+  - `MODEL_LINK` and `PROVIDER_LINK` for entity resolution
+  - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` for Neo4j connection
+  - `COLLECTION_NAME` for Qdrant collection
 - `docker-compose.yaml` - Infrastructure services (Ollama, Neo4j, Qdrant)
 - `pyproject.toml` - Python project configuration and dependencies
 - `apps/backend/requirements.txt` - Backend-specific dependencies
@@ -203,6 +240,17 @@ Used in:
 **Entity Resolution Storage Backends:**
 - `memory`: Fast for testing, but data lost between CLI invocations. Use `--stage all` in one command.
 - `qdrant`: Persistent storage, allows running stages separately across multiple CLI invocations.
+
+**Entity Resolution Output:**
+- Stage 1: Vectors stored in Qdrant collection or memory
+- Stage 2: Cluster assignments in `artifacts/<run_id>/stage2/clusters.json` and HTML dashboard
+- Stage 3: `id_remap.json` (entity ID mappings) and rewritten graph files in `artifacts/<run_id>/stage3/output/`
+
+**LLM-CER Algorithm Parameters:**
+- `llm_set_size`: Optimal record set size for NRS (default: 9)
+- `mdg_similarity_threshold`: Threshold for MDG validation (default: 0.15)
+- `cmr_merge_threshold`: Similarity threshold for CMR merging (default: 0.80)
+- `conservative_merge_threshold`: High threshold for conservative fallback (default: 0.88)
 
 **Neo4j Import:**
 - Import script uses MERGE on node `id` (unique constraint)

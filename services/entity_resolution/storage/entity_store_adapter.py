@@ -38,7 +38,7 @@ class QdrantVectorStore(VectorStore):
         self.collection_name = collection_name
         self.vector_dim = vector_dim
         self._models = models
-        self.client = QdrantClient(url=url, timeout=60)
+        self.client = QdrantClient(url=url, timeout=300)
         if not self.client.collection_exists(collection_name):
             self.client.create_collection(
                 collection_name=collection_name,
@@ -62,9 +62,17 @@ class QdrantVectorStore(VectorStore):
                     payload=item["payload"],
                 )
             )
-        if points:
-            self.client.upsert(collection_name=self.collection_name, points=points, wait=True)
-        return len(points)
+
+        # Batch upsert to avoid timeout with large datasets
+        batch_size = 1000
+        total_upserted = 0
+        for i in range(0, len(points), batch_size):
+            batch = points[i:i + batch_size]
+            if batch:
+                self.client.upsert(collection_name=self.collection_name, points=batch, wait=True)
+                total_upserted += len(batch)
+
+        return total_upserted
 
     def fetch_embeddings(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []

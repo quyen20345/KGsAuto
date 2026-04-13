@@ -62,62 +62,47 @@ def run_stage2(config: RunConfig) -> Stage2Result:
                 item = next(x for x in items if x["node_id"] == a.node_id)
                 clusters[a.cluster_id].append(item)
 
-        # Validate and split PERSON clusters only
+        # Validate and split clusters (all types for source, PERSON for fuzzy)
         validated_assignments = []
         person_split_count = 0
-        person_violation_count = 0
+        source_violation_count = 0
+
+        # Initialize cluster_counter with max existing IDs for each type
         cluster_counter = defaultdict(int)
+        for cluster_id in clusters.keys():
+            # Extract type and number from cluster_id (e.g., "person_0042" -> "PERSON", 42)
+            parts = cluster_id.rsplit("_", 1)
+            if len(parts) == 2 and parts[1].isdigit():
+                type_key = parts[0]
+                cluster_num = int(parts[1])
+                # Find the primary_type for this cluster
+                cluster_items = clusters[cluster_id]
+                if cluster_items:
+                    ptype = cluster_items[0]["payload"]["primary_type"]
+                    cluster_counter[ptype] = max(cluster_counter[ptype], cluster_num + 1)
 
         for cluster_id, cluster_items in clusters.items():
             ptype = cluster_items[0]["payload"]["primary_type"]
 
-            # Only validate PERSON clusters
-            if ptype != "PERSON":
-                # Keep non-PERSON clusters as is
-                for item in cluster_items:
-                    orig = next(a for a in assignments if a.node_id == item["node_id"])
-                    validated_assignments.append(orig)
-                continue
-
-            # Validate PERSON cluster
-            # Check source constraint
+            # Step 1: Check source constraint for ALL types
             source_valid, source_reason = validate_source_constraint(cluster_items)
 
-            # Check fuzzy similarity
-            fuzzy_valid, fuzzy_reason = validate_person_cluster(
-                cluster_items,
-                min_name_similarity=config.min_name_similarity,
-                min_alias_similarity=config.min_alias_similarity,
-            )
+            if not source_valid:
+                # Source constraint violated - split by source
+                logger.warning(f"{ptype} cluster {cluster_id}: {source_reason}")
+                source_violation_count += 1
 
-            if source_valid and fuzzy_valid:
-                # Valid PERSON cluster, keep as is
-                for item in cluster_items:
-                    orig = next(a for a in assignments if a.node_id == item["node_id"])
-                    validated_assignments.append(orig)
-            else:
-                # Invalid PERSON cluster, split
-                if not source_valid:
-                    logger.warning(f"PERSON cluster {cluster_id}: {source_reason}")
-                    person_violation_count += 1
-                if not fuzzy_valid:
-                    logger.warning(f"PERSON cluster {cluster_id}: {fuzzy_reason}")
+                # Split by source_document_id
+                from ..matching.fuzzy_validation import split_cluster_by_source
+                sub_clusters = split_cluster_by_source(cluster_items)
 
-                # Split by similarity
-                sub_clusters = split_person_cluster_by_similarity(
-                    cluster_items,
-                    min_name_similarity=config.min_name_similarity,
-                    min_alias_similarity=config.min_alias_similarity,
-                )
-
-                person_split_count += len(sub_clusters) - 1
-
-                # Assign new cluster IDs
+                # Assign new cluster IDs for each sub-cluster
                 for sub_cluster in sub_clusters:
                     if len(sub_cluster) >= config.min_cluster_size:
-                        # Create new PERSON cluster
-                        new_cluster_id = f"person_{cluster_counter['PERSON']:04d}"
-                        cluster_counter['PERSON'] += 1
+                        # Create new cluster with type-specific ID
+                        type_key = ptype.lower()
+                        new_cluster_id = f"{type_key}_{cluster_counter[ptype]:04d}"
+                        cluster_counter[ptype] += 1
 
                         for item in sub_cluster:
                             orig = next(a for a in assignments if a.node_id == item["node_id"])
@@ -134,8 +119,62 @@ def run_stage2(config: RunConfig) -> Stage2Result:
                                 node_id=item["node_id"],
                                 cluster_id="noise",
                                 probability=0.0,
-                                primary_type="PERSON",
+                                primary_type=ptype,
                             ))
+                continue
+
+            # Step 2: Source valid - check PERSON-specific fuzzy validation
+            if ptype == "PERSON":
+                # Check fuzzy similarity for PERSON
+                fuzzy_valid, fuzzy_reason = validate_person_cluster(
+                    cluster_items,
+                    min_name_similarity=config.min_name_similarity,
+                    min_alias_similarity=config.min_alias_similarity,
+                )
+
+                if fuzzy_valid:
+                    # Valid PERSON cluster, keep as is
+                    for item in cluster_items:
+                        orig = next(a for a in assignments if a.node_id == item["node_id"])
+                        validated_assignments.append(orig)
+                else:
+                    # Invalid PERSON cluster, split by similarity
+                    logger.warning(f"PERSON cluster {cluster_id}: {fuzzy_reason}")
+
+                    sub_clusters = split_person_cluster_by_similarity(
+                        cluster_items,
+                        min_name_similarity=config.min_name_similarity,
+                        min_alias_similarity=config.min_alias_similarity,
+                    )
+
+                    person_split_count += len(sub_clusters) - 1
+
+                    for sub_cluster in sub_clusters:
+                        if len(sub_cluster) >= config.min_cluster_size:
+                            new_cluster_id = f"person_{cluster_counter['PERSON']:04d}"
+                            cluster_counter['PERSON'] += 1
+
+                            for item in sub_cluster:
+                                orig = next(a for a in assignments if a.node_id == item["node_id"])
+                                validated_assignments.append(ClusterAssignment(
+                                    node_id=orig.node_id,
+                                    cluster_id=new_cluster_id,
+                                    probability=orig.probability,
+                                    primary_type=orig.primary_type,
+                                ))
+                        else:
+                            for item in sub_cluster:
+                                validated_assignments.append(ClusterAssignment(
+                                    node_id=item["node_id"],
+                                    cluster_id="noise",
+                                    probability=0.0,
+                                    primary_type="PERSON",
+                                ))
+            else:
+                # Non-PERSON types: source already validated, keep as is
+                for item in cluster_items:
+                    orig = next(a for a in assignments if a.node_id == item["node_id"])
+                    validated_assignments.append(orig)
 
         # Add original noise
         for a in assignments:
@@ -145,7 +184,7 @@ def run_stage2(config: RunConfig) -> Stage2Result:
         # Replace assignments with validated ones
         assignments = validated_assignments
 
-        logger.info(f"PERSON fuzzy validation completed: {person_split_count} clusters split, {person_violation_count} violations")
+        logger.info(f"Validation completed: {source_violation_count} source violations, {person_split_count} PERSON clusters split")
     else:
         logger.info("Fuzzy validation disabled, skipping...")
 
