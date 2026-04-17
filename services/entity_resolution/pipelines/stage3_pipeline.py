@@ -12,11 +12,7 @@ from typing import Any
 
 from ..config import RunConfig
 from ..types import Stage3Result
-from ..clustering.cluster_merger import HierarchicalClusterMerger
-from ..matching.llm_cer import LLMClusterer
-from ..evaluation.mdg_validator import MDGValidator
 from ..merging.merge_engine import build_cluster_groups, build_id_remap_from_proposals
-from ..blocking.record_set_builder import RecordSetBuilder
 from ..evaluation.review_ui_stage3 import write_review_dashboard
 from ..merging.rewire import collect_entities, load_kg_files, rewire_graph
 
@@ -34,10 +30,15 @@ def _load_stage1_embeddings(config: RunConfig) -> dict[str, list[float]]:
 
     Fetches vectors from Qdrant or memory store.
     """
-    from ..blocking.vector_fetch import fetch_stage_vectors
+    from ..storage.entity_store_adapter import build_vector_store
 
-    # Fetch vectors from store
-    items = fetch_stage_vectors(config)
+    store = build_vector_store(
+        backend=config.store_backend,
+        collection_name=config.resolve_collection_name(),
+        vector_dim=config.embedding_dim,
+        qdrant_url=config.qdrant_url,
+    )
+    items = store.fetch_embeddings()
 
     # Extract embeddings
     embeddings = {}
@@ -199,12 +200,14 @@ def run_stage3(config: RunConfig) -> Stage3Result:
         if cluster_id == "noise":
             continue
 
-        # Get primary type
-        ptype = "UNKNOWN"
-        for row in assignments:
-            if row.get("cluster_id") == cluster_id:
-                ptype = row.get("primary_type", "UNKNOWN")
-                break
+        # Get primary type summary for the cluster
+        cluster_types = sorted({
+            row.get("primary_type", "UNKNOWN")
+            for row in assignments
+            if row.get("cluster_id") == cluster_id
+        })
+        ptype = cluster_types[0] if len(cluster_types) == 1 else "MIXED"
+        cluster_types_display = ", ".join(cluster_types) if cluster_types else "UNKNOWN"
 
         # Build cluster items with payload
         cluster_items = []
@@ -215,7 +218,10 @@ def run_stage3(config: RunConfig) -> Stage3Result:
                 "payload": payload,
             })
 
-        logger.info(f"Processing cluster {cluster_id} with {len(cluster_items)} entities (type: {ptype})")
+        logger.info(
+            f"Processing cluster {cluster_id} with {len(cluster_items)} entities "
+            f"(types: {cluster_types_display}; llm_type: {ptype})"
+        )
 
         # 2-Pass LLM resolution
         canonical_entities = two_pass_resolver.resolve_cluster(
@@ -236,6 +242,33 @@ def run_stage3(config: RunConfig) -> Stage3Result:
         merged_from = canonical_entity.get("merged_from", [])
         labels = canonical_entity.get("labels", [])
         properties = canonical_entity.get("properties", {})
+
+        # Fallback: merge model_extracted and chunk_id from original entities if LLM missed them
+        if len(merged_from) > 1:
+            # Collect model_extracted and chunk_id from all merged entities
+            all_models = set()
+            all_chunks = set()
+            for node_id in merged_from:
+                entity = entities.get(node_id, {})
+                entity_props = entity.get("properties", {})
+
+                models = entity_props.get("model_extracted", [])
+                if isinstance(models, list):
+                    all_models.update(models)
+                elif models:
+                    all_models.add(models)
+
+                chunks = entity_props.get("chunk_id", [])
+                if isinstance(chunks, list):
+                    all_chunks.update(chunks)
+                elif chunks:
+                    all_chunks.add(chunks)
+
+            # Override if LLM returned empty
+            if not properties.get("model_extracted"):
+                properties["model_extracted"] = sorted(all_models)
+            if not properties.get("chunk_id"):
+                properties["chunk_id"] = sorted(all_chunks)
 
         # Map all merged IDs to canonical ID
         for node_id in merged_from:

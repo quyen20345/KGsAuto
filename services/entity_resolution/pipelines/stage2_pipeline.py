@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from ..config import RunConfig
 from ..preprocessing.logger import setup_stage_logger
 from ..types import ClusterAssignment, Stage2Result
-from ..blocking.vector_fetch import fetch_stage_vectors
+from ..blocking.vector_fetch import fetch_and_block_vectors
 from ..clustering.cluster import cluster_embeddings
 from ..evaluation.metrics import calculate_cluster_metrics
 from ..evaluation.review_ui_stage2 import write_cluster_dashboard
@@ -23,136 +23,54 @@ def run_stage2(config: RunConfig) -> Stage2Result:
     logger = setup_stage_logger("stage2", config.stage_dir("stage2") / "stage2.log")
     logger.info(f"Starting Stage 2: run_id={config.run_id}")
 
-    # Fetch vectors from store (blocking module)
-    logger.info(f"Fetching vectors from store: collection={config.resolve_collection_name()}")
-    items = fetch_stage_vectors(config)
-    logger.info(f"Fetched {len(items)} vectors from store")
+    # Fetch vectors and apply blocking
+    logger.info(f"Fetching vectors and applying blocking strategy (LLM-based: {config.enable_llm_blocking})")
+    blocks = fetch_and_block_vectors(config, use_llm_blocking=config.enable_llm_blocking)
+
+    total_items = sum(len(items) for items in blocks.values())
+    logger.info(f"Fetched {total_items} vectors from store")
+    logger.info("=" * 80)
+    logger.info(f"Created {len(blocks)} blocks:")
+    for block_id, items in blocks.items():
+        unique_label_combinations = sorted({
+            tuple(sorted(item.get("payload", {}).get("labels", [])))
+            for item in items
+        })
+        unique_types = sorted({
+            label
+            for labels in unique_label_combinations
+            for label in labels
+        })
+        logger.info(f"  - {block_id}: {len(items)} entities")
+        logger.info(f"    Types: {unique_types}")
+        logger.info(f"    Label combinations: {[list(labels) for labels in unique_label_combinations]}")
+    logger.info("=" * 80)
 
     # Log clustering parameters
     logger.info(
         f"Clustering parameters: min_cluster_size={config.min_cluster_size}, "
         f"min_samples={config.min_samples}, "
-        f"similarity_threshold={config.cluster_similarity_threshold}, "
-        f"by_primary_type={config.cluster_by_primary_type}"
+        f"similarity_threshold={config.cluster_similarity_threshold}"
     )
 
-    # Perform clustering
+    # Perform clustering on each block
     assignments = cluster_embeddings(
-        items=items,
+        blocks=blocks,
         min_cluster_size=config.min_cluster_size,
         min_samples=config.min_samples,
         similarity_threshold=config.cluster_similarity_threshold,
-        by_primary_type=config.cluster_by_primary_type,
     )
 
-    # Fuzzy matching validation (PERSON only)
-    if config.enable_fuzzy_validation_person:
-        logger.info("Validating PERSON clusters with fuzzy matching...")
-        from ..matching.fuzzy_validation import (
-            validate_person_cluster,
-            split_person_cluster_by_similarity,
-        )
+    # Stage 2 responsibility: Blocking + Clustering only
+    # All validation is handled by Stage 3 Two-Pass LLM (has full context)
+    logger.info("Stage 2 clustering completed. Validation will be handled by Stage 3.")
 
-        # Group by cluster
-        clusters = defaultdict(list)
-        for a in assignments:
-            if a.cluster_id != "noise":
-                # Find corresponding item
-                item = next(x for x in items if x["node_id"] == a.node_id)
-                clusters[a.cluster_id].append(item)
-
-        # Validate and split clusters (PERSON fuzzy validation only)
-        validated_assignments = []
-        person_split_count = 0
-
-        # Initialize cluster_counter with max existing IDs for each type
-        cluster_counter = defaultdict(int)
-        for cluster_id in clusters.keys():
-            # Extract type and number from cluster_id (e.g., "person_0042" -> "PERSON", 42)
-            parts = cluster_id.rsplit("_", 1)
-            if len(parts) == 2 and parts[1].isdigit():
-                type_key = parts[0]
-                cluster_num = int(parts[1])
-                # Find the primary_type for this cluster
-                cluster_items = clusters[cluster_id]
-                if cluster_items:
-                    ptype = cluster_items[0]["payload"]["primary_type"]
-                    cluster_counter[ptype] = max(cluster_counter[ptype], cluster_num + 1)
-
-        for cluster_id, cluster_items in clusters.items():
-            ptype = cluster_items[0]["payload"]["primary_type"]
-
-            # REMOVED: Source constraint validation
-            # Let Stage 3 (2-Pass LLM) handle entities from same source
-
-            # Check PERSON-specific fuzzy validation
-            if ptype == "PERSON":
-                # Check fuzzy similarity for PERSON
-                fuzzy_valid, fuzzy_reason = validate_person_cluster(
-                    cluster_items,
-                    min_name_similarity=config.min_name_similarity,
-                    min_alias_similarity=config.min_alias_similarity,
-                )
-
-                if fuzzy_valid:
-                    # Valid PERSON cluster, keep as is
-                    for item in cluster_items:
-                        orig = next(a for a in assignments if a.node_id == item["node_id"])
-                        validated_assignments.append(orig)
-                else:
-                    # Invalid PERSON cluster, split by similarity
-                    logger.warning(f"PERSON cluster {cluster_id}: {fuzzy_reason}")
-
-                    sub_clusters = split_person_cluster_by_similarity(
-                        cluster_items,
-                        min_name_similarity=config.min_name_similarity,
-                        min_alias_similarity=config.min_alias_similarity,
-                    )
-
-                    person_split_count += len(sub_clusters) - 1
-
-                    for sub_cluster in sub_clusters:
-                        if len(sub_cluster) >= config.min_cluster_size:
-                            new_cluster_id = f"person_{cluster_counter['PERSON']:04d}"
-                            cluster_counter['PERSON'] += 1
-
-                            for item in sub_cluster:
-                                orig = next(a for a in assignments if a.node_id == item["node_id"])
-                                validated_assignments.append(ClusterAssignment(
-                                    node_id=orig.node_id,
-                                    cluster_id=new_cluster_id,
-                                    probability=orig.probability,
-                                    primary_type=orig.primary_type,
-                                ))
-                        else:
-                            for item in sub_cluster:
-                                validated_assignments.append(ClusterAssignment(
-                                    node_id=item["node_id"],
-                                    cluster_id="noise",
-                                    probability=0.0,
-                                    primary_type="PERSON",
-                                ))
-            else:
-                # Non-PERSON types: source already validated, keep as is
-                for item in cluster_items:
-                    orig = next(a for a in assignments if a.node_id == item["node_id"])
-                    validated_assignments.append(orig)
-
-        # Add original noise
-        for a in assignments:
-            if a.cluster_id == "noise":
-                validated_assignments.append(a)
-
-        # Replace assignments with validated ones
-        assignments = validated_assignments
-
-        logger.info(f"Validation completed: {person_split_count} PERSON clusters split")
-    else:
-        logger.info("Fuzzy validation disabled, skipping...")
+    # Flatten blocks for metrics calculation
+    all_items = [item for block_items in blocks.values() for item in block_items]
 
     # Calculate cluster quality metrics
     logger.info("Calculating cluster quality metrics...")
-    metrics = calculate_cluster_metrics(items, assignments)
+    metrics = calculate_cluster_metrics(all_items, assignments)
     sil_score = metrics.get("silhouette_score")
     if sil_score is not None:
         logger.info(f"Silhouette score: {sil_score:.3f}")
@@ -184,7 +102,7 @@ def run_stage2(config: RunConfig) -> Stage2Result:
     logger.info(f"Saved cluster assignments to: {assignments_path}")
 
     # Enrich with node metadata
-    by_node = {str(x.get("node_id")): x for x in items}
+    by_node = {str(x.get("node_id")): x for x in all_items}
     enriched = []
     for row in payload:
         source = by_node.get(row["node_id"], {})
@@ -196,7 +114,7 @@ def run_stage2(config: RunConfig) -> Stage2Result:
                 "node_name": props.get("name"),
                 "labels": source_payload.get("labels", []),
                 "source_file": source_payload.get("source_file"),
-                "source_document_id": source_payload.get("source_document_id"),
+                "chunk_id": source_payload.get("chunk_id"),
             }
         )
 

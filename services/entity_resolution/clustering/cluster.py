@@ -66,32 +66,36 @@ def _fallback_cluster(items: list[dict], similarity_threshold: float) -> tuple[l
 
 
 def cluster_embeddings(
-    items: list[dict],
+    blocks: dict[str, list[dict]],
     min_cluster_size: int,
     min_samples: int,
     similarity_threshold: float,
-    by_primary_type: bool = True,
 ) -> list[ClusterAssignment]:
-    groups: dict[str, list[dict]] = defaultdict(list)
-    if by_primary_type:
-        for item in items:
-            ptype = str(item.get("payload", {}).get("primary_type", "UNKNOWN"))
-            groups[ptype].append(item)
-    else:
-        groups["ALL"] = list(items)
+    """
+    Cluster entities within each block separately.
 
+    Args:
+        blocks: Dict mapping block_id → list of items in that block
+        min_cluster_size: Minimum cluster size for HDBSCAN
+        min_samples: Minimum samples for HDBSCAN
+        similarity_threshold: Cosine similarity threshold for fallback clustering
+
+    Returns:
+        List of cluster assignments
+    """
     assignments: list[ClusterAssignment] = []
     cluster_offsets: dict[str, int] = defaultdict(int)
 
-    for ptype, gitems in groups.items():
+    for block_key, gitems in blocks.items():
         if not gitems:
             continue
 
+        # Cluster this block
         if SklearnHDBSCAN is not None and len(gitems) >= max(2, min_cluster_size):
             model = SklearnHDBSCAN(
                 min_cluster_size=min_cluster_size,
                 min_samples=min_samples,
-                metric="cosine",  # Changed from "euclidean" for consistency with fallback
+                metric="cosine",
                 allow_single_cluster=True,
             )
             vectors = [x["vector"] for x in gitems]
@@ -100,8 +104,9 @@ def cluster_embeddings(
         else:
             labels, probabilities = _fallback_cluster(gitems, similarity_threshold)
 
+        # Create cluster IDs with block prefix
         label_remap: dict[int, str] = {}
-        next_local = cluster_offsets[ptype]
+        next_local = cluster_offsets[block_key]
 
         for item, label, prob in zip(gitems, labels, probabilities):
             if label == -1:
@@ -109,20 +114,23 @@ def cluster_embeddings(
                 confidence = 0.0
             else:
                 if label not in label_remap:
-                    label_remap[label] = f"{ptype.lower()}_{next_local:04d}"
+                    label_remap[label] = f"{block_key.lower()}_{next_local:04d}"
                     next_local += 1
                 cid = label_remap[label]
                 confidence = float(prob)
+
+            # Get primary_type from item payload (still needed for fuzzy validation)
+            item_primary_type = str(item.get("payload", {}).get("primary_type", "UNKNOWN"))
 
             assignments.append(
                 ClusterAssignment(
                     node_id=item["node_id"],
                     cluster_id=cid,
                     probability=confidence,
-                    primary_type=ptype,
+                    primary_type=item_primary_type,
                 )
             )
 
-        cluster_offsets[ptype] = next_local
+        cluster_offsets[block_key] = next_local
 
     return assignments

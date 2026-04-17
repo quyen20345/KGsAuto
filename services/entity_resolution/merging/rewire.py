@@ -9,6 +9,24 @@ _END_KEYS = ("target", "end_id", "end", "endNode", "to")
 _ENDPOINT_KEYS = set(_START_KEYS) | set(_END_KEYS)
 
 
+def _build_relationship_payload(rel: dict[str, Any], start: str, end: str, rel_type: str) -> dict[str, Any]:
+    rel_props = dict(rel.get("properties", {}))
+    for rk, rv in rel.items():
+        if rk in _ENDPOINT_KEYS or rk in {"id", "type", "properties"}:
+            continue
+        rel_props[rk] = rv
+
+    return {
+        "id": rel.get("id"),
+        "type": rel_type,
+        "source": start,
+        "target": end,
+        "properties": rel_props,
+    }
+
+
+
+
 def flatten_canonical_map(canonical_map: dict[str, str]) -> dict[str, str]:
     out = dict(canonical_map)
     for k in list(out):
@@ -66,18 +84,81 @@ def load_kg_files(input_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def collect_entities(kg_files: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """
+    Collect entities from KG files with deduplication and property merging.
+
+    For nodes with same ID appearing in multiple files:
+    - Merge properties (union for lists, fill missing for scalars)
+    - Merge labels (union)
+    """
     entities: dict[str, dict[str, Any]] = {}
+
     for _fname, data in kg_files.items():
         for node in data.get("nodes", []):
             node_id = str(node.get("id", "")).strip()
             if not node_id:
                 continue
-            entities[node_id] = {
-                "labels": list(node.get("labels", [])),
-                "properties": dict(node.get("properties", {})),
-                "merged_ids": [],
-            }
+
+            labels = list(node.get("labels", []))
+            properties = dict(node.get("properties", {}))
+
+            if node_id not in entities:
+                entities[node_id] = {
+                    "labels": labels,
+                    "properties": properties,
+                    "merged_ids": [],
+                }
+            else:
+                existing = entities[node_id]
+
+                for label in labels:
+                    if label not in existing["labels"]:
+                        existing["labels"].append(label)
+
+                for key, val in properties.items():
+                    if val is None or val == "" or val == []:
+                        continue
+
+                    existing_val = existing["properties"].get(key)
+
+                    if key == "aliases":
+                        old_aliases = existing_val if isinstance(existing_val, list) else ([] if existing_val is None else [existing_val])
+                        new_aliases = val if isinstance(val, list) else [val]
+                        existing["properties"][key] = list(set(old_aliases + new_aliases))
+                    elif existing_val is None or existing_val == "" or existing_val == []:
+                        existing["properties"][key] = val
+                    elif isinstance(existing_val, list) and isinstance(val, list):
+                        existing["properties"][key] = list(set(existing_val + val))
+
     return entities
+
+
+def _filter_relationships(
+    relationships: list[dict[str, Any]],
+    canonical_map: dict[str, str],
+    valid_node_ids: set[str],
+) -> tuple[list[dict[str, Any]], int]:
+    filtered_relationships: list[dict[str, Any]] = []
+    dangling_removed = 0
+
+    for rel in relationships:
+        raw_start = _resolve_endpoint(rel, _START_KEYS)
+        raw_end = _resolve_endpoint(rel, _END_KEYS)
+        start = canonical_map.get(raw_start, raw_start)
+        end = canonical_map.get(raw_end, raw_end)
+        rel_type = str(rel.get("type", "RELATED_TO"))
+
+        if not start or not end or start == end:
+            dangling_removed += 1
+            continue
+
+        if start not in valid_node_ids or end not in valid_node_ids:
+            dangling_removed += 1
+            continue
+
+        filtered_relationships.append(_build_relationship_payload(rel, start, end, rel_type))
+
+    return filtered_relationships, dangling_removed
 
 
 def rewire_graph(
@@ -126,38 +207,12 @@ def rewire_graph(
                     }
                 )
 
-        new_rels: list[dict[str, Any]] = []
-        seen_edges: set[tuple[str, str, str]] = set()
-        for rel in data.get("relationships", []):
-            raw_start = _resolve_endpoint(rel, _START_KEYS)
-            raw_end = _resolve_endpoint(rel, _END_KEYS)
-            start = canonical_map.get(raw_start, raw_start)
-            end = canonical_map.get(raw_end, raw_end)
-            rel_type = str(rel.get("type", "RELATED_TO"))
-
-            if not start or not end or start == end:
-                continue
-
-            key = (start, rel_type, end)
-            if key in seen_edges:
-                continue
-            seen_edges.add(key)
-
-            rel_props = dict(rel.get("properties", {}))
-            for rk, rv in rel.items():
-                if rk in _ENDPOINT_KEYS or rk in {"id", "type", "properties"}:
-                    continue
-                rel_props[rk] = rv
-
-            new_rels.append(
-                {
-                    "id": rel.get("id") or f"rel_{start}_{rel_type}_{end}",
-                    "type": rel_type,
-                    "source": start,
-                    "target": end,
-                    "properties": rel_props,
-                }
-            )
+        valid_node_ids = {node["id"] for node in new_nodes if node.get("id")}
+        new_rels, dangling_removed = _filter_relationships(
+            data.get("relationships", []),
+            canonical_map,
+            valid_node_ids,
+        )
 
         with open(output_dir / filename, "w", encoding="utf-8") as f:
             json.dump({"nodes": new_nodes, "relationships": new_rels}, f, ensure_ascii=False, indent=2)
@@ -169,6 +224,7 @@ def rewire_graph(
                 "nodes_after": len(new_nodes),
                 "rels_before": len(data.get("relationships", [])),
                 "rels_after": len(new_rels),
+                "dangling_relationships_removed": dangling_removed,
             }
         )
 

@@ -21,7 +21,7 @@ def setup_stage_logger(stage_name: str, log_file: Path) -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
     # Create log directory if needed
@@ -29,7 +29,7 @@ def setup_stage_logger(stage_name: str, log_file: Path) -> logging.Logger:
 
     # File handler
     fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setLevel(logging.INFO)
+    fh.setLevel(logging.DEBUG)
 
     # Console handler
     ch = logging.StreamHandler()

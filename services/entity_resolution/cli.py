@@ -13,7 +13,7 @@ from .pipelines.stage3_pipeline import run_stage3
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Entity Resolution Pipeline")
     p.add_argument("--input-dir", default="mock_data")
-    p.add_argument("--artifacts-dir", default="entity_resolution/artifacts")
+    p.add_argument("--artifacts-dir", default="data/entity_resolution/artifacts")
     p.add_argument("--run-id", default=None)
     p.add_argument("--collection-name", default=None)
 
@@ -29,14 +29,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-cluster-size", type=int, default=2)
     p.add_argument("--min-samples", type=int, default=1)
     p.add_argument("--cluster-threshold", type=float, default=0.72)
+    p.add_argument("--enable-llm-blocking", action="store_true", default=None,
+                   help="Use LLM to determine blocking strategy (default: True)")
+    p.add_argument("--no-llm-blocking", action="store_false", dest="enable_llm_blocking",
+                   help="Use hard-coded primary_type blocking instead of LLM")
 
     # LLM Configuration
     p.add_argument("--llm-provider", default="9router", choices=["openai", "anthropic", "proxypal", "9router"])
     p.add_argument("--llm-model", default="cx/gpt-5.3-codex")
-    p.add_argument("--llm-api-key", default="sk-2c8a5a86cb957baf-oo8f99-366bc10b", help="API key for LLM provider")
-    p.add_argument("--llm-set-size", type=int, default=9, help="Optimal record set size")
-    p.add_argument("--mdg-threshold", type=float, default=0.1, help="MDG similarity threshold")
-    p.add_argument("--cmr-threshold", type=float, default=0.80, help="CMR merge threshold")
+    p.add_argument("--llm-api-key", help="API key for LLM provider")
 
     # Stage selection
     p.add_argument("--stage", default="all", choices=["stage1", "stage2", "stage3", "all"])
@@ -59,6 +60,7 @@ def main() -> None:
         min_cluster_size=args.min_cluster_size,
         min_samples=args.min_samples,
         cluster_similarity_threshold=args.cluster_threshold,
+        enable_llm_blocking=args.enable_llm_blocking if args.enable_llm_blocking is not None else True,
 
         # Storage
         store_backend=args.store_backend,
@@ -68,9 +70,6 @@ def main() -> None:
         llm_provider=args.llm_provider,
         llm_model=args.llm_model,
         llm_api_key=args.llm_api_key,
-        llm_set_size=args.llm_set_size,
-        mdg_similarity_threshold=args.mdg_threshold,
-        cmr_merge_threshold=args.cmr_threshold,
     )
 
     outputs: dict[str, dict] = {}

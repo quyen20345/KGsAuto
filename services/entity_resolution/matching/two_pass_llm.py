@@ -144,6 +144,15 @@ class TwoPassLLMResolver:
 
             content = response.content if hasattr(response, "content") else str(response)
 
+            # Log Pass 1 prompt and response for debugging
+            self.logger.debug("=" * 80)
+            self.logger.debug("PASS 1 PROMPT:")
+            self.logger.debug(prompt[:1000] + "..." if len(prompt) > 1000 else prompt)
+            self.logger.debug("=" * 80)
+            self.logger.debug("PASS 1 RESPONSE:")
+            self.logger.debug(content[:2000] + "..." if len(content) > 2000 else content)
+            self.logger.debug("=" * 80)
+
             # Parse response
             result = self._parse_pass1_response(content, cluster_entities)
 
@@ -194,6 +203,15 @@ class TwoPassLLMResolver:
 
             content = response.content if hasattr(response, "content") else str(response)
 
+            # Log Pass 2 prompt and response for debugging
+            self.logger.debug("=" * 80)
+            self.logger.debug(f"PASS 2 PROMPT (sub-group {sub_group.get('group_id')}):")
+            self.logger.debug(prompt[:1000] + "..." if len(prompt) > 1000 else prompt)
+            self.logger.debug("=" * 80)
+            self.logger.debug("PASS 2 RESPONSE:")
+            self.logger.debug(content[:2000] + "..." if len(content) > 2000 else content)
+            self.logger.debug("=" * 80)
+
             # Parse response
             canonical = self._parse_pass2_response(content, entities)
 
@@ -207,9 +225,9 @@ class TwoPassLLMResolver:
         """Build prompt cho Pass 1."""
         entities_formatted = self._format_entities_for_prompt(entities)
 
-        prompt = f"""Task: Phân tích {len(entities)} entities và chia thành các sub-groups.
+        prompt = f"""Task: Analyze {len(entities)} entities and partition them into sub-groups.
 
-Mỗi sub-group chứa các entities đại diện cho CÙNG MỘT thực thể trong thế giới thực.
+Each sub-group should contain entities that refer to the same real-world entity.
 
 Entity Type: {entity_type}
 
@@ -217,70 +235,111 @@ Entities:
 {entities_formatted}
 
 Guidelines:
-1. Tìm các entities có name/alias giống nhau hoặc tương tự
-2. Kiểm tra context: cùng role, cùng organization, cùng time period
-3. Entities từ cùng source_document CÓ THỂ là cùng entity (nếu có vai trò khác nhau)
-4. Nếu không chắc chắn → Tách riêng (đừng merge sai)
-5. Ít nhất phải có 1 sub-group với 2+ entities (trừ khi thực sự tất cả khác nhau)
+1. **Aliases are strong signals**: If entity A has an alias that matches entity B's name (or vice versa), they likely refer to the same entity.
+   - Example: Entity A name="Trường Đại học Công nghệ, ĐHQGHN" with alias="Trường Đại học Công nghệ"
+              Entity B name="Trường Đại học Công nghệ"
+              → Should be grouped together (alias match)
+
+2. **Vietnamese abbreviations**: Recognize common Vietnamese abbreviation patterns:
+   - "ĐHCN" = "Đại học Công nghệ" (University of Technology)
+   - "UET" = "University of Engineering and Technology"
+   - "ĐHQGHN" = "Đại học Quốc gia Hà Nội" (Vietnam National University, Hanoi)
+   - Abbreviated forms and full forms refer to the same entity
+
+3. **Institutional names with/without parent organization**:
+   - "Trường Đại học Công nghệ" and "Trường Đại học Công nghệ, ĐHQGHN" refer to the same university
+   - The second form just includes the parent organization name
+   - Group them together unless evidence suggests they are different institutions
+
+4. **Compare all fields systematically**:
+   - Names: Check for exact match, substring match, or abbreviation match
+   - Aliases: Check if any alias from entity A matches name or aliases of entity B
+   - Labels: Same labels increase likelihood of co-reference
+   - Descriptions: Look for contradictory evidence (different locations, different roles, etc.)
+
+5. **Balance precision and recall**:
+   - When there is strong evidence (alias match, name overlap, shared context), group entities together
+   - Only keep entities separate when there is clear contradictory evidence
+   - Ambiguity alone is not sufficient reason to separate - use all available signals
+
+6. **Entities with similar names may still refer to different objects** - but check carefully:
+   - Different people with same name → separate
+   - Same institution with different name variants → group together
+   - Use context (descriptions, source documents) to disambiguate
+
+7. **Shared aliases or overlapping aliases are very strong signals** for co-reference.
 
 Output JSON format:
 {{
   "sub_groups": [
     {{
       "group_id": "g0",
-      "entity_ids": ["node_id_1", "node_id_2", "node_id_3"],
-      "reasoning": "Cùng tên 'Nguyễn Văn A', cùng là Giảng viên"
-    }},
-    {{
-      "group_id": "g1",
-      "entity_ids": ["node_id_4", "node_id_5"],
-      "reasoning": "Cùng tên 'Trần Thị B'"
+      "entity_ids": ["entity_id_1", "entity_id_2"],
+      "reasoning": "Why these entities likely refer to the same real-world entity (mention specific evidence: alias match, name overlap, etc.)"
     }}
   ],
-  "singletons": ["node_id_6", "node_id_7", "node_id_8"],
+  "singletons": ["entity_id_3"],
   "confidence": 0.85
 }}
 
 Return ONLY valid JSON, no markdown, no extra text."""
 
         return prompt
-
+    
     def _build_pass2_prompt(self, entities: list[dict], entity_type: str) -> str:
         """Build prompt cho Pass 2."""
         entities_formatted = self._format_entities_for_prompt(entities)
 
-        prompt = f"""Task: Merge {len(entities)} entities thành 1 canonical entity.
+        prompt = f"""Task: Synthesize {len(entities)} entities into one canonical entity.
 
-Entity Type: {entity_type}
+    Entity Type: {entity_type}
 
-Entities (đã được xác nhận là cùng 1 thực thể):
-{entities_formatted}
+    These entities have already been grouped as referring to the same real-world entity:
+    {entities_formatted}
 
-Guidelines:
-1. Chọn canonical_id: Ưu tiên entity có thông tin đầy đủ nhất
-2. Merge labels: Union tất cả labels
-3. Merge properties:
-   - name: Chọn tên đầy đủ nhất (ưu tiên có học hàm/chức danh cho PERSON)
-   - aliases: Union tất cả names và aliases
-   - email: Chọn email hợp lệ
-   - Các fields khác: Ưu tiên giá trị chi tiết nhất, không conflict
+    Node schema:
+    - top-level fields:
+      - canonical_id
+      - labels
+      - properties
+      - merged_from
+    - properties fields:
+      - name
+      - aliases
+      - chunk_id
+      - model_extracted
+      - description
 
-Output JSON format:
-{{
-  "canonical_id": "node_id_1",
-  "labels": ["PERSON", "LECTURER"],
-  "properties": {{
-    "name": "TS. Nguyễn Văn A",
-    "aliases": ["Nguyễn Văn A", "NVA", "TS. A"],
-    "role": "Giảng viên",
-    "email": "nva@vnu.edu.vn"
-  }},
-  "merged_from": ["node_id_1", "node_id_2", "node_id_3"]
-}}
+    Guidelines:
+    1. Choose a canonical_id that best represents the merged entity.
+    2. Merge labels by taking the union of all relevant labels.
+    3. Merge properties using only the fields allowed by the schema.
+    4. For properties.name, choose the clearest canonical name.
+    5. For properties.aliases, include distinct name variants and aliases without duplication.
+    6. For properties.chunk_id, include all supporting chunk ids without duplication.
+    7. For properties.model_extracted, include all contributing model names without duplication.
+    8. For properties.description, keep informative and non-duplicate descriptions that support the canonical entity.
+    9. Do not invent new fields.
+    10. Do not add information that is not supported by the input entities.
 
-Return ONLY valid JSON, no markdown, no extra text."""
+    Output JSON format:
+    {{
+      "canonical_id": "entity_id_1",
+      "labels": ["ENTITY_LABEL"],
+      "properties": {{
+        "name": "Canonical Name",
+        "aliases": ["Name Variant 1", "Name Variant 2"],
+        "chunk_id": ["doc_001", "doc_002"],
+        "model_extracted": ["model_a", "model_b"],
+        "description": ["Supporting description 1", "Supporting description 2"]
+      }},
+      "merged_from": ["entity_id_1", "entity_id_2"]
+    }}
+
+    Return ONLY valid JSON, no markdown, no extra text."""
 
         return prompt
+
 
     def _format_entities_for_prompt(self, entities: list[dict]) -> str:
         """Format entities for LLM prompt."""
@@ -289,18 +348,23 @@ Return ONLY valid JSON, no markdown, no extra text."""
         for i, entity in enumerate(entities, 1):
             node_id = entity.get("node_id", "unknown")
             payload = entity.get("payload", {})
+            labels = payload.get("labels", [])
             props = payload.get("properties", {})
 
             name = props.get("name", "N/A")
             aliases = props.get("aliases") or []
-            source_doc = props.get("source_document_id", "N/A")
-            evidence = props.get("evidence_text", "")
+            source_doc = props.get("chunk_id", "N/A")
+            model_extracted = props.get("model_extracted", [])
+            evidence = props.get("description", "")
 
             lines.append(f"{i}. ID: {node_id}")
+            lines.append(f"   Labels: {labels}")
             lines.append(f"   Name: {name}")
             if aliases:
                 lines.append(f"   Aliases: {aliases}")
             lines.append(f"   Source: {source_doc}")
+            if model_extracted:
+                lines.append(f"   Model: {model_extracted}")
             if evidence:
                 lines.append(f"   Evidence: {evidence[:200]}")
             lines.append("")
@@ -435,7 +499,7 @@ Return ONLY valid JSON, no markdown, no extra text."""
         self,
         pass1_result: dict,
         embeddings: dict[str, list[float]],
-        min_intra_similarity: float = 0.70,
+        min_intra_similarity: float = 0.83,
     ) -> bool:
         """Validate sub-groups bằng embedding similarity."""
         sub_groups = pass1_result.get("sub_groups", [])
@@ -485,6 +549,36 @@ Return ONLY valid JSON, no markdown, no extra text."""
                 similarities.append(sim_matrix[i, j])
 
         return float(np.mean(similarities)) if similarities else 1.0
+
+    def _entity_id(self, entity: dict) -> str:
+        """Get entity ID (support both old and new schema)."""
+        if "id" in entity:
+            return entity["id"]
+        return entity.get("node_id", "")
+
+    def _entity_props(self, entity: dict) -> dict:
+        """Get entity properties (support both schemas)."""
+        if "properties" in entity:
+            props = entity.get("properties", {})
+        else:
+            props = entity.get("payload", {}).get("properties", {})
+        return props if isinstance(props, dict) else {}
+
+    def _get_description_text(self, entity: dict) -> str:
+        """Extract description text from entity."""
+        props = self._entity_props(entity)
+        description = props.get("description", [])
+
+        if isinstance(description, str):
+            return description.lower()
+        elif isinstance(description, list):
+            return " ".join([d for d in description if isinstance(d, str)]).lower()
+        return ""
+
+    def _tokenize_text(self, text: str) -> set[str]:
+        """Tokenize text into words (length > 2)."""
+        tokens = re.findall(r"\w+", text.lower())
+        return {t for t in tokens if len(t) > 2}
 
     def _keep_singleton_by_id(self, node_id: str, cluster_entities: list[dict]) -> dict:
         """Keep entity as singleton (no merge)."""

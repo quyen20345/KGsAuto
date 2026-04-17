@@ -104,6 +104,45 @@ def validate_person_cluster(
     return True, "valid"
 
 
+def validate_organizational_unit_cluster(
+    cluster_items: list[dict],
+    min_name_similarity: float = 0.90,
+) -> tuple[bool, str]:
+    """
+    Validate ORGANIZATIONAL_UNIT cluster conservatively using name similarity.
+
+    Organizational sub-units with similar prefixes (e.g. "Công đoàn Khoa ...")
+    are often different real entities, so Stage 2 should avoid merging them unless
+    their names are extremely similar.
+    """
+    if len(cluster_items) <= 1:
+        return True, "singleton"
+
+    for i, item_a in enumerate(cluster_items):
+        for item_b in cluster_items[i + 1:]:
+            name_a = item_a["payload"]["properties"].get("name", "")
+            name_b = item_b["payload"]["properties"].get("name", "")
+            name_sim = compute_name_similarity(name_a, name_b, entity_type="ORGANIZATIONAL_UNIT")
+            if name_sim < min_name_similarity:
+                return False, f"Low organizational unit name similarity: {name_sim:.2f} ({name_a} vs {name_b})"
+
+    return True, "valid"
+
+
+def split_organizational_unit_cluster(
+    cluster_items: list[dict],
+) -> list[list[dict]]:
+    """
+    Split ambiguous ORGANIZATIONAL_UNIT clusters into singletons.
+
+    This is intentionally conservative: Stage 3 can still reason about possible
+    merges later, but Stage 2 should not over-merge sibling sub-units.
+    """
+    if len(cluster_items) <= 1:
+        return [cluster_items]
+    return [[item] for item in cluster_items]
+
+
 def split_person_cluster_by_similarity(
     cluster_items: list[dict],
     min_name_similarity: float = 0.80,
@@ -196,7 +235,7 @@ def validate_source_constraint(
         return True, "singleton"
 
     # Check for duplicate sources
-    sources = [item["payload"]["properties"]["source_document_id"] for item in cluster_items]
+    sources = [item["payload"]["properties"]["chunk_id"] for item in cluster_items]
     source_counts = defaultdict(int)
 
     for source in sources:
@@ -215,7 +254,7 @@ def split_cluster_by_source(
     cluster_items: list[dict],
 ) -> list[list[dict]]:
     """
-    Split cluster by source_document_id to resolve violations.
+    Split cluster by chunk_id to resolve violations.
 
     When a cluster contains multiple entities from the same source,
     we cannot determine which entities should stay together.

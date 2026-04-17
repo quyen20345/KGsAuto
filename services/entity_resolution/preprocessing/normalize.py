@@ -6,7 +6,7 @@ from typing import Any
 
 
 STOP_KEYS = {
-    "source_document_id",
+    "chunk_id",
     "model_extracted",
 }
 
@@ -53,8 +53,8 @@ def normalize_properties(properties: dict[str, Any]) -> dict[str, Any]:
     props["name"] = normalize_text(props.get("name", ""))
     props["aliases"] = normalize_aliases(props.get("aliases"))
 
-    evidence = props.get("evidence_text", "")
-    props["evidence_text"] = normalize_text(evidence)
+    evidence = props.get("description", "")
+    props["description"] = normalize_text(evidence)
 
     return props
 
@@ -148,7 +148,7 @@ def build_embedding_text(labels: list[str], properties: dict[str, Any]) -> str:
     """
     Build embedding text from entity labels and properties.
 
-    Format: labels || name
+    Format: name || aliases (sorted by length descending, excluding name)
 
     Args:
         labels: Entity labels (e.g., ["PERSON"])
@@ -163,10 +163,23 @@ def build_embedding_text(labels: list[str], properties: dict[str, Any]) -> str:
     ptype = primary_type(labels)
     name = normalize_name_by_type(name, ptype)
 
-    label_part = " ".join(labels)
+    # Get aliases and filter out name to avoid duplication
+    aliases = properties.get("aliases", [])
+    if isinstance(aliases, list) and aliases:
+        # Normalize name for comparison
+        name_lower = name.lower().strip()
 
-    # Format: labels || name
-    # Removed: aliases (will be used for fuzzy matching validation in Stage 2)
-    # Removed: evidence_text (document-specific, causes noise)
-    # Removed: other_properties (founded_year, location, etc.)
-    return f"{label_part} || {name}"
+        # Filter out aliases that are identical to name (case-insensitive)
+        filtered_aliases = [
+            alias for alias in aliases
+            if alias and alias.lower().strip() != name_lower
+        ]
+
+        if filtered_aliases:
+            # Sort by length descending
+            sorted_aliases = sorted(filtered_aliases, key=len, reverse=True)
+            aliases_part = ", ".join(sorted_aliases)
+            return f"{name} || {aliases_part}"
+
+    # No aliases or all filtered out, just name
+    return name

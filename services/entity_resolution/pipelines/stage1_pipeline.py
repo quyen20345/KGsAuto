@@ -71,7 +71,7 @@ def run_stage1(config: RunConfig) -> Stage1Result:
             "labels": rec.labels,
             "primary_type": primary_type(rec.labels),
             "source_file": rec.source_file,
-            "source_document_id": props.get("source_document_id"),
+            "chunk_id": props.get("chunk_id"),
             "embedding_text": text,
             "properties": props,
         }
