@@ -1,0 +1,18 @@
+\thispagestyle{empty}
+\begin{center}
+\fontsize{13pt}{1pt}\selectfont
+    \textbf{TÓM TẮT}
+\end{center}
+
+\fontsize{13pt}{1pt}\selectfont
+\vspace{1cm}
+
+Bài toán giảm hallucination cho các hệ thống ứng dụng mô hình ngôn ngữ lớn (LLM) đã được nghiên cứu rộng rãi, trong đó việc áp dụng RAG (Retrieval-Augmented Generation) kết hợp với Knowledge Graph đã chứng minh hiệu quả tích cực. Tuy nhiên, vẫn còn thiếu các hướng dẫn hoàn chỉnh về quy trình xây dựng Knowledge Graph tự động từ dữ liệu phi cấu trúc, đặc biệt là việc lựa chọn cấu trúc graph phù hợp và xử lý vấn đề trùng lặp thực thể.
+
+Khóa luận này trình bày hệ thống KGsAuto - một giải pháp tự động hóa toàn bộ quy trình xây dựng Knowledge Graph từ tài liệu markdown, bao gồm: (1) trích xuất thực thể và quan hệ sử dụng LLM với prompt được thiết kế tối ưu cho Property Graph, (2) giải quyết bài toán Entity Resolution thông qua pipeline 3 giai đoạn kết hợp blocking, clustering và Two-Pass LLM resolution với validation dựa trên embedding, (3) lưu trữ và truy vấn hiệu quả trên Neo4j, và (4) tích hợp hệ thống RAG lai ghép (hybrid RAG) kết hợp retrieval từ cả markdown chunks và knowledge graph để cải thiện chất lượng câu trả lời.
+
+Hệ thống được triển khai với kiến trúc microservices, sử dụng FastAPI cho backend, React cho frontend, Neo4j làm graph database và Qdrant làm vector database. Kết quả thực nghiệm trên tập dữ liệu về Trường Đại học Công nghệ - ĐHQGHN cho thấy pipeline Entity Resolution đạt độ chính xác cao trong việc gộp các thực thể trùng lặp, và hệ thống RAG cung cấp khả năng truy vấn thông tin chính xác với trích dẫn nguồn rõ ràng.
+
+\vspace{0.5cm}
+
+\textit{\textbf{Từ khóa:} Knowledge Graph, Property Graph, Entity Resolution, LLM, RAG, Neo4j, Graph Database, Information Extraction, Entity Linking}
