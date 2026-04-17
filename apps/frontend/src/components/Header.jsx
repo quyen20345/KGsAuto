@@ -17,7 +17,9 @@ export default function Header() {
     <header>
       <Link to="/" className="logo">UETKB</Link>
       <nav>
-        <Link to="/">Browse</Link>
+        <Link to="/">Home</Link>
+        <Link to="/search">Search</Link>
+        <Link to="/merge">Merge</Link>
       </nav>
       <div className="search-bar">
         <input

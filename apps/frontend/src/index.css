@@ -32,3 +32,138 @@ td.object { display: flex; flex-direction: column; gap: 4px; }
 
 #query-box textarea { width: 100%; height: 100px; padding: 10px; font-family: monospace; border: 1px solid var(--border); margin-bottom: 10px; }
 #query-result { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: monospace; }
+
+.merge-form { margin-top: 10px; }
+.merge-input, .merge-textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; font-family: monospace; box-sizing: border-box; }
+.merge-textarea { min-height: 140px; resize: vertical; }
+.merge-button { padding: 8px 14px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; }
+.merge-button:disabled { opacity: 0.6; cursor: not-allowed; }
+.merge-button-secondary { background: #6c757d; }
+.merge-actions { display: flex; gap: 10px; margin-top: 10px; }
+.merge-box { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: #f8f9fa; }
+.merge-error { border-color: #c0392b; background: #fdecea; color: #8a1f11; }
+.merge-success { border-color: #2e7d32; background: #edf7ed; }
+.merge-help { margin-bottom: 8px; color: #666; }
+
+/* Buttons and links with high z-index to prevent popover overlap */
+button, .merge-button {
+  position: relative;
+  z-index: 10000;
+}
+
+.internal-link {
+  position: relative;
+  z-index: 10000;
+}
+
+/* Entity Popover */
+.entity-popover {
+  background: white !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 500px;
+  max-height: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  isolation: isolate;
+}
+
+.entity-popover-content {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 580px;
+  background: white !important;
+}
+
+.entity-popover-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  background: white !important;
+}
+
+.entity-popover-loading,
+.entity-popover-error {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  background: white !important;
+}
+
+.entity-popover-error {
+  color: #c0392b;
+}
+
+.entity-popover table {
+  margin-bottom: 16px;
+  background: white !important;
+}
+
+.entity-popover th {
+  font-size: 0.85rem;
+  padding: 8px;
+  background: #f8f9fa !important;
+}
+
+.entity-popover td {
+  font-size: 0.9rem;
+  padding: 8px;
+  background: white !important;
+}
+
+.entity-popover tbody {
+  background: white !important;
+}
+
+.entity-popover tr {
+  background: white !important;
+}
+
+.entity-popover .statements-header {
+  font-size: 1rem;
+  margin: 16px 0 8px 0;
+}
+
+.entity-popover .entity-title {
+  font-size: 1.3rem;
+  margin: 0 0 8px 0;
+}
+
+.entity-popover .entity-uri {
+  font-size: 0.85rem;
+}
+
+.entity-popover .badge {
+  font-size: 0.75rem;
+}
+
+/* Relationship Tooltip */
+.relationship-tooltip {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  pointer-events: none;
+}
+
+.relationship-tooltip-content {
+  padding: 12px;
+}
+
+.relationship-tooltip-type {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-family: monospace;
+}
+
+.relationship-tooltip-description {
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.4;
+}
