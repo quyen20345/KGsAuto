@@ -67,27 +67,32 @@ export default function Entity() {
         </thead>
         <tbody>
           {Object.entries(outGroups).map(([type, rels]) => {
-            const relationshipDescription = rels[0]?.properties?.description;
-            const descriptionText = Array.isArray(relationshipDescription)
-              ? relationshipDescription[0]
-              : relationshipDescription;
-
             return (
               <tr key={`out-${type}`}>
                 <td className="predicate">
-                  <RelationshipTooltip
-                    relationshipType={type}
-                    description={descriptionText}
-                  >
-                    rel:{type}
-                  </RelationshipTooltip>
+                  rel:{type}
                 </td>
                 <td className="object">
-                  {rels.map((r, i) => (
-                    <EntityLink key={i} entityId={r.target_id}>
-                      {r.target_name || r.target_id}
-                    </EntityLink>
-                  ))}
+                  {rels.map((r, i) => {
+                    const relDescription = r.properties?.description;
+                    const relDescriptionText = Array.isArray(relDescription)
+                      ? relDescription[0]
+                      : relDescription;
+
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: i < rels.length - 1 ? '4px' : '0' }}>
+                        <RelationshipTooltip
+                          relationshipType={type}
+                          description={relDescriptionText}
+                        >
+                          <span className="relationship-dot">•</span>
+                        </RelationshipTooltip>
+                        <EntityLink entityId={r.target_id}>
+                          {r.target_name || r.target_id}
+                        </EntityLink>
+                      </div>
+                    );
+                  })}
                 </td>
               </tr>
             );

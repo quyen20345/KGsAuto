@@ -33,13 +33,6 @@ export default function Home() {
 
       {!loading && !error && (
         <table>
-          <thead>
-            <tr>
-              <th style={{ width: '40%' }}>Subject</th>
-              <th style={{ width: '20%' }}>Predicate (Relation)</th>
-              <th style={{ width: '40%' }}>Object</th>
-            </tr>
-          </thead>
           <tbody>
             {triplets.map((t, i) => {
               const relationshipDescription = t.rel_properties?.description;

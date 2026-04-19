@@ -7,15 +7,15 @@ const STORAGE_KEY = 'lastCypherQuery';
 const QUERY_TEMPLATES = {
   merge: {
     label: 'Merge Nodes',
-    query: `MATCH (a {id: 'node_truong_dai_hoc_cong_nghe_dai_hoc_quoc_gia_ha_noi'}),
-      (b {id: 'node_truong_dhcn'})
+    query: `MATCH (a {id: 'node_A}),
+      (b {id: 'node_B'})
 CALL apoc.refactor.mergeNodes([a, b], {
   properties: 'combine',
   mergeRels: true
 })
 YIELD node
-SET node.id = 'node_truong_dai_hoc_cong_nghe_dai_hoc_quoc_gia_ha_noi',
-    node.name = 'Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội'
+SET node.id = 'node_A',
+    node.name = 'name node A'
 RETURN node`
   },
   search: {

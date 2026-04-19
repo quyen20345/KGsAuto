@@ -173,30 +173,32 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
                       return acc;
                     }, {})
                   ).map(([type, rels]) => {
-                    // Get description from first relationship of this type
-                    const relationshipDescription = rels[0]?.properties?.description;
-                    const descriptionText = Array.isArray(relationshipDescription)
-                      ? relationshipDescription[0]
-                      : relationshipDescription;
-
                     return (
                       <tr key={`out-${type}`}>
                         <td className="predicate">
-                          <RelationshipTooltip
-                            relationshipType={type}
-                            description={descriptionText}
-                          >
-                            rel:{type}
-                          </RelationshipTooltip>
+                          rel:{type}
                         </td>
                         <td className="object">
-                          {rels.map((r, i) => (
-                            <div key={i} style={{ marginBottom: '8px' }}>
-                              <EntityLink entityId={r.target_id} disablePopover={true}>
-                                {r.target_name || r.target_id}
-                              </EntityLink>
-                            </div>
-                          ))}
+                          {rels.map((r, i) => {
+                            const relDescription = r.properties?.description;
+                            const relDescriptionText = Array.isArray(relDescription)
+                              ? relDescription[0]
+                              : relDescription;
+
+                            return (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                <RelationshipTooltip
+                                  relationshipType={type}
+                                  description={relDescriptionText}
+                                >
+                                  <span className="relationship-dot">•</span>
+                                </RelationshipTooltip>
+                                <EntityLink entityId={r.target_id} disablePopover={true}>
+                                  {r.target_name || r.target_id}
+                                </EntityLink>
+                              </div>
+                            );
+                          })}
                         </td>
                       </tr>
                     );
