@@ -28,7 +28,7 @@ def get_random_triplets(limit: int = 10):
     ORDER BY random
     LIMIT $limit
     RETURN n.id AS source_id, coalesce(n.name, n.id) AS source_name, labels(n)[0] AS source_label,
-           type(r) AS rel_type,
+           type(r) AS rel_type, properties(r) AS rel_properties,
            m.id AS target_id, coalesce(m.name, m.id) AS target_name, labels(m)[0] AS target_label
     """
     driver = get_driver()
@@ -41,6 +41,7 @@ def get_random_triplets(limit: int = 10):
                     "source_name": r["source_name"],
                     "source_label": r["source_label"],
                     "rel_type": r["rel_type"],
+                    "rel_properties": r["rel_properties"],
                     "target_id": r["target_id"],
                     "target_name": r["target_name"],
                     "target_label": r["target_label"],
