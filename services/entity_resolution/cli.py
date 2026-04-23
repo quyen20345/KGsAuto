@@ -28,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     # Clustering
     p.add_argument("--min-cluster-size", type=int, default=2)
     p.add_argument("--min-samples", type=int, default=1)
-    p.add_argument("--cluster-threshold", type=float, default=0.72)
+    p.add_argument("--cluster-threshold", type=float, default=0.6) # 0.72
     p.add_argument("--enable-llm-blocking", action="store_true", default=None,
                    help="Use LLM to determine blocking strategy (default: True)")
     p.add_argument("--no-llm-blocking", action="store_false", dest="enable_llm_blocking",

@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
+from collections import defaultdict
+
+from ..preprocessing.normalize import normalize_aliases
+
+logger = logging.getLogger(__name__)
 
 _START_KEYS = ("source", "start_id", "start", "startNode", "from")
 _END_KEYS = ("target", "end_id", "end", "endNode", "to")
@@ -25,6 +31,90 @@ def _build_relationship_payload(rel: dict[str, Any], start: str, end: str, rel_t
     }
 
 
+def _merge_relationship_properties(base_props: dict[str, Any], merge_props: dict[str, Any]) -> dict[str, Any]:
+    """
+    Merge properties from duplicate relationships.
+
+    Strategy:
+    - Scalar properties: Keep first non-null value
+    - List properties: Concatenate and deduplicate
+    - Conflicting values: Keep first, log warning
+    """
+    merged = dict(base_props)
+
+    for key, val in merge_props.items():
+        if val is None or val == "" or val == []:
+            continue
+
+        existing_val = merged.get(key)
+
+        # If key doesn't exist or is empty, use new value
+        if existing_val is None or existing_val == "" or existing_val == []:
+            merged[key] = val
+        # Both are lists: concatenate and deduplicate
+        elif isinstance(existing_val, list) and isinstance(val, list):
+            merged[key] = list(set(existing_val + val))
+        # Conflicting scalar values: keep first, log warning
+        elif existing_val != val:
+            logger.warning(
+                f"Property conflict for key '{key}': keeping '{existing_val}', ignoring '{val}'"
+            )
+
+    return merged
+
+
+def _deduplicate_relationships(relationships: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int, int]:
+    """
+    Deduplicate relationships with identical (source, target, type).
+
+    Returns:
+        - Deduplicated relationship list
+        - Number of relationships removed
+        - Number of duplicate groups found
+    """
+    # Group by (source, target, type) tuple
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+
+    for rel in relationships:
+        key = (rel["source"], rel["target"], rel["type"])
+        groups[key].append(rel)
+
+    deduplicated: list[dict[str, Any]] = []
+    relationships_removed = 0
+    duplicate_groups = 0
+
+    for key, group in groups.items():
+        if len(group) == 1:
+            # No duplicates, keep as-is
+            deduplicated.append(group[0])
+        else:
+            # Duplicates found: merge into first relationship
+            duplicate_groups += 1
+            relationships_removed += len(group) - 1
+
+            canonical = group[0]
+            merged_ids = [canonical["id"]]
+            merged_props = dict(canonical.get("properties", {}))
+
+            # Merge properties from duplicates
+            for dup in group[1:]:
+                merged_ids.append(dup["id"])
+                dup_props = dup.get("properties", {})
+                merged_props = _merge_relationship_properties(merged_props, dup_props)
+
+            # Add merge metadata
+            merged_props["merged_from_ids"] = merged_ids
+            merged_props["merge_count"] = len(group)
+
+            canonical["properties"] = merged_props
+            deduplicated.append(canonical)
+
+            logger.info(
+                f"Merged {len(group)} duplicate relationships: "
+                f"{key[0]} -[{key[2]}]-> {key[1]} (IDs: {merged_ids})"
+            )
+
+    return deduplicated, relationships_removed, duplicate_groups
 
 
 def flatten_canonical_map(canonical_map: dict[str, str]) -> dict[str, str]:
@@ -101,6 +191,8 @@ def collect_entities(kg_files: dict[str, dict[str, Any]]) -> dict[str, dict[str,
 
             labels = list(node.get("labels", []))
             properties = dict(node.get("properties", {}))
+            if "aliases" in properties:
+                properties["aliases"] = normalize_aliases(properties.get("aliases"))
 
             if node_id not in entities:
                 entities[node_id] = {
@@ -124,7 +216,7 @@ def collect_entities(kg_files: dict[str, dict[str, Any]]) -> dict[str, dict[str,
                     if key == "aliases":
                         old_aliases = existing_val if isinstance(existing_val, list) else ([] if existing_val is None else [existing_val])
                         new_aliases = val if isinstance(val, list) else [val]
-                        existing["properties"][key] = list(set(old_aliases + new_aliases))
+                        existing["properties"][key] = normalize_aliases(old_aliases + new_aliases)
                     elif existing_val is None or existing_val == "" or existing_val == []:
                         existing["properties"][key] = val
                     elif isinstance(existing_val, list) and isinstance(val, list):
@@ -137,7 +229,7 @@ def _filter_relationships(
     relationships: list[dict[str, Any]],
     canonical_map: dict[str, str],
     valid_node_ids: set[str],
-) -> tuple[list[dict[str, Any]], int]:
+) -> tuple[list[dict[str, Any]], int, int, int]:
     filtered_relationships: list[dict[str, Any]] = []
     dangling_removed = 0
 
@@ -158,7 +250,10 @@ def _filter_relationships(
 
         filtered_relationships.append(_build_relationship_payload(rel, start, end, rel_type))
 
-    return filtered_relationships, dangling_removed
+    # Deduplicate relationships after filtering
+    deduplicated_rels, rels_removed, duplicate_groups = _deduplicate_relationships(filtered_relationships)
+
+    return deduplicated_rels, dangling_removed, rels_removed, duplicate_groups
 
 
 def rewire_graph(
@@ -208,7 +303,7 @@ def rewire_graph(
                 )
 
         valid_node_ids = {node["id"] for node in new_nodes if node.get("id")}
-        new_rels, dangling_removed = _filter_relationships(
+        new_rels, dangling_removed, rels_deduplicated, duplicate_groups = _filter_relationships(
             data.get("relationships", []),
             canonical_map,
             valid_node_ids,
@@ -225,6 +320,8 @@ def rewire_graph(
                 "rels_before": len(data.get("relationships", [])),
                 "rels_after": len(new_rels),
                 "dangling_relationships_removed": dangling_removed,
+                "relationships_deduplicated": rels_deduplicated,
+                "duplicate_groups": duplicate_groups,
             }
         )
 

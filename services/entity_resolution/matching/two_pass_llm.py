@@ -311,7 +311,7 @@ Return ONLY valid JSON, no markdown, no extra text."""
       - description
 
     Guidelines:
-    1. Choose a canonical_id that best represents the merged entity.
+    1. Choose a canonical_id that best represents the merged entity. The canonical_id should follow the format "node_[sanitized_canonical_name]" where sanitized_canonical_name is lowercase, underscore-separated, and derived from the canonical name you choose in properties.name.
     2. Merge labels by taking the union of all relevant labels.
     3. Merge properties using only the fields allowed by the schema.
     4. For properties.name, choose the clearest canonical name.
@@ -719,9 +719,6 @@ Return ONLY valid JSON, no markdown, no extra text."""
                 "merged_from": [],
             }
 
-        # Pick first as canonical
-        canonical_id = entities[0]["node_id"]
-
         # Merge labels
         all_labels = []
         for e in entities:
@@ -755,6 +752,15 @@ Return ONLY valid JSON, no markdown, no extra text."""
                     # Prefer longer/more detailed value
                     if val and (not existing or len(str(val)) > len(str(existing))):
                         merged_props[key] = val
+
+        # Regenerate canonical_id from merged canonical name
+        canonical_name = merged_props.get("name", "")
+        if canonical_name:
+            from services.entity_resolution.utils.id_builder import build_canonical_id
+            canonical_id = build_canonical_id(canonical_name)
+        else:
+            # Fallback: use first entity ID if no name
+            canonical_id = entities[0]["node_id"]
 
         return {
             "canonical_id": canonical_id,

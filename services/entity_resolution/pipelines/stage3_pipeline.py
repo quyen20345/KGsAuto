@@ -15,6 +15,17 @@ from ..types import Stage3Result
 from ..merging.merge_engine import build_cluster_groups, build_id_remap_from_proposals
 from ..evaluation.review_ui_stage3 import write_review_dashboard
 from ..merging.rewire import collect_entities, load_kg_files, rewire_graph
+from ..preprocessing.normalize import normalize_aliases
+
+
+def _normalize_canonical_aliases(properties: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(properties)
+    if "aliases" in normalized:
+        normalized["aliases"] = normalize_aliases(normalized.get("aliases"))
+    return normalized
+
+
+
 
 
 def load_stage2_assignments(config: RunConfig) -> list[dict[str, Any]]:
@@ -234,6 +245,31 @@ def run_stage3(config: RunConfig) -> Stage3Result:
 
     # Build id_remap and canonical_map from canonical entities
     logger.info("Building ID remap and canonical map...")
+
+    # Regenerate canonical IDs from canonical names to ensure consistency
+    logger.info("Regenerating canonical IDs from canonical names...")
+    from services.entity_resolution.utils.id_builder import build_canonical_id, ensure_unique_canonical_id
+
+    used_ids = set()
+    for canonical_entity in all_canonical_entities:
+        old_canonical_id = canonical_entity["canonical_id"]
+        canonical_name = canonical_entity.get("properties", {}).get("name", "")
+
+        if not canonical_name:
+            # Fallback: keep original ID if no name
+            logger.warning(f"No canonical name for {old_canonical_id}, keeping original ID")
+            new_canonical_id = old_canonical_id
+        else:
+            # Generate new ID from canonical name
+            new_canonical_id = build_canonical_id(canonical_name)
+            new_canonical_id = ensure_unique_canonical_id(new_canonical_id, used_ids)
+
+        used_ids.add(new_canonical_id)
+
+        # Store legacy ID for traceability
+        canonical_entity["legacy_canonical_id"] = old_canonical_id
+        canonical_entity["canonical_id"] = new_canonical_id
+
     canonical_map = {}
     canonical_overrides = {}
 
@@ -241,7 +277,7 @@ def run_stage3(config: RunConfig) -> Stage3Result:
         canonical_id = canonical_entity.get("canonical_id")
         merged_from = canonical_entity.get("merged_from", [])
         labels = canonical_entity.get("labels", [])
-        properties = canonical_entity.get("properties", {})
+        properties = _normalize_canonical_aliases(canonical_entity.get("properties", {}))
 
         # Fallback: merge model_extracted and chunk_id from original entities if LLM missed them
         if len(merged_from) > 1:
@@ -281,6 +317,7 @@ def run_stage3(config: RunConfig) -> Stage3Result:
                 "labels": labels,
                 "properties": properties,
                 "merged_ids": [nid for nid in merged_from if nid != canonical_id],
+                "legacy_canonical_id": canonical_entity.get("legacy_canonical_id"),
             }
 
     logger.info(f"ID remap: {len(canonical_map)} mappings")
@@ -301,6 +338,15 @@ def run_stage3(config: RunConfig) -> Stage3Result:
         canonical_overrides=canonical_overrides,
     )
 
+    # Calculate aggregate deduplication metrics
+    total_rels_deduplicated = sum(stat.get("relationships_deduplicated", 0) for stat in rewrite_stats)
+    total_duplicate_groups = sum(stat.get("duplicate_groups", 0) for stat in rewrite_stats)
+    total_rels_before = sum(stat.get("rels_before", 0) for stat in rewrite_stats)
+    total_rels_after = sum(stat.get("rels_after", 0) for stat in rewrite_stats)
+
+    logger.info(f"Relationship deduplication: {total_rels_deduplicated} duplicates removed from {total_duplicate_groups} groups")
+    logger.info(f"Relationships: {total_rels_before} -> {total_rels_after} (after deduplication)")
+
     audit_path = stage_dir / "rewire_audit.json"
     with open(audit_path, "w", encoding="utf-8") as f:
         json.dump({
@@ -308,6 +354,10 @@ def run_stage3(config: RunConfig) -> Stage3Result:
             "canonical_entities_total": len(all_canonical_entities),
             "canonical_map_size": len(canonical_map),
             "canonical_overrides_size": len(canonical_overrides),
+            "relationships_deduplicated": total_rels_deduplicated,
+            "duplicate_relationship_groups": total_duplicate_groups,
+            "relationships_before": total_rels_before,
+            "relationships_after": total_rels_after,
             "rewrite_stats": rewrite_stats,
         }, f, ensure_ascii=False, indent=2)
 
