@@ -266,12 +266,33 @@ def run_stage3(config: RunConfig) -> Stage3Result:
 
         used_ids.add(new_canonical_id)
 
+        merged_from = canonical_entity.get("merged_from", [])
+        if old_canonical_id not in merged_from:
+            logger.warning(
+                "Canonical ID %s is not present in merged_from=%s before regeneration",
+                old_canonical_id,
+                merged_from,
+            )
+        if old_canonical_id != new_canonical_id:
+            logger.debug(
+                "Regenerated canonical ID: %s -> %s (canonical_name=%r)",
+                old_canonical_id,
+                new_canonical_id,
+                canonical_name,
+            )
+
         # Store legacy ID for traceability
         canonical_entity["legacy_canonical_id"] = old_canonical_id
         canonical_entity["canonical_id"] = new_canonical_id
 
     canonical_map = {}
     canonical_overrides = {}
+    canonical_decisions = []
+    cluster_by_node = {
+        row.get("node_id"): row.get("cluster_id")
+        for row in assignments
+        if row.get("node_id")
+    }
 
     for canonical_entity in all_canonical_entities:
         canonical_id = canonical_entity.get("canonical_id")
@@ -306,6 +327,22 @@ def run_stage3(config: RunConfig) -> Stage3Result:
             if not properties.get("chunk_id"):
                 properties["chunk_id"] = sorted(all_chunks)
 
+        cluster_ids = sorted({
+            cluster_by_node.get(node_id)
+            for node_id in merged_from
+            if cluster_by_node.get(node_id)
+        })
+        canonical_decisions.append({
+            "cluster_id": cluster_ids[0] if len(cluster_ids) == 1 else None,
+            "cluster_ids": cluster_ids,
+            "legacy_canonical_id": canonical_entity.get("legacy_canonical_id"),
+            "canonical_id": canonical_id,
+            "canonical_name": properties.get("name"),
+            "merged_from": merged_from,
+            "merge_count": len(merged_from),
+            "labels": labels,
+        })
+
         # Map all merged IDs to canonical ID
         for node_id in merged_from:
             canonical_map[node_id] = canonical_id
@@ -324,6 +361,11 @@ def run_stage3(config: RunConfig) -> Stage3Result:
     logger.info(f"Canonical overrides: {len(canonical_overrides)} entities")
 
     # Save outputs
+    decisions_path = stage_dir / "canonical_decisions.json"
+    with open(decisions_path, "w", encoding="utf-8") as f:
+        json.dump(canonical_decisions, f, ensure_ascii=False, indent=2)
+    logger.info(f"Canonical decisions: {decisions_path}")
+
     remap_path = stage_dir / "id_remap.json"
     with open(remap_path, "w", encoding="utf-8") as f:
         json.dump(canonical_map, f, ensure_ascii=False, indent=2)
@@ -363,6 +405,7 @@ def run_stage3(config: RunConfig) -> Stage3Result:
 
     logger.info(f"Stage 3 completed successfully")
     logger.info(f"Output directory: {output_dir}")
+    logger.info(f"Canonical decisions: {decisions_path}")
     logger.info(f"ID remap: {remap_path}")
     logger.info(f"Audit: {audit_path}")
 

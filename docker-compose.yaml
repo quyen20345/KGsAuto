@@ -17,10 +17,10 @@ services:
       - "7474:7474"
       - "7687:7687"
     volumes:
-      - ${HOME}/neo4j/data:/data
-      - ${HOME}/neo4j/logs:/logs
-      - ${HOME}/neo4j/plugins:/plugins
-      - ${HOME}/neo4j/conf:/conf   
+      - ${Browser}/neo4j/data:/data
+      - ${Browser}/neo4j/logs:/logs
+      - ${Browser}/neo4j/plugins:/plugins
+      - ${Browser}/neo4j/conf:/conf   
     environment:
       - NEO4J_AUTH=neo4j/12345678
       - NEO4JLABS_PLUGINS=["apoc"]
@@ -34,7 +34,7 @@ services:
     ports:
       - "6333:6333"
     volumes:
-      - ${HOME}/qdrant/data:/qdrant/storage
+      - ${Browser}/qdrant/data:/qdrant/storage
     restart: always
 
   # backend:

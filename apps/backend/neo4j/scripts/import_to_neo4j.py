@@ -33,12 +33,8 @@ class KGImporter:
         self.driver.close()
 
     def ensure_constraint(self):
-        cql = (
-            "CREATE CONSTRAINT kg_node_id_unique IF NOT EXISTS "
-            "FOR (n:KgNode) REQUIRE n.id IS UNIQUE"
-        )
-        with self.driver.session() as s:
-            s.run(cql)
+        # No constraint needed - we'll use MERGE on id property directly
+        pass
 
     def import_nodes(self, nodes, source_file):
         with self.driver.session() as session:
@@ -52,22 +48,28 @@ class KGImporter:
                 props_with_meta["id"] = node_id
                 # props_with_meta["source_file"] = source_file
 
-                label_clause = ":".join([f"`{l}`" for l in labels]) if labels else ""
-                
-                # 1. MERGE CHỈ TRÊN NHỮNG TRƯỜNG CÓ CONSTRAINT LÀ UNIQUE
-                cypher = (
-                    "MERGE (n:KgNode {id: $id}) "
-                    "SET n += $props"
-                )
-                
-                # 2. SAU ĐÓ MỚI SET THÊM CÁC LABEL PHỤ (Neo4j cho phép SET n:Label1:Label2)
-                if label_clause:
+                # Use first label for MERGE, then add remaining labels
+                if not labels:
+                    labels = ["Entity"]  # Fallback label if none provided
+
+                primary_label = labels[0]
+                remaining_labels = labels[1:] if len(labels) > 1 else []
+
+                # MERGE on primary label + id
+                cypher = f"MERGE (n:`{primary_label}` {{id: $id}}) SET n += $props"
+
+                # Add remaining labels if any
+                if remaining_labels:
+                    label_clause = ":".join([f"`{l}`" for l in remaining_labels])
                     cypher += f" SET n:{label_clause}"
 
                 session.run(cypher, id=node_id, props=props_with_meta)
 
     def import_relationships(self, relationships, source_file):
         with self.driver.session() as session:
+            relationships_created = 0
+            relationships_merged = 0
+
             for rel in relationships:
                 rel_id = rel.get("id")
                 rel_type = sanitize_label(rel.get("type", "RELATED_TO"))
@@ -79,20 +81,31 @@ class KGImporter:
                 props_with_meta["id"] = rel_id
                 # props_with_meta["source_file"] = source_file
 
+                # MERGE on (source, target, type) tuple instead of id
+                # This ensures only one relationship per unique tuple
                 cypher = (
-                    "MATCH (s:KgNode {id: $start_id}), "
-                    "(e:KgNode {id: $end_id}) "
-                    f"MERGE (s)-[r:`{rel_type}` {{id: $id}}]->(e) "
-                    "SET r += $props"
+                    "MATCH (s {id: $start_id}), "
+                    "(e {id: $end_id}) "
+                    f"MERGE (s)-[r:`{rel_type}`]->(e) "
+                    "ON CREATE SET r = $props, r.created_count = 1 "
+                    "ON MATCH SET r += $props, r.created_count = coalesce(r.created_count, 0) + 1 "
+                    "RETURN r.created_count as count"
                 )
 
-                session.run(
+                result = session.run(
                     cypher,
                     start_id=start_id,
                     end_id=end_id,
-                    id=rel_id,
                     props=props_with_meta,
                 )
+
+                record = result.single()
+                if record and record["count"] == 1:
+                    relationships_created += 1
+                else:
+                    relationships_merged += 1
+
+            return relationships_created, relationships_merged
 
 
 def load_json_file(path: Path):
@@ -118,6 +131,9 @@ def main():
         if not json_files:
             raise SystemExit("No JSON files found in folder")
 
+        total_rels_created = 0
+        total_rels_merged = 0
+
         for file_path in json_files:
             print(f"Importing {file_path.name} ...")
             data = load_json_file(file_path)
@@ -126,9 +142,17 @@ def main():
             relationships = data.get("relationships", [])
 
             importer.import_nodes(nodes, file_path.name)
-            importer.import_relationships(relationships, file_path.name)
+            rels_created, rels_merged = importer.import_relationships(relationships, file_path.name)
 
-        print("All files imported successfully.")
+            total_rels_created += rels_created
+            total_rels_merged += rels_merged
+
+            print(f"  Nodes: {len(nodes)}, Relationships: {len(relationships)} "
+                  f"(created: {rels_created}, merged: {rels_merged})")
+
+        print("\nAll files imported successfully.")
+        print(f"Total relationships created: {total_rels_created}")
+        print(f"Total relationships merged (duplicates): {total_rels_merged}")
 
     finally:
         importer.close()

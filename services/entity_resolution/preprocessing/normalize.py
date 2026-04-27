@@ -148,7 +148,7 @@ def build_embedding_text(labels: list[str], properties: dict[str, Any]) -> str:
     """
     Build embedding text from entity labels and properties.
 
-    Format: name || aliases (sorted by length descending, excluding name)
+    Format: name only.
 
     Args:
         labels: Entity labels (e.g., ["PERSON"])
@@ -158,28 +158,5 @@ def build_embedding_text(labels: list[str], properties: dict[str, Any]) -> str:
         Formatted embedding text
     """
     name = normalize_text(properties.get("name", ""))
-
-    # Normalize name based on entity type
     ptype = primary_type(labels)
-    name = normalize_name_by_type(name, ptype)
-
-    # Get aliases and filter out name to avoid duplication
-    aliases = properties.get("aliases", [])
-    if isinstance(aliases, list) and aliases:
-        # Normalize name for comparison
-        name_lower = name.lower().strip()
-
-        # Filter out aliases that are identical to name (case-insensitive)
-        filtered_aliases = [
-            alias for alias in aliases
-            if alias and alias.lower().strip() != name_lower
-        ]
-
-        if filtered_aliases:
-            # Sort by length descending
-            sorted_aliases = sorted(filtered_aliases, key=len, reverse=True)
-            aliases_part = ", ".join(sorted_aliases)
-            return f"{name} || {aliases_part}"
-
-    # No aliases or all filtered out, just name
-    return name
+    return normalize_name_by_type(name, ptype)

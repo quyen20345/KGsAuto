@@ -11,9 +11,12 @@ from __future__ import annotations
 
 import json
 import re
-import numpy as np
-from typing import Any
 import logging
+from typing import Any
+
+import numpy as np
+
+from services.entity_resolution.utils.canonical_name_selector import select_canonical_name
 
 
 class TwoPassLLMResolver:
@@ -753,9 +756,23 @@ Return ONLY valid JSON, no markdown, no extra text."""
                     if val and (not existing or len(str(val)) > len(str(existing))):
                         merged_props[key] = val
 
-        # Regenerate canonical_id from merged canonical name
-        canonical_name = merged_props.get("name", "")
+        name_candidates: list[str] = []
+        preferred_names: list[str] = []
+        aliases = merged_props.get("aliases", [])
+        alias_candidates = aliases if isinstance(aliases, list) else [aliases]
+
+        for e in entities:
+            props = e.get("payload", {}).get("properties", {})
+            source_name = props.get("name")
+            if source_name:
+                source_names = source_name if isinstance(source_name, list) else [source_name]
+                name_candidates.extend(str(name) for name in source_names if name)
+                preferred_names.extend(str(name) for name in source_names if name)
+
+        name_candidates.extend(str(alias) for alias in alias_candidates if alias)
+        canonical_name = select_canonical_name(name_candidates, preferred_names)
         if canonical_name:
+            merged_props["name"] = canonical_name
             from services.entity_resolution.utils.id_builder import build_canonical_id
             canonical_id = build_canonical_id(canonical_name)
         else:

@@ -2,8 +2,67 @@
 
 \section{Bối cảnh và động lực}
 
+Trong bối cảnh các hệ thống AI tạo sinh ngày càng được ứng dụng rộng rãi, Retrieval-Augmented Generation (RAG) đã trở thành một kiến trúc phổ biến nhằm giảm hiện tượng hallucination bằng cách bổ sung tri thức ngoài cho mô hình ngôn ngữ lớn. Tuy nhiên, nhiều nghiên cứu gần đây chỉ ra rằng RAG truyền thống vẫn phụ thuộc mạnh vào semantic retrieval trên các đoạn văn bản rời rạc, nên thường gặp khó khăn với các câu hỏi đòi hỏi multi-hop reasoning, tổng hợp thông tin phân tán, truy vết quan hệ, và suy luận logic có cấu trúc. Các khảo sát về RAG cũng nhấn mạnh rằng dù cải thiện tính factuality, RAG vẫn còn những giới hạn về khả năng reasoning, tính truy vết và độ ổn định của đáp án \cite{arxiv_rag_survey}.
+
+Chính vì vậy, knowledge graph (KG) nổi lên như một lớp biểu diễn tri thức đặc biệt quan trọng cho các hệ thống AI hiện đại. Khác với việc chỉ lưu trữ tri thức dưới dạng văn bản hoặc embedding, knowledge graph biểu diễn dữ liệu bằng thực thể, quan hệ và ràng buộc ngữ nghĩa, từ đó giúp hệ thống không chỉ “tìm thấy thông tin giống nghĩa” mà còn hiểu được cấu trúc của tri thức và hỗ trợ suy luận rõ ràng, có thể kiểm chứng. Nhiều nghiên cứu gần đây cho thấy việc tích hợp knowledge graph vào pipeline của LLM là một hướng đầy hứa hẹn để giảm hallucination, tăng factual accuracy và cải thiện năng lực suy luận nhiều bước \cite{acl_kg_llm}.
+
+Tuy nhiên, vấn đề đặt ra là làm sao để xây dựng một knowledge graph có thể sử dụng được trong thực tế? Knowledge graph có lịch sử phát triển lâu dài, bắt đầu từ các hệ thống biểu diễn tri thức truyền thống. RDF graph là chuẩn graph lâu đời với các tiêu chuẩn, bộ thư viện xây dựng với nhiều logic và quan hệ khắt khe. Trong đó, Ontology đóng vai trò là xương sống cho RDF graph, định nghĩa các khái niệm, thuộc tính và quan hệ trong miền tri thức \cite{ontology_rdf}.
+
+Với sự phát triển của LLM, property graph ngày càng được ứng dụng rộng rãi do tính linh hoạt và khả năng tích hợp với các hệ thống AI hiện đại. Tuy nhiên, việc xây dựng property graph cũng nên tuân theo các quy chuẩn của RDF graph và Ontology để đảm bảo chất lượng và tính nhất quán của tri thức.
+
 \section{Mục tiêu nghiên cứu}
+
+Luận văn này hướng tới việc xây dựng một khung làm việc (framework) để tự động hóa quá trình xây dựng knowledge graph từ dữ liệu phi cấu trúc, cụ thể là các bài viết từ trang web uet.vnu.vn. Khung làm việc này gắn liền chặt chẽ với quy trình xây dựng Ontology, đảm bảo property graph được tạo ra có nền tảng vững chắc.
+
+Theo phương pháp Ontology Development 101 \cite{ontology101}, quy trình xây dựng ontology trải qua 7 bước:
+
+\begin{enumerate}
+    \item Determine the domain and scope of the ontology
+    \item Consider reusing existing ontologies
+    \item Enumerate important terms in the ontology
+    \item Define the classes and the class hierarchy
+    \item Define the properties of classes—slots
+    \item Define the facets of the slots
+    \item Create instances
+\end{enumerate}
+
+Tuy nhiên, cách tiếp cận của luận văn có điều chỉnh để phù hợp với bối cảnh data-driven:
+
+\begin{enumerate}
+    \item Chọn dataset cho mục tiêu nghiên cứu
+    \item Xây dựng tập câu hỏi thường gặp (FAQ) để xác định domain và scope mà dataset có khả năng trả lời
+    \item Consider reusing existing ontologies
+    \item Enumerate important terms in the ontology
+    \item Define the classes and the class hierarchy
+    \item Define the properties of classes—slots
+    \item Define the facets of the slots
+    \item Create instances
+\end{enumerate}
+
+Cách tiếp cận này xuất phát từ dữ liệu thực tế và các nhu cầu truy vấn cụ thể, từ đó xây dựng ontology phù hợp với miền tri thức cần giải quyết.
 
 \section{Đóng góp chính}
 
+Luận văn tập trung vào hai thành phần chính:
+
+\subsection{Knowledge Graph Extraction bằng Prompting}
+
+Thành phần này gắn liền chặt chẽ với quy trình xây dựng Ontology và là tiền đề cho một property graph chất lượng. Sử dụng các mô hình ngôn ngữ lớn (LLM) với kỹ thuật prompting để trích xuất thực thể, quan hệ và thuộc tính từ văn bản phi cấu trúc, đồng thời đảm bảo tuân thủ schema ontology đã định nghĩa.
+
+\subsection{Entity Resolution}
+
+Entity Resolution là một bài toán khó và có rất nhiều nghiên cứu. Sau nhiều lần thử nghiệm, luận văn đưa ra nhận định: \textit{“không có một phương pháp nào hoàn toàn tốt cho tất cả các dữ liệu, chỉ có thử nghiệm và xem xét chi phí, thời gian, tài nguyên hiện tại như thế nào, từ đó chọn các phương pháp phù hợp với chất lượng mong muốn.”}
+
+Luận văn đề xuất một pipeline entity resolution 3 giai đoạn kết hợp embedding, clustering và LLM-based matching để giải quyết bài toán trùng lặp thực thể trong knowledge graph.
+
 \section{Cấu trúc luận văn}
+
+Luận văn được tổ chức thành các chương sau:
+
+\begin{itemize}
+    \item \textbf{Chương 1: Giới thiệu} - Trình bày bối cảnh, động lực, mục tiêu và đóng góp của nghiên cứu.
+    \item \textbf{Chương 2: Cơ sở lý thuyết} - Tổng quan về knowledge graph, ontology, RAG, và các kỹ thuật liên quan.
+    \item \textbf{Chương 3: Phương pháp đề xuất} - Mô tả chi tiết kiến trúc hệ thống và các thuật toán.
+    \item \textbf{Chương 4: Thực nghiệm và đánh giá} - Trình bày kết quả thực nghiệm và phân tích.
+    \item \textbf{Chương 5: Kết luận và hướng phát triển} - Tổng kết và đề xuất hướng nghiên cứu tiếp theo.
+\end{itemize}

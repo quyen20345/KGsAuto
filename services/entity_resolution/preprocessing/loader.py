@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..types import NodeRecord
+from ..utils.canonical_name_selector import select_canonical_name
 
 
 def load_kg_files(input_dir: Path) -> dict[str, dict[str, Any]]:
@@ -61,12 +62,13 @@ def extract_node_records(kg_files: dict[str, dict[str, Any]]) -> list[NodeRecord
                     existing_val = existing.properties.get(key)
 
                     if key == "name":
-                        # Choose longest name
                         old_name = existing_val if isinstance(existing_val, str) else ""
-                        new_name = val if isinstance(val, str) else (val[0] if isinstance(val, list) and val else "")
-
-                        if len(new_name) > len(old_name):
-                            existing.properties["name"] = new_name
+                        new_names = val if isinstance(val, list) else [val]
+                        aliases = existing.properties.get("aliases", [])
+                        alias_candidates = aliases if isinstance(aliases, list) else [aliases]
+                        candidates = [old_name, *new_names, *alias_candidates]
+                        preferred_names = [old_name, *new_names]
+                        existing.properties["name"] = select_canonical_name(candidates, preferred_names)
 
                     elif key == "description":
                         # Merge descriptions into list

@@ -2,263 +2,223 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Project overview
 
-KGsAuto is a Knowledge Graph Automation System that extracts, links, and visualizes knowledge graphs from markdown documents using LLMs and graph databases.
+KGsAuto is a knowledge-graph pipeline for Vietnamese markdown sources:
+1. Extract structured graph data from markdown with LLMs
+2. Resolve duplicate entities and relationships in a 3-stage entity-resolution pipeline
+3. Import the resolved graph into Neo4j and optionally add vector indexes/embeddings
+4. Serve graph/search/query APIs through FastAPI services
+5. Browse, search, merge, and visualize graph data from a React/Vite frontend
 
-**Tech Stack:**
-- Backend: FastAPI + Neo4j (graph database) + Qdrant (vector database)
-- Frontend: React 19 + Vite 8 + React Router
-- LLM Integration: Multi-provider abstraction (9Router, Proxypal/OpenAI-compatible, Google Gemini, Ollama)
-- Python 3.10+
+Primary stack: FastAPI, Neo4j, Qdrant, sentence-transformers, React/Vite.
 
-## Common Development Commands
+When prose docs disagree with code/config, treat the executable code, CLI parsers, package scripts, and compose files as the source of truth. `AGENTS.md` and service READMEs may contain useful context but can lag behind current code.
 
-### Start Infrastructure Services
+## Common commands
+
+Run all commands from repo root unless noted.
+
+### Infrastructure
 ```bash
 docker compose up -d
+docker compose down
 ```
-This starts Ollama (port 11434), Neo4j (ports 7474, 7687), and Qdrant (port 6333).
+Docker Compose is used mainly for local infrastructure such as Neo4j, Qdrant, and Ollama. In normal development, run the FastAPI services and React frontend directly from the repo.
 
-### Backend Development
+### Backend API (main graph API)
 ```bash
-# From repo root
 uvicorn apps.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Access at: http://localhost:8000/docs (Swagger UI)
+Docs: `http://localhost:8000/docs`
 
-### Frontend Development
+### Unified RAG API
 ```bash
+uvicorn apps.rag_api.main:app --host 0.0.0.0 --port 8001 --reload
+```
+Health: `http://localhost:8001/health`  
+Docs: `http://localhost:8001/docs`
+Modes: `semantic_search`, `graph_search`, `naive_grag`, `hybrid`.
+
+### Frontend
+```bash
+cd apps/frontend && npm install
 cd apps/frontend && npm run dev
+cd apps/frontend && npm run build
+cd apps/frontend && npm run lint
+cd apps/frontend && npm run preview
 ```
-Access at: http://localhost:5173
 
-### Run Tests
+### Tests
 ```bash
-# Backend tests
 python -m pytest apps/backend/tests -q
+python -m pytest apps/backend/tests/api -v
+python -m pytest apps/backend/tests/unit -v
 
-# Entity resolution tests (from repo root)
-python -m pytest services/entity_resolution/tests/ -q
+python -m pytest services/entity_resolution/tests -q
+python -m pytest services/extraction/tests -v
+python -m pytest services/rag_system/tests -v
 
-# Run specific test files
-python -m pytest services/entity_resolution/tests/test_llm_cer.py -v
-python -m pytest services/entity_resolution/tests/test_e2e_mock_data.py -v
-
-# Run with verbose output
-python -m pytest services/entity_resolution/tests/ -v
+# single test examples
+python -m pytest services/entity_resolution/tests/test_two_pass_llm_detailed.py -v
+python -m pytest services/entity_resolution/tests/test_stage3_under_merge.py -v
+python -m pytest services/extraction/tests/test_extract.py -v
+python -m pytest services/rag_system/tests/test_flat_architecture.py -v
 ```
 
-### Knowledge Graph Extraction
+### Extraction
 ```bash
-# Extract KG from markdown files
-python3 -m services.extraction.extract
+python -m services.extraction.cli \
+  --input-dir data/raw/uet \
+  --output-dir data/extracted \
+  --provider 9router \
+  --model cx/gpt-5.3-codex
+
+python -m services.extraction.cli --help
+python -m services.extraction.cli --no-skip-existing
 ```
-Reads `*.md` from input directory, uses LLM to extract structured knowledge graphs into JSON files.
 
-**Extraction Process:**
-- Uses `KGExtractorV2` class with configurable LLM provider and model
-- Generates JSON with `nodes` and `relationships` arrays
-- Includes metadata: processing time, node/relation counts, model info, token usage
-- Failed extractions saved to `data/failed_responses/` for debugging
-- Supports retry logic (default: 3 attempts)
-
-### Entity Resolution Pipeline
+### Entity resolution
 ```bash
-# Run full 3-stage pipeline (memory backend - fast, non-persistent)
+# full run with ephemeral memory backend
 python -m services.entity_resolution.cli \
   --stage all \
   --input-dir data/extracted \
   --store-backend memory \
   --run-id demo_run
 
-# Run individual stages (qdrant backend - persistent)
-python -m services.entity_resolution.cli \
-  --stage stage1 \
-  --input-dir data/extracted \
-  --store-backend qdrant \
-  --run-id my_run
-
-python -m services.entity_resolution.cli \
-  --stage stage2 \
-  --store-backend qdrant \
-  --run-id my_run
-
-python -m services.entity_resolution.cli \
-  --stage stage3 \
-  --store-backend qdrant \
-  --run-id my_run
+# staged run with persistent qdrant backend
+python -m services.entity_resolution.cli --stage stage1 --input-dir data/extracted --store-backend qdrant --run-id my_run
+python -m services.entity_resolution.cli --stage stage2 --store-backend qdrant --run-id my_run
+python -m services.entity_resolution.cli --stage stage3 --store-backend qdrant --run-id my_run
 ```
 
-**Key CLI Options:**
-- `--llm-provider`: `9router` (default), `proxypal`, `openai`, `anthropic`
-- `--llm-model`: Model name (default: `cx/gpt-5.3-codex` for 9router, `gpt-5` for proxypal)
-- `--embedding-model`: Sentence transformer model (default: `paraphrase-multilingual-mpnet-base-v2`)
-- `--cluster-threshold`: Cosine similarity threshold for clustering (default: 0.72)
-- `--min-cluster-size`: Minimum entities per cluster (default: 2)
-- `--cmr-threshold`: Merge threshold for canonical entity synthesis (default: 0.80)
-- `--mdg-threshold`: MDG similarity threshold (default: 0.1)
+Current CLI defaults include `--input-dir mock_data`, `--artifacts-dir data/entity_resolution/artifacts`, `--store-backend qdrant`, `--qdrant-url http://localhost:6333`, `--cluster-threshold 0.6`, `--llm-provider 9router`, and `--llm-model cx/gpt-5.3-codex`.
 
-**Important:** When using `--store-backend memory`, you must run `--stage all` in a single command. Memory backend does not persist between separate CLI invocations. Use `qdrant` backend to run stages separately.
-
-### Import Knowledge Graph to Neo4j
+### Neo4j import/index
 ```bash
 python apps/backend/neo4j/scripts/import_to_neo4j.py --dir data/extracted
+python -m apps.backend.neo4j.scripts.add_embeddings_to_neo4j
+python -m apps.backend.neo4j.scripts.create_vector_index
 ```
 
-## Architecture
-
-### Repository Structure
-
-```
-KGsAuto/
-├── apps/                 # Deployable applications
-│   ├── backend/          # FastAPI application
-│   └── frontend/         # React application
-├── services/             # Reusable Python services
-│   ├── extraction/       # KG extraction service
-│   ├── entity_resolution/ # Entity deduplication pipeline
-│   └── llms/             # LLM abstraction layer
-├── data/                 # Data files (extracted, raw, mock)
-├── scripts/              # Utility scripts
-├── .claude/              # Claude Code configuration
-├── CLAUDE.md             # Project documentation
-├── README.md             # Quick start guide
-├── docker-compose.yml    # Infrastructure services
-├── pyproject.toml        # Python project configuration
-└── .env.example          # Environment variables template
+### RAG system CLI
+```bash
+python -m services.rag_system.cli test-connections
+python -m services.rag_system.cli create-collection
+python -m services.rag_system.cli index --limit 100
+python -m services.rag_system.cli query --question "Hiệu trưởng là ai?" --mode semantic_search --top-k 5 --show-evidence
+python -m services.rag_system.cli info
 ```
 
-### Data Flow Pipeline
+## Architecture (big picture)
 
-1. **Extraction** (`services/extraction/`): Markdown → LLM → JSON knowledge graphs
-2. **Entity Resolution** (`services/entity_resolution/`): 3-stage deduplication pipeline
-   - Stage 1: Embedding & vectorization (stores in Qdrant)
-   - Stage 2: Clustering similar entities (HDBSCAN or cosine threshold)
-   - Stage 3: Human-in-the-loop review + canonical entity synthesis
-3. **Import**: Load resolved JSON graphs into Neo4j
-4. **Backend API** (`apps/backend/`): FastAPI service for querying Neo4j
-5. **Frontend UI** (`apps/frontend/`): React app for browsing and visualizing the graph
+### 1) End-to-end data flow
+- `services/extraction`: markdown -> extracted JSON graph fragments.
+- `services/entity_resolution`: deduplicates entities/relations through staged artifacts and rewrites graph data before import.
+- `apps/backend/neo4j/scripts/import_to_neo4j.py`: writes graph JSON into Neo4j.
+- Runtime consumers:
+  - `apps/backend`: main graph CRUD/search/query API.
+  - `services/rag_system` + `apps/rag_api`: unified retrieval-augmented QA over markdown and/or graph data.
+  - `apps/frontend`: UI for home/search/entity/merge workflows.
 
-### Backend Structure (`apps/backend/`)
+### 2) Local runtime shape
+- Core local infrastructure is typically started with Docker Compose: Neo4j, Qdrant, and Ollama.
+- Run FastAPI services and the React frontend directly with the commands above during development.
+- Graph-backed runtime modes require Neo4j data to be imported first.
 
-FastAPI application with modular routers:
-- `routers/health.py` - Health check endpoint
-- `routers/entity.py` - Entity search and detail (`/api/search`, `/api/entity/{id}`)
-- `routers/graph.py` - Graph queries, random triplets, visualization, metadata
+### 3) Backend and frontend surface area
+- Backend main graph API entrypoint: `apps.backend.app.main:app`.
+- Frontend routes currently include `/`, `/search`, `/search/:query`, `/entity/:id`, and `/merge`.
+- Frontend API configuration uses `VITE_API_BASE_URL` when provided and otherwise falls back to `http://localhost:8000`.
 
-**Database Integration:**
-- Neo4j: Singleton driver pattern in `app/db/neo4j.py`, lazy initialization
-- Qdrant: Used by entity linking services for semantic similarity search
+### 4) Two merge paths (important)
+- **Online merge**: `POST /api/entity/merge` in backend; rewires the live Neo4j graph.
+- **Offline merge**: entity-resolution stage3 rewrites JSON graph artifacts before import.
 
-**Key Design Patterns:**
-- Service layer pattern (business logic separated from routers)
-- Dependency injection for testability
-- Pydantic schemas for request/response validation
+Use online merge for production corrections; use offline merge for pipeline processing.
 
-### Frontend Structure (`apps/frontend/`)
+### 5) Entity resolution staging model
+- Stage 1: build embeddings and store vectors.
+- Stage 2: blocking and clustering (recall-oriented).
+- Stage 3: LLM-based split/merge validation and graph rewiring (precision-oriented).
+- Stages communicate through persisted artifacts, not shared in-memory state.
+- `--store-backend memory` is ephemeral; run `--stage all` in one command when using it.
 
-React SPA with client-side routing:
-- `pages/Home.jsx` - Displays random triplets from the graph
-- `pages/Search.jsx` - Entity search results
-- `pages/Entity.jsx` - Entity detail view with properties and relationships
-- `services/api.js` - Backend API client (reads `VITE_API_BASE_URL` from env)
+### 6) RAG system structure
+`services/rag_system` is domain-split:
+- `core/`
+  - `unified_pipeline.py`: mode orchestration (`semantic_search`, `graph_search`, `naive_grag`, `hybrid`)
+  - `pipeline.py`: compatibility alias for `UnifiedRetrievalPipeline`
+  - `generator.py`: prompt construction and answer synthesis
+- `retrieval/`
+  - `chunking.py`, `indexing.py`, `markdown.py`, `graph.py`, `hybrid.py`
+- `storage/`
+  - `document.py`: Qdrant chunk storage/search
+  - `graph.py`: Neo4j graph lookup
+- `graph_search/`
+  - `pipeline.py`: Neo4j-only `naive_grag` and multi-step `graph_search` reasoning
+  - `deepsearch/`: query decomposition, evidence verification, and query expansion components
+  - `neo4j_adapter.py`: GraphSearch context adapter for the imported Neo4j graph
+- `evaluation/metrics.py`: benchmark dataclasses and evaluator
+- `config.py`, `schemas.py`, `cli.py`: config/types/operational CLI
 
-**Environment Configuration:**
-- `.env.development` sets `VITE_API_BASE_URL=http://localhost:8000`
-- Vite automatically loads `VITE_*` prefixed variables
+`apps/rag_api/main.py` is a thin FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` and `hybrid` need Qdrant markdown indexing.
 
-### Entity Resolution (`services/entity_resolution/`)
+### 7) Shared infrastructure patterns
+- LLM access goes through `services.llms.get_llm(...)` provider abstraction.
+- Neo4j driver is centralized in `apps/backend/app/db/neo4j.py` and reused by backend, RAG graph storage, and GraphSearch reasoning.
+- Qdrant is used in two separate contexts:
+  - entity resolution vector backend
+  - RAG markdown retrieval store
 
-3-stage pipeline for entity deduplication:
+## Environment/config notes
 
-**Stage 1 - Embedding Pipeline:**
-- Loads JSON graph files, normalizes node properties
-- Creates `embedding_text` representation for each entity
-- Generates vectors (semantic embeddings or hash-based)
-- Stores in Qdrant or memory backend
+Key env settings are loaded via `.env` (see `.env.example`):
+- `ROUTER9_API_KEY`, `ROUTER9_BASE_URL`, `ROUTER9_MODEL`
+- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`
+- optional provider keys such as `PROXYPAL_KEY`, `GOOGLE_API_KEY`
 
-**Stage 2 - Clustering Pipeline:**
-- Fetches vectors from storage
-- Clusters by `primary_type` using HDBSCAN or cosine threshold
-- Outputs cluster assignments and HTML dashboard for visualization
-- Dashboard saved to `artifacts/<run_id>/stage2/cluster_dashboard.html`
+Operational constraints:
+- Backend and graph-backed RAG modes require Neo4j to be running and populated.
+- RAG markdown retrieval requires Qdrant collection setup/indexing.
+- `apps/rag_api` uses the same Neo4j env vars as the main backend.
 
-**Stage 3 - Resolution Pipeline (LLM-CER):**
-- Uses LLM-based Collective Entity Resolution with three algorithms:
-  - **NRS (Near-optimal Record Selection)**: Selects optimal record sets for LLM processing
-  - **MDG (Merge Decision Generation)**: LLM generates merge decisions with validation
-  - **CMR (Canonical Merged Record)**: Synthesizes canonical entities from clusters
-- Outputs `id_remap.json` and rewrites graph files with merged entities
-- Artifacts saved to `data/entity_resolution/artifacts/<run_id>/stage3/`
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
 
-### LLM Integration (`services/llms/`)
+**IMPORTANT: This project has a knowledge graph. ALWAYS use the
+code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
+the codebase.** The graph is faster, cheaper (fewer tokens), and gives
+you structural context (callers, dependents, test coverage) that file
+scanning cannot.
 
-Multi-provider abstraction layer with factory pattern:
-- `get_llm(provider, **kwargs)` returns unified `BaseLLM` interface
-- Supported providers: `proxypal`, `9router`, `gemini`, `ollama`
-- All providers return response with `.content`, `.model`, `.usage_tokens`
-- Registry-based client loading via `@register_llm` decorator
+### When to use graph tools FIRST
 
-**Provider Details:**
-- `proxypal`: OpenAI-compatible proxy (default base URL: `http://localhost:8317/v1`)
-- `9router`: Router9 client for model routing
-- `gemini`: Google Gemini API
-- `ollama`: Local Ollama instance
+- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
+- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
+- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
+- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
+- **Architecture questions**: `get_architecture_overview` + `list_communities`
 
-Used in:
-- Extraction pipeline (converts markdown to structured KG)
-- Entity resolution stage 3 (LLM-CER: MDG and CMR algorithms)
+Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 
-## Key Configuration Files
+### Key Tools
 
-- `.env` - LLM API keys, Neo4j credentials, Qdrant settings, model configuration
-  - `PROXYPAL_KEY` and `PROXYPAL_BASE_URL` for Proxypal provider
-  - `GOOGLE_API_KEY` for Gemini provider
-  - `MODEL_LINK` and `PROVIDER_LINK` for entity resolution
-  - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` for Neo4j connection
-  - `COLLECTION_NAME` for Qdrant collection
-- `docker-compose.yaml` - Infrastructure services (Ollama, Neo4j, Qdrant)
-- `pyproject.toml` - Python project configuration and dependencies
-- `apps/backend/requirements.txt` - Backend-specific dependencies
-- `apps/frontend/package.json` - Frontend dependencies and scripts
+| Tool | Use when |
+|------|----------|
+| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
+| `get_review_context` | Need source snippets for review — token-efficient |
+| `get_impact_radius` | Understanding blast radius of a change |
+| `get_affected_flows` | Finding which execution paths are impacted |
+| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
+| `semantic_search_nodes` | Finding functions/classes by name or keyword |
+| `get_architecture_overview` | Understanding high-level codebase structure |
+| `refactor_tool` | Planning renames, finding dead code |
 
-## Service Access Points
+### Workflow
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000/docs
-- Neo4j Browser: http://localhost:7474 (neo4j / 12345678)
-- Qdrant Dashboard: http://localhost:6333/dashboard
-- Ollama: http://localhost:11434
-
-## Important Notes
-
-**Running from Repo Root:**
-- Always run backend and entity resolution commands from the repository root
-- Use: `uvicorn apps.backend.app.main:app ...` not `cd apps/backend && uvicorn app.main:app ...`
-
-**Entity Resolution Storage Backends:**
-- `memory`: Fast for testing, but data lost between CLI invocations. Use `--stage all` in one command.
-- `qdrant`: Persistent storage, allows running stages separately across multiple CLI invocations.
-
-**Entity Resolution Output:**
-- Stage 1: Vectors stored in Qdrant collection or memory
-- Stage 2: Cluster assignments in `artifacts/<run_id>/stage2/clusters.json` and HTML dashboard
-- Stage 3: `id_remap.json` (entity ID mappings) and rewritten graph files in `artifacts/<run_id>/stage3/output/`
-
-**LLM-CER Algorithm Parameters:**
-- `llm_set_size`: Optimal record set size for NRS (default: 9)
-- `mdg_similarity_threshold`: Threshold for MDG validation (default: 0.15)
-- `cmr_merge_threshold`: Similarity threshold for CMR merging (default: 0.80)
-- `conservative_merge_threshold`: High threshold for conservative fallback (default: 0.88)
-
-**Neo4j Import:**
-- Import script uses MERGE on node `id` (unique constraint)
-- Labels are sanitized (removes special characters, prefixes digits with `L_`)
-- All nodes get `:KgNode` base label plus their specific labels
-- Relationships use sanitized type names
-
-**Frontend Build:**
-- `npm run build` creates production build in `dist/`
-- `npm run preview` previews production build locally
-- Docker uses multi-stage build: Node 22 Alpine (build) → Nginx Alpine (serve)
+1. The graph auto-updates on file changes (via hooks).
+2. Use `detect_changes` for code review.
+3. Use `get_affected_flows` to understand impact.
+4. Use `query_graph` pattern="tests_for" to check coverage.

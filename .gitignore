@@ -1,89 +1,182 @@
 # ==============================================================================
-# 1. DOCUMENTATION & AI AGENT CONFIG (The "AGENTS.md" fix)
+# 1. DOCUMENTATION & AI AGENTS
 # ==============================================================================
+
 *.md
-!AGENTS.md
-!AGENTS.md
 !README.md
+!AGENTS.md
 !CLAUDE.md
 !docs/
+data/
+*tests/
+thesis/
 *.txt
-debug_split.py
-test_prompt_comparison.py
-test_proxypal_direct.py
-test_source_validation.py
-*.zip
-
-# AI Tools context
+*/lib
+# AI tooling
 .continue/
 .claude/
-.codex
+.codex/
+
 
 # ==============================================================================
-# 2. ENVIRONMENTS & SECRETS
+# 2. ENVIRONMENT & SECRETS
 # ==============================================================================
+
 .env
 .env.*
 !.env.example
+
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
+py312/
+
 .python-version
 
 # ==============================================================================
-# 3. PYTHON / BACKEND (FastAPI & ER Pipeline)
+# 3. PYTHON / BACKEND
 # ==============================================================================
+
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Build artifacts
+build/
+dist/
+develop-eggs/
+eggs/
+.eggs/
+wheels/
+*.egg-info/
+pip-wheel-metadata/
+share/python-wheels/
+
+# Testing / coverage
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
+.nox/
 
-# Ignore legacy backend tests if they are stale
-# backend/tests  # Uncomment nếu bạn muốn bỏ qua hoàn toàn suite cũ
-
-# ER Artifacts (Tránh đẩy hàng GB cluster/HDBSCAN data lên Git)
-legacy/ 
-services/entity_resolution/artifacts/
-**/stage1/
-**/stage2/
-**/stage3/
+# Static typing
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # ==============================================================================
 # 4. FRONTEND (React)
 # ==============================================================================
+
 apps/frontend/node_modules/
 apps/frontend/dist/
 apps/frontend/build/
 .eslintcache
 
 # ==============================================================================
-# 5. DATA & INFRASTRUCTURE (Neo4j, Qdrant, UET Data)
+# 5. DATA PIPELINE
 # ==============================================================================
-data/*
-!data/agents/  # Giữ lại folder này để user thêm agent thủ công
-uet_*
-*.log
-logs/
-*.tmp
 
-# Docker & Databases
-*.pid
-.docker/
+data/raw/*
+data/extracted/*
+data/failed_responses/*
+data/entity_resolution/artifacts/
+
+# Keep directory structure
+!data/raw/.gitkeep
+!data/extracted/.gitkeep
+
+# UET specific data dumps
+uet_*
+
+# ==============================================================================
+# 6. ENTITY RESOLUTION ARTIFACTS
+# ==============================================================================
+
+legacy/
+services/entity_resolution/artifacts/
+
+**/stage1/
+**/stage2/
+**/stage3/
+
+# ==============================================================================
+# 7. DATABASES & INFRASTRUCTURE
+# ==============================================================================
+
+# Neo4j
 neo4j/data/
 neo4j/logs/
+
+# Qdrant
 qdrant/storage/
+qdrant_storage/
+
+# Docker
+.docker/
+*.pid
 
 # ==============================================================================
-# 6. IDE & OS
+# 8. LOGS
 # ==============================================================================
+
+*.log
+logs/
+extraction_*.log
+extraction_summary_*.json
+
+# ==============================================================================
+# 9. IDE / EDITOR
+# ==============================================================================
+
 .vscode/
-!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
-.DS_Store
+*~
+
+# ==============================================================================
+# 10. NOTEBOOKS
+# ==============================================================================
+
+.ipynb_checkpoints/
+*.ipynb
+
+# ==============================================================================
+# 11. THESIS (LATEX)
+# ==============================================================================
+
+thesis/*.aux
+thesis/*.bbl
+thesis/*.blg
+thesis/*.log
+thesis/*.out
+thesis/*.toc
+thesis/*.lof
+thesis/*.lot
+thesis/*.fdb_latexmk
+thesis/*.fls
+thesis/*.synctex.gz
+thesis/main.pdf
+thesis/logs/
+
+# ==============================================================================
+# 12. TEMP / CACHE
+# ==============================================================================
+
+*.tmp
+*.temp
+.cache/
+
+# ==============================================================================
+# 13. OS FILES
+# ==============================================================================
+
 Thumbs.db
+.DS_Store
+# Added by code-review-graph
+.code-review-graph/
