@@ -14,6 +14,8 @@ class MarkdownChunker:
         self.config = config
         self.max_chunk_size = config.max_chunk_size
         self.chunk_overlap = config.chunk_overlap
+        if self.chunk_overlap >= self.max_chunk_size:
+            raise ValueError("chunk_overlap must be smaller than max_chunk_size")
 
     def chunk_file(self, md_path: Path) -> List[Chunk]:
         with open(md_path, 'r', encoding='utf-8') as f:

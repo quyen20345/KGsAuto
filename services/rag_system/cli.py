@@ -139,6 +139,7 @@ def query(question, mode, top_k, show_evidence):
             markdown_chunks = evidence.get("markdown_chunks") or []
             graph_facts = evidence.get("graph_facts") or []
             graph_context = evidence.get("graph_context")
+            graph_reasoning = evidence.get("graph_reasoning")
             click.echo("Retrieved Evidence:")
             if markdown_chunks:
                 click.echo(f"  {len(markdown_chunks)} markdown chunks")
@@ -163,6 +164,12 @@ def query(question, mode, top_k, show_evidence):
                     click.echo(f"      Fact: {_preview_text(fact, 'fact_text', 'description', 'text')}")
             if graph_context:
                 click.echo("  GraphSearch context available")
+            if graph_reasoning:
+                text_queries = graph_reasoning.get("text_queries") or []
+                kg_queries = graph_reasoning.get("kg_queries") or []
+                click.echo(
+                    f"  GraphSearch reasoning available: {len(text_queries)} text queries, {len(kg_queries)} KG queries"
+                )
 
     except Exception as e:
         click.echo(f"✗ Query failed: {e}")
@@ -171,138 +178,39 @@ def query(question, mode, top_k, show_evidence):
 
 @cli.group()
 def evaluate():
-    """Generate and score RAGAS evaluation data"""
+    """Run simple RAG evaluation datasets."""
     pass
 
 
-@evaluate.command("generate-dataset")
-@click.option("--input-dir", type=click.Path(path_type=Path), default=Path("data/raw/uet"))
-@click.option("--output", type=click.Path(path_type=Path), default=Path("data/evaluation/uet_ragas_dataset.jsonl"))
-@click.option("--max-questions", default=120, type=int)
-@click.option("--min-context-chars", default=80, type=int)
-@click.option("--single-hop", default=70, type=int)
-@click.option("--long-document", default=25, type=int)
-@click.option("--multi-hop", default=15, type=int)
-@click.option("--unanswerable", default=10, type=int)
-def evaluate_generate_dataset(input_dir, output, max_questions, min_context_chars, single_hop, long_document, multi_hop, unanswerable):
-    """Generate a JSONL evaluation dataset from markdown files"""
-    from services.rag_system.evaluation.ragas_eval import (
-        DatasetGenerationConfig,
-        QuestionTypeTargets,
-        generate_dataset_from_markdown,
-    )
-
-    samples = generate_dataset_from_markdown(
-        DatasetGenerationConfig(
-            input_dir=input_dir,
-            output=output,
-            max_questions=max_questions,
-            min_context_chars=min_context_chars,
-            targets=QuestionTypeTargets(single_hop, long_document, multi_hop, unanswerable),
-        )
-    )
-    click.echo(f"Wrote {len(samples)} samples to {output}")
-
-
-@evaluate.command("generate-pilot")
-@click.option("--input-dir", type=click.Path(path_type=Path), default=Path("data/raw/uet"))
-@click.option("--output", type=click.Path(path_type=Path), default=Path("data/evaluation/uet_v1_pilot.jsonl"))
-@click.option("--max-questions", default=40, type=int)
-@click.option("--min-context-chars", default=80, type=int)
-@click.option("--single-hop", default=12, type=int)
-@click.option("--relationship", default=12, type=int)
-@click.option("--multi-hop", default=10, type=int)
-@click.option("--unanswerable", default=6, type=int)
-def evaluate_generate_pilot(input_dir, output, max_questions, min_context_chars, single_hop, relationship, multi_hop, unanswerable):
-    """Generate the V1 manual-comparison pilot dataset"""
-    from services.rag_system.evaluation.ragas_eval import (
-        PilotDatasetGenerationConfig,
-        PilotQuestionTypeTargets,
-        generate_pilot_dataset_from_markdown,
-    )
-
-    samples = generate_pilot_dataset_from_markdown(
-        PilotDatasetGenerationConfig(
-            input_dir=input_dir,
-            output=output,
-            max_questions=max_questions,
-            min_context_chars=min_context_chars,
-            targets=PilotQuestionTypeTargets(single_hop, relationship, multi_hop, unanswerable),
-        )
-    )
-    click.echo(f"Wrote {len(samples)} pilot samples to {output}")
-
-
 @evaluate.command("run")
-@click.option("--dataset", type=click.Path(path_type=Path), required=True)
-@click.option("--output", type=click.Path(path_type=Path), required=True)
+@click.option(
+    "--dataset",
+    type=click.Path(path_type=Path),
+    default=Path("services/rag_system/evaluation/mock_questions.jsonl"),
+    help="Input JSONL evaluation dataset",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    default=Path("data/evaluation/rag_eval_results.jsonl"),
+    help="Output JSONL path; CSV is written next to it",
+)
 @click.option(
     "--mode",
     type=click.Choice(["semantic_search", "graph_search", "naive_grag", "hybrid"]),
     default="semantic_search",
 )
-@click.option("--top-k", default=5, type=int)
+@click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
 def evaluate_run(dataset, output, mode, top_k):
-    """Run the unified retrieval pipeline over an evaluation dataset"""
-    from services.rag_system.evaluation.ragas_eval import (
-        iter_jsonl,
-        run_unified_pipeline,
-        samples_from_rows,
-        write_jsonl,
-    )
+    """Run one RAG mode over a JSONL question set."""
+    from services.rag_system.evaluation.runner import run_dataset
 
-    samples = samples_from_rows(iter_jsonl(dataset))
-    results = run_unified_pipeline(samples, mode=mode, top_k=top_k)
-    write_jsonl(output, results)
+    click.echo(f"Dataset: {dataset}")
+    click.echo(f"Mode: {mode}")
+    click.echo(f"Output: {output}")
+    results = run_dataset(dataset, output, mode=mode, top_k=top_k)
     click.echo(f"Wrote {len(results)} results to {output}")
-
-
-@evaluate.command("run-comparison")
-@click.option("--dataset", type=click.Path(path_type=Path), required=True)
-@click.option("--output-dir", type=click.Path(path_type=Path), default=Path("data/evaluation/v1_comparison"))
-@click.option("--backend", default="neo4j")
-@click.option("--top-k", default=5, type=int)
-def evaluate_run_comparison(dataset, output_dir, backend, top_k):
-    """Run semantic_search, graph_search, naive_grag, and hybrid over the same dataset"""
-    from services.rag_system.evaluation.ragas_eval import (
-        iter_jsonl,
-        run_v1_comparison,
-        samples_from_rows,
-        write_jsonl,
-        write_manual_scoring_csv,
-    )
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    samples = samples_from_rows(iter_jsonl(dataset))
-    results_by_mode = run_v1_comparison(samples, top_k=top_k, backend=backend)
-
-    for mode, results in results_by_mode.items():
-        write_jsonl(output_dir / f"{mode}.jsonl", results)
-
-    manual_csv = output_dir / "manual_scoring.csv"
-    write_manual_scoring_csv(manual_csv, samples, results_by_mode)
-    click.echo(f"Wrote comparison results to {output_dir}")
-    click.echo(f"Wrote manual scoring CSV to {manual_csv}")
-
-
-@evaluate.command("score")
-@click.option("--dataset", type=click.Path(path_type=Path), required=True)
-@click.option("--results", type=click.Path(path_type=Path), required=True)
-@click.option("--output", type=click.Path(path_type=Path), default=Path("data/evaluation/ragas_scores.csv"))
-def evaluate_score(dataset, results, output):
-    """Score pipeline results with RAGAS"""
-    from services.rag_system.evaluation.ragas_eval import (
-        build_ragas_rows,
-        iter_jsonl,
-        samples_from_rows,
-        score_with_ragas,
-        write_scores_csv,
-    )
-
-    rows = build_ragas_rows(samples_from_rows(iter_jsonl(dataset)), list(iter_jsonl(results)))
-    scores = score_with_ragas(rows)
-    write_scores_csv(output, scores)
-    click.echo(f"Wrote RAGAS scores to {output}")
+    click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
 
 
 @cli.command()
