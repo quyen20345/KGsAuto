@@ -25,9 +25,6 @@ _LAZY_EXPORTS = {
     "GraphRetriever": ("services.rag_system.retrieval.graph", "GraphRetriever"),
     "HybridRetriever": ("services.rag_system.retrieval.hybrid", "HybridRetriever"),
     "AnswerSynthesizer": ("services.rag_system.components.synthesis", "AnswerSynthesizer"),
-    "EvaluationMetrics": ("services.rag_system.evaluation.metrics", "EvaluationMetrics"),
-    "BenchmarkResults": ("services.rag_system.evaluation.metrics", "BenchmarkResults"),
-    "RAGEvaluator": ("services.rag_system.evaluation.metrics", "RAGEvaluator"),
 }
 
 __all__ = [
@@ -48,9 +45,6 @@ __all__ = [
     "GraphRetriever",
     "HybridRetriever",
     "AnswerSynthesizer",
-    "EvaluationMetrics",
-    "BenchmarkResults",
-    "RAGEvaluator",
 ]
 
 

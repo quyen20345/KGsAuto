@@ -7,7 +7,7 @@
 - markdown chunks stored in Qdrant
 - entity and relationship data stored in Neo4j
 
-The package exists to let the application answer the same user question through different retrieval strategies without changing the caller. The main entrypoint is `services/rag_system/core/unified_pipeline.py`.
+The package exists to let the application answer the same user question through different retrieval strategies without changing the caller. The main entrypoint is `services/rag_system/core/unified_pipeline.py`, which dispatches to user-facing mode implementations in `services/rag_system/modes/`.
 
 ```mermaid
 flowchart TB
@@ -41,7 +41,7 @@ flowchart TB
 - `semantic_search`: retrieve markdown chunks from Qdrant, then synthesize one answer from text evidence only.
 - `graph_search`: run a multi-step Neo4j-only reasoning workflow with decomposition, verification, and optional query expansion.
 - `naive_grag`: run a simpler Neo4j-only path that fetches graph context once and answers from it directly.
-- `hybrid`: retrieve markdown and graph evidence in parallel, fuse both lists, then synthesize one answer.
+- `hybrid`: retrieve markdown chunks and run deep `graph_search` in parallel, then synthesize one answer from semantic and GraphSearch evidence.
 
 ## Package structure
 
@@ -54,14 +54,20 @@ services/rag_system/
   core/
     unified_pipeline.py          # main orchestration entrypoint
     pipeline.py                  # compatibility alias
+  modes/
+    semantic_search.py           # Qdrant markdown mode
+    hybrid.py                    # semantic markdown + deep graph_search mode
+    graph_search.py              # multi-step graph reasoning mode
+    naive_grag.py                # one-pass graph context mode
+    common.py                    # shared response/evidence helpers
   components/
-    synthesis.py                 # LLM answer synthesis for semantic/graph/hybrid
+    synthesis.py                 # LLM answer synthesis for semantic/hybrid
     llm/components.py            # async GraphSearch helper calls
     prompts/prompts.py           # GraphSearch prompts
   retrieval/
     markdown.py                  # Qdrant markdown retrieval
     graph.py                     # simple Neo4j fact retrieval
-    hybrid.py                    # parallel markdown + graph retrieval and fusion
+    hybrid.py                    # legacy weighted markdown + basic graph retrieval helper
     indexing.py                  # markdown indexing into Qdrant
     chunking.py                  # markdown chunking strategies
     adapters/
@@ -75,8 +81,8 @@ services/rag_system/
       parsing.py                 # decomposition/expansion parsing helpers
       utils.py                   # normalization and formatting helpers
   evaluation/
-    ragas_eval.py                # dataset generation and comparison runners
-    metrics.py                   # benchmark dataclasses/metrics
+    runner.py                    # simple JSONL/CSV evaluation runner
+    mock_questions.jsonl         # small mock question set
   tests/
     test_unified_pipeline.py
     test_graph_search_neo4j_adapter.py
@@ -101,8 +107,9 @@ The codebase intentionally keeps two Neo4j-only paths:
 
 ### 3. Two answer-generation styles
 
-- `semantic_search` and `hybrid` use `components/synthesis.py` and return citation-bearing answers extracted from prompt output.
-- `graph_search` and `naive_grag` generate answers inside `workflows/deep_graph_search/pipeline.py` through async workflow components.
+- `semantic_search` uses `components/synthesis.py` over markdown evidence only.
+- `hybrid` uses `components/synthesis.py` over markdown evidence plus deep GraphSearch context/reasoning.
+- `graph_search` and `naive_grag` generate graph-backed answers inside `workflows/deep_graph_search/pipeline.py` through async workflow components.
 
 ## Architecture
 
@@ -117,6 +124,7 @@ flowchart LR
 
     subgraph Core
         U[core/unified_pipeline.py]
+        M[modes/*.py]
         S[components/synthesis.py]
     end
 
@@ -140,11 +148,10 @@ flowchart LR
     CLI --> U
     API --> U
 
-    U --> MR
-    U --> GR
-    U --> HR
-    U --> S
-    U --> WG
+    U --> M
+    M --> MR
+    M --> S
+    M --> WG
 
     MR --> DS
     GR --> GS
@@ -202,10 +209,11 @@ sequenceDiagram
 ```
 
 Relevant files:
-- `services/rag_system/core/unified_pipeline.py:163`
-- `services/rag_system/retrieval/markdown.py:7`
-- `services/rag_system/storage/document.py:11`
-- `services/rag_system/components/synthesis.py:127`
+- `services/rag_system/modes/semantic_search.py`
+- `services/rag_system/core/unified_pipeline.py`
+- `services/rag_system/retrieval/markdown.py`
+- `services/rag_system/storage/document.py`
+- `services/rag_system/components/synthesis.py`
 
 ### `naive_grag`
 
@@ -236,9 +244,10 @@ sequenceDiagram
 ```
 
 Relevant files:
-- `services/rag_system/core/unified_pipeline.py:217`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py:69`
-- `services/rag_system/retrieval/adapters/neo4j_adapter.py:105`
+- `services/rag_system/modes/naive_grag.py`
+- `services/rag_system/core/unified_pipeline.py`
+- `services/rag_system/workflows/deep_graph_search/pipeline.py`
+- `services/rag_system/retrieval/adapters/neo4j_adapter.py`
 
 ### `graph_search`
 
@@ -278,46 +287,50 @@ flowchart TB
 ```
 
 Relevant files:
-- `services/rag_system/core/unified_pipeline.py:186`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py:90`
+- `services/rag_system/modes/graph_search.py`
+- `services/rag_system/core/unified_pipeline.py`
+- `services/rag_system/workflows/deep_graph_search/pipeline.py`
 - `services/rag_system/workflows/deep_graph_search/parsing.py`
 - `services/rag_system/components/llm/components.py`
 
 ### `hybrid`
 
-`hybrid` runs markdown retrieval and graph retrieval concurrently in a `ThreadPoolExecutor`, deduplicates both result sets, ranks merged items, and then synthesizes one answer across both evidence types.
+`hybrid` runs markdown retrieval and deep `graph_search` concurrently, then synthesizes one answer from markdown chunks plus GraphSearch context/reasoning. Public `hybrid` no longer uses the legacy `HybridRetriever`/`GraphRetriever` weighted fusion path.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant Caller
     participant Pipeline as UnifiedRetrievalPipeline
-    participant Hybrid as HybridRetriever
+    participant Hybrid as modes/hybrid.py
     participant Markdown as MarkdownRetriever
-    participant Graph as GraphRetriever
+    participant Workflow as graph_search_reasoning
+    participant Adapter as Neo4jAdapter
     participant Synth as AnswerSynthesizer
 
     Caller->>Pipeline: query(question, mode=hybrid)
-    Pipeline->>Hybrid: retrieve(question, top_k_markdown, top_k_graph)
-    par Parallel retrieval
-        Hybrid->>Markdown: retrieve(question)
+    Pipeline->>Hybrid: run_hybrid/arun_hybrid(question)
+    par Parallel evidence gathering
+        Hybrid->>Markdown: retrieve(question, top_k_markdown)
         and
-        Hybrid->>Graph: retrieve(question)
+        Hybrid->>Workflow: graph_search_reasoning(question, adapter)
+        Workflow->>Adapter: aquery_context/question reasoning
     end
     Markdown-->>Hybrid: markdown chunks
-    Graph-->>Hybrid: graph facts
-    Hybrid->>Hybrid: deduplicate + rank merged items
-    Hybrid-->>Pipeline: markdown_chunks + graph_facts + merged_context
-    Pipeline->>Synth: synthesize_hybrid(question, markdown_chunks, graph_facts)
-    Synth-->>Pipeline: answer + citations
-    Pipeline-->>Caller: response with both evidence lists
+    Workflow-->>Hybrid: graph answer + context + reasoning steps
+    Hybrid->>Synth: synthesize_hybrid_graphsearch(...)
+    Synth-->>Hybrid: final answer + citations
+    Hybrid-->>Pipeline: response with markdown_chunks, graph_context, graph_reasoning
+    Pipeline-->>Caller: hybrid response
 ```
 
 Relevant files:
-- `services/rag_system/core/unified_pipeline.py:247`
-- `services/rag_system/retrieval/hybrid.py:21`
-- `services/rag_system/retrieval/graph.py:7`
-- `services/rag_system/components/synthesis.py:188`
+- `services/rag_system/modes/hybrid.py`
+- `services/rag_system/modes/graph_search.py`
+- `services/rag_system/core/unified_pipeline.py`
+- `services/rag_system/retrieval/adapters/neo4j_adapter.py`
+- `services/rag_system/workflows/deep_graph_search/pipeline.py`
+- `services/rag_system/components/synthesis.py`
 
 ## Data flow for markdown indexing
 

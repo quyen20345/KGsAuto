@@ -1,6 +1,7 @@
 """Answer generation using LLM"""
 
 import re
+from pprint import pformat
 from typing import List, Dict, Any
 
 from services.llms import get_llm
@@ -186,6 +187,21 @@ Trả lời:"""
             user_prompt=user_prompt,
         )
 
+    def _format_markdown_evidence(self, markdown_chunks: List[Dict[str, Any]]) -> str:
+        markdown_parts = []
+        for i, chunk in enumerate(markdown_chunks, 1):
+            markdown_parts.append(
+                f"""[M{i}] Tài liệu: {chunk.get('chunk_id', 'unknown')}
+Tiêu đề: {chunk.get('title', '')}
+Phần: {chunk.get('section', '')}
+Độ liên quan: {_score(chunk.get('score')):.3f}
+
+Nội dung:
+{chunk.get('text', '')}
+"""
+            )
+        return chr(10).join(markdown_parts) if markdown_parts else "Không có markdown evidence."
+
     def synthesize_hybrid(
         self,
         question: str,
@@ -203,19 +219,6 @@ Quy tắc bổ sung:
 5. Nếu cả hai nguồn không đủ thông tin, nói rõ thiếu thông tin gì
 """ + CITATION_INSTRUCTIONS
 
-        markdown_parts = []
-        for i, chunk in enumerate(markdown_chunks, 1):
-            markdown_parts.append(
-                f"""[M{i}] Tài liệu: {chunk.get('chunk_id', 'unknown')}
-Tiêu đề: {chunk.get('title', '')}
-Phần: {chunk.get('section', '')}
-Độ liên quan: {_score(chunk.get('score')):.3f}
-
-Nội dung:
-{chunk.get('text', '')}
-"""
-            )
-
         graph_parts = []
         for i, fact in enumerate(graph_facts, 1):
             graph_parts.append(
@@ -230,7 +233,7 @@ Fact:
 
         user_prompt = f"""Semantic evidence từ markdown:
 {"=" * 60}
-{chr(10).join(markdown_parts) if markdown_parts else "Không có markdown evidence."}
+{self._format_markdown_evidence(markdown_chunks)}
 
 Graph evidence từ knowledge graph:
 {"=" * 60}
@@ -250,6 +253,63 @@ Trả lời:"""
         return self.synthesize(
             question=question,
             evidence=[*markdown_chunks, *graph_facts],
+            mode="hybrid",
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+
+    def synthesize_hybrid_graphsearch(
+        self,
+        question: str,
+        markdown_chunks: List[Dict[str, Any]],
+        graph_context: Dict[str, Any] | None,
+        graph_answer: str,
+        graph_reasoning: Dict[str, Any] | None = None,
+    ) -> Answer:
+        system_prompt = BASE_SYSTEM_PROMPT + """
+Chế độ: Hybrid (kết hợp semantic search trên markdown và deep graph_search trên knowledge graph)
+
+Quy tắc bổ sung:
+1. CHỈ sử dụng thông tin từ markdown evidence và graph_search evidence được cung cấp bên dưới
+2. Phân biệt rõ nguồn từ tài liệu markdown và nguồn từ knowledge graph khi lập luận
+3. Nếu hai nguồn mâu thuẫn, nêu rõ mâu thuẫn và ưu tiên trả lời có điều kiện thay vì suy đoán
+4. Trích dẫn markdown bằng [chunk_id] khi có thể
+5. Không bịa citation cho graph_search nếu graph evidence không có citation trực tiếp
+6. Nếu cả hai nguồn không đủ thông tin, nói rõ thiếu thông tin gì
+""" + CITATION_INSTRUCTIONS
+
+        user_prompt = f"""Semantic evidence từ markdown:
+{"=" * 60}
+{self._format_markdown_evidence(markdown_chunks)}
+
+Deep graph_search answer:
+{"=" * 60}
+{graph_answer or "Không có câu trả lời từ graph_search."}
+
+Deep graph_search evidence/context:
+{"=" * 60}
+{pformat(graph_context, compact=False) if graph_context else "Không có graph_search context."}
+
+Deep graph_search reasoning summary:
+{"=" * 60}
+{pformat(graph_reasoning, compact=True) if graph_reasoning else "Không có reasoning steps."}
+
+{"=" * 60}
+
+Câu hỏi: {question}
+
+Hướng dẫn trả lời:
+- Tổng hợp markdown evidence và graph_search evidence nếu chúng bổ sung cho nhau
+- Nếu chỉ một nguồn hỗ trợ được câu trả lời, hãy nói rõ nguồn nào hỗ trợ
+- Nếu graph_search không tìm được nhưng markdown có bằng chứng rõ ràng, có thể trả lời dựa trên markdown và nói rõ graph chưa đối chiếu được
+- Nếu markdown và graph_search mâu thuẫn, nêu mâu thuẫn thay vì chọn bừa
+- Không dùng kiến thức ngoài context
+
+Trả lời:"""
+
+        return self.synthesize(
+            question=question,
+            evidence=[*markdown_chunks, graph_context or {}, graph_reasoning or {}],
             mode="hybrid",
             system_prompt=system_prompt,
             user_prompt=user_prompt,
