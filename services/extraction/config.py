@@ -19,7 +19,7 @@ class ExtractionConfig:
     output_dir: Path
 
     # LLM Configuration
-    provider: str = "9router"
+    provider: str = "OpenAICompatible"
     model_name: str = "cx/gpt-5.3-codex"
 
     # Extraction Behavior

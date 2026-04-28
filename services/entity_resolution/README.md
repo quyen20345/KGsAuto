@@ -570,7 +570,7 @@ Important flags:
 --min-samples 1
 --enable-llm-blocking
 --no-llm-blocking
---llm-provider 9router
+--llm-provider OpenAICompatible
 --llm-model cx/gpt-5.3-codex
 ```
 

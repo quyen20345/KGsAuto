@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Use hard-coded primary_type blocking instead of LLM")
 
     # LLM Configuration
-    p.add_argument("--llm-provider", default="9router", choices=["openai", "anthropic", "proxypal", "9router"])
+    p.add_argument("--llm-provider", default="OpenAICompatible", choices=["openai", "anthropic", "OpenAICompatible"])
     p.add_argument("--llm-model", default="cx/gpt-5.3-codex")
     p.add_argument("--llm-api-key", help="API key for LLM provider")
 

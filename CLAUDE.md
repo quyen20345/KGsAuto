@@ -71,7 +71,7 @@ python -m pytest services/rag_system/tests/test_flat_architecture.py -v
 python -m services.extraction.cli \
   --input-dir data/raw/uet \
   --output-dir data/extracted \
-  --provider 9router \
+  --provider OpenAICompatible \
   --model cx/gpt-5.3-codex
 
 python -m services.extraction.cli --help
@@ -93,7 +93,7 @@ python -m services.entity_resolution.cli --stage stage2 --store-backend qdrant -
 python -m services.entity_resolution.cli --stage stage3 --store-backend qdrant --run-id my_run
 ```
 
-Current CLI defaults include `--input-dir mock_data`, `--artifacts-dir data/entity_resolution/artifacts`, `--store-backend qdrant`, `--qdrant-url http://localhost:6333`, `--cluster-threshold 0.6`, `--llm-provider 9router`, and `--llm-model cx/gpt-5.3-codex`.
+Current CLI defaults include `--input-dir mock_data`, `--artifacts-dir data/entity_resolution/artifacts`, `--store-backend qdrant`, `--qdrant-url http://localhost:6333`, `--cluster-threshold 0.6`, `--llm-provider OpenAICompatible`, and `--llm-model cx/gpt-5.3-codex`.
 
 ### Neo4j import/index
 ```bash
@@ -148,22 +148,29 @@ Use online merge for production corrections; use offline merge for pipeline proc
 ### 6) RAG system structure
 `services/rag_system` is domain-split:
 - `core/`
-  - `unified_pipeline.py`: mode orchestration (`semantic_search`, `graph_search`, `naive_grag`, `hybrid`)
+  - `unified_pipeline.py`: stable orchestration entrypoint for `semantic_search`, `graph_search`, `naive_grag`, and `hybrid`
   - `pipeline.py`: compatibility alias for `UnifiedRetrievalPipeline`
-  - `generator.py`: prompt construction and answer synthesis
+- `modes/`
+  - `semantic_search.py`: Qdrant markdown-only mode
+  - `hybrid.py`: Qdrant markdown retrieval + deep GraphSearch mode wrapper
+  - `graph_search.py`: multi-step Neo4j reasoning mode wrapper
+  - `naive_grag.py`: one-pass Neo4j graph-context mode wrapper
+  - `common.py`: shared response/evidence helpers
 - `retrieval/`
-  - `chunking.py`, `indexing.py`, `markdown.py`, `graph.py`, `hybrid.py`
+  - `chunking.py`, `indexing.py`, `markdown.py`, `graph.py`, `hybrid.py` (`hybrid.py` is legacy weighted retrieval, not the public hybrid mode)
+  - `adapters/neo4j_adapter.py`: GraphSearch context adapter for the imported Neo4j graph
 - `storage/`
   - `document.py`: Qdrant chunk storage/search
   - `graph.py`: Neo4j graph lookup
-- `graph_search/`
-  - `pipeline.py`: Neo4j-only `naive_grag` and multi-step `graph_search` reasoning
-  - `deepsearch/`: query decomposition, evidence verification, and query expansion components
-  - `neo4j_adapter.py`: GraphSearch context adapter for the imported Neo4j graph
-- `evaluation/metrics.py`: benchmark dataclasses and evaluator
+- `workflows/deep_graph_search/`
+  - `pipeline.py`: internal Neo4j-only `naive_grag` and multi-step `graph_search` reasoning workflow
+  - `parsing.py`, `utils.py`: workflow helpers
+- `evaluation/`
+  - `runner.py`: simple JSONL/CSV evaluation runner
+  - `mock_questions.jsonl`: small mock evaluation question set
 - `config.py`, `schemas.py`, `cli.py`: config/types/operational CLI
 
-`apps/rag_api/main.py` is a thin FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` and `hybrid` need Qdrant markdown indexing.
+`apps/rag_api/main.py` is a thin FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` needs Qdrant markdown indexing; `hybrid` needs both Qdrant markdown indexing and Neo4j because it combines semantic retrieval with deep GraphSearch.
 
 ### 7) Shared infrastructure patterns
 - LLM access goes through `services.llms.get_llm(...)` provider abstraction.
@@ -175,9 +182,9 @@ Use online merge for production corrections; use offline merge for pipeline proc
 ## Environment/config notes
 
 Key env settings are loaded via `.env` (see `.env.example`):
-- `ROUTER9_API_KEY`, `ROUTER9_BASE_URL`, `ROUTER9_MODEL`
+- `OPENAI_COMPATIBLE_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_MODEL`
 - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`
-- optional provider keys such as `PROXYPAL_KEY`, `GOOGLE_API_KEY`
+- optional provider keys such as `GOOGLE_API_KEY`
 
 Operational constraints:
 - Backend and graph-backed RAG modes require Neo4j to be running and populated.

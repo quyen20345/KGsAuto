@@ -38,7 +38,7 @@ class TwoPassLLMResolver:
         Initialize TwoPassLLMResolver.
 
         Args:
-            llm_provider: LLM provider (proxypal, 9router, gemini, etc.)
+            llm_provider: LLM provider (OpenAICompatible, gemini, etc.)
             llm_model: Model name
             llm_api_key: API key (optional)
             conservative_threshold: Threshold for conservative fallback

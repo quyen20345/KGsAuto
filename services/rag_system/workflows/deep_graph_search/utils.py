@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-LLM_BASE_URL = os.getenv("ROUTER9_BASE_URL", "http://192.168.190.8:8000/v1/")
-LLM_API_KEY = os.getenv("ROUTER9_API_KEY", "NONE")
-MODEL_NAME = os.getenv("ROUTER9_MODEL", "Qwen2.5-32B-Instruct")
+LLM_BASE_URL = os.getenv("OPENAI_COMPATIBLE_BASE_URL", "http://192.168.190.8:8000/v1/")
+LLM_API_KEY = os.getenv("OPENAI_COMPATIBLE_API_KEY", "NONE")
+MODEL_NAME = os.getenv("OPENAI_COMPATIBLE_MODEL", "Qwen2.5-32B-Instruct")
 
 
 async def openai_complete(

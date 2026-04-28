@@ -33,7 +33,7 @@ class RunConfig:
     store_backend: str = "qdrant"  # qdrant|memory
 
     # LLM Configuration (for LLM-CER and LLM blocking)
-    llm_provider: str = "9router"  # 9router|proxypal|openai|anthropic
+    llm_provider: str = "OpenAICompatible"  # OpenAICompatible|openai|anthropic
     llm_model: str = "cx/gpt-5.3-codex"
     llm_api_key: str | None = None
     llm_temperature: float = 0.0

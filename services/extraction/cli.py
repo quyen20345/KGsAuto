@@ -47,9 +47,9 @@ Examples:
     parser.add_argument(
         "--provider",
         type=str,
-        default="9router",
-        choices=["proxypal", "9router", "gemini", "ollama"],
-        help="LLM provider (default: 9router)"
+        default="OpenAICompatible",
+        choices=["OpenAICompatible", "gemini", "ollama"],
+        help="LLM provider (default: OpenAICompatible)"
     )
     parser.add_argument(
         "--model",

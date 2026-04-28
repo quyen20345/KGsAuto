@@ -9,8 +9,7 @@ _CLIENTS_REGISTERED = False
 _CLIENT_MODULES = (
     "services.llms.clients.gemini_client",
     "services.llms.clients.ollama_client",
-    "services.llms.clients.proxypal_client",
-    "services.llms.clients.router9_client",
+    "services.llms.clients.openai_compatible_client",
 )
 
 

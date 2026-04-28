@@ -20,14 +20,12 @@ llms/
    |- __init__.py
    |- gemini_client.py
    |- ollama_client.py
-   |- proxypal_client.py
-   '- router9_client.py
+   '- openai_compatible_client.py
 ```
 
 ## 3) Providers hien co
 
-- `proxypal`: OpenAI-compatible endpoint (mac dinh `http://localhost:8317/v1`)
-- `9router`: OpenAI-compatible endpoint (mac dinh `http://localhost:20128/v1`)
+- `OpenAICompatible`: OpenAI-compatible endpoint (mac dinh `http://localhost:20128/v1`)
 - `gemini`: Google GenAI SDK
 - `ollama`: Ollama local server (mac dinh `http://localhost:11434`)
 
@@ -40,7 +38,7 @@ Tat ca clients duoc auto-register khi import package `llms` (qua `llms/clients/_
 ```python
 from llms import get_llm
 
-llm = get_llm("proxypal", model_name="gpt-5")
+llm = get_llm("OpenAICompatible", model_name="gpt-5")
 ```
 
 ### Generate
@@ -63,15 +61,11 @@ resp = llm.generate(
 
 ## 5) Bien moi truong
 
-### Proxypal
+### OpenAICompatible
 
-- `PROXYPAL_KEY` (optional, fallback: `proxypal-local`)
-- `PROXYPAL_BASE_URL` (optional, fallback: `http://localhost:8317/v1`)
-
-### 9router
-
-- `ROUTER9_API_KEY` (required)
-- `ROUTER9_BASE_URL` (optional, fallback: `http://localhost:20128/v1`)
+- `OPENAI_COMPATIBLE_API_KEY` (required)
+- `OPENAI_COMPATIBLE_BASE_URL` (optional, fallback: `http://localhost:20128/v1`)
+- `OPENAI_COMPATIBLE_MODEL` (optional, used by the module demo)
 
 ### Gemini
 
@@ -87,11 +81,8 @@ resp = llm.generate(
 ```python
 from llms import get_llm
 
-# Proxypal
-pp = get_llm("proxypal", model_name="gpt-5")
-
-# 9router
-r9 = get_llm("9router", model_name="gpt-5")
+# OpenAICompatible
+openai_compatible = get_llm("OpenAICompatible", model_name="gpt-5")
 
 # Gemini
 gm = get_llm("gemini", model_name="gemini-2.5-flash")

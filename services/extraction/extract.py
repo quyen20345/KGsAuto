@@ -329,7 +329,7 @@ if __name__ == "__main__":
     config = ExtractionConfig(
         input_dir="data/raw/uet",
         output_dir="data/extracted",
-        provider="9router",
+        provider="OpenAICompatible",
         model_name="cx/gpt-5.3-codex",
     )
 

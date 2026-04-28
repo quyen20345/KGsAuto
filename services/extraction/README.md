@@ -11,7 +11,7 @@ Module này hỗ trợ chạy batch, retry khi lỗi, validation cấu trúc out
 python -m services.extraction.cli \
   --input-dir data/raw/uet \
   --output-dir data/extracted \
-  --provider 9router \
+  --provider OpenAICompatible \
   --model cx/gpt-5.3-codex
 ```
 
@@ -49,7 +49,7 @@ flowchart TB
 
     EXT --> PROMPT[prompt.py\nget_extraction_prompt]
     EXT --> LLMF[services.llms.get_llm]
-    LLMF --> LLM[(LLM Provider\n9router/gemini/ollama/proxypal)]
+    LLMF --> LLM[(LLM Provider\nOpenAICompatible/gemini/ollama)]
 
     EXT --> VAL[validation.py\nvalidate_and_log]
     EXT --> MET[metrics.py\nExtractionMetrics]

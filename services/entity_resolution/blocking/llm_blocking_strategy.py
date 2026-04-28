@@ -29,7 +29,7 @@ class LLMBlockingStrategy:
         Initialize LLM blocking strategy.
 
         Args:
-            llm_provider: LLM provider (9router, proxypal, etc.)
+            llm_provider: LLM provider (OpenAICompatible, gemini, etc.)
             llm_model: Model name
             llm_api_key: API key (optional)
         """

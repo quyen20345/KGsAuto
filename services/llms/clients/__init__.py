@@ -1,4 +1,4 @@
-__all__ = ["GeminiClient", "OllamaClient", "ProxypalClient", "Router9Client"]
+__all__ = ["GeminiClient", "OllamaClient", "OpenAICompatibleClient", "OpenAICompatibleProviderClient"]
 
 
 def __getattr__(name: str):
@@ -10,12 +10,12 @@ def __getattr__(name: str):
         from .ollama_client import OllamaClient
 
         return OllamaClient
-    if name == "ProxypalClient":
-        from .proxypal_client import ProxypalClient
+    if name == "OpenAICompatibleClient":
+        from .openai_compatible_client import OpenAICompatibleClient
 
-        return ProxypalClient
-    if name == "Router9Client":
-        from .router9_client import Router9Client
+        return OpenAICompatibleClient
+    if name == "OpenAICompatibleProviderClient":
+        from .openai_compatible_client import OpenAICompatibleProviderClient
 
-        return Router9Client
+        return OpenAICompatibleProviderClient
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

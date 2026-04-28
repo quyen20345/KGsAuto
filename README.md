@@ -54,7 +54,7 @@ Chạy từ thư mục gốc của repo:
 python -m services.extraction.cli \
   --input-dir data/raw/uet \
   --output-dir data/extracted \
-  --provider 9router \
+  --provider OpenAICompatible \
   --model cx/gpt-5.3-codex
 ```
 
@@ -68,7 +68,7 @@ Chạy lại toàn bộ, bỏ qua chế độ skip file đã tồn tại:
 python -m services.extraction.cli \
   --input-dir data/raw/uet \
   --output-dir data/extracted \
-  --provider 9router \
+  --provider OpenAICompatible \
   --model cx/gpt-5.3-codex \
   --no-skip-existing
 ```
@@ -128,7 +128,7 @@ python -m services.entity_resolution.cli \
 
 ### Một số option hay dùng
 
-- `--llm-provider 9router`
+- `--llm-provider OpenAICompatible`
 - `--llm-model cx/gpt-5.3-codex`
 - `--enable-llm-blocking`
 - `--no-llm-blocking`

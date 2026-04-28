@@ -11,15 +11,22 @@ from services.llms.types import LLMResponse
 load_dotenv()
 
 
-@register_llm("9router")
-class Router9Client(BaseLLM):
+class OpenAICompatibleClient(BaseLLM):
+    provider_name = "openai-compatible"
+    api_key_env: Optional[str] = None
+    base_url_env: Optional[str] = None
+    default_base_url: Optional[str] = None
+    default_api_key: Optional[str] = None
+
     def __init__(self, model_name: Optional[str] = None, **kwargs):
         self.model_name = model_name
-        self.host = kwargs.get("host") or os.getenv("ROUTER9_BASE_URL") or "http://localhost:20128/v1"
-        self.api_key = kwargs.get("api_key") or os.getenv("ROUTER9_API_KEY") or "sk-2c8a5a86cb957baf-oo8f99-366bc10b"
+        self.host = kwargs.get("host") or kwargs.get("base_url") or self._env(self.base_url_env) or self.default_base_url
+        self.api_key = kwargs.get("api_key") or self._env(self.api_key_env) or self.default_api_key
 
+        if not self.host:
+            raise ValueError(f"{self.provider_name} base URL is not set")
         if not self.api_key:
-            raise ValueError("ROUTER9_API_KEY is not set")
+            raise ValueError(f"{self.provider_name} API key is not set")
 
         self.client = OpenAI(
             api_key=self.api_key,
@@ -53,7 +60,7 @@ class Router9Client(BaseLLM):
             if content is None:
                 finish_reason = response.choices[0].finish_reason if response.choices else "unknown"
                 content = (
-                    "9router returned empty assistant content "
+                    f"{self.provider_name} returned empty assistant content "
                     f"(finish_reason={finish_reason})."
                 )
 
@@ -64,9 +71,13 @@ class Router9Client(BaseLLM):
             )
         except Exception as e:
             return LLMResponse(
-                content=f"9router Error (host={self.host}): {str(e)}",
+                content=f"{self.provider_name} Error (host={self.host}): {str(e)}",
                 model=self.model_name,
             )
+
+    @staticmethod
+    def _env(name: Optional[str]) -> Optional[str]:
+        return os.getenv(name) if name else None
 
     @staticmethod
     def _extract_text_from_message_parts(message) -> Optional[str]:
@@ -94,7 +105,15 @@ class Router9Client(BaseLLM):
         return "".join(text_chunks) if text_chunks else None
 
 
+@register_llm("OpenAICompatible")
+class OpenAICompatibleProviderClient(OpenAICompatibleClient):
+    provider_name = "OpenAICompatible"
+    api_key_env = "OPENAI_COMPATIBLE_API_KEY"
+    base_url_env = "OPENAI_COMPATIBLE_BASE_URL"
+    default_base_url = "http://localhost:20128/v1"
+
+
 if __name__ == "__main__":
-    demo_model = os.getenv("ROUTER9_MODEL", "cx/gpt-5.3-codex")
-    client = Router9Client(demo_model)
+    demo_model = os.getenv("OPENAI_COMPATIBLE_MODEL", "cx/gpt-5.3-codex")
+    client = OpenAICompatibleProviderClient(demo_model)
     print(client.generate("why is the sky blue?"))

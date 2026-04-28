@@ -41,8 +41,8 @@ class RAGConfig:
     max_graph_depth: int = 1  # 1-hop default, 2-hop for multi-hop
     max_relations: int = 20
 
-    # LLM configuration (based on user decision: 9router + cx/gpt-5.3-codex)
-    llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "9router"))
+    # LLM configuration
+    llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "OpenAICompatible"))
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "cx/gpt-5.3-codex"))
     llm_temperature: float = 0.0
     llm_max_tokens: int = 2000
