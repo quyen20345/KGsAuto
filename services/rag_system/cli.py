@@ -182,6 +182,9 @@ def evaluate():
     pass
 
 
+RAG_MODES = ["semantic_search", "graph_search", "naive_grag", "hybrid"]
+
+
 @evaluate.command("run")
 @click.option(
     "--dataset",
@@ -197,7 +200,7 @@ def evaluate():
 )
 @click.option(
     "--mode",
-    type=click.Choice(["semantic_search", "graph_search", "naive_grag", "hybrid"]),
+    type=click.Choice(RAG_MODES),
     default="semantic_search",
 )
 @click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
@@ -211,6 +214,81 @@ def evaluate_run(dataset, output, mode, top_k):
     results = run_dataset(dataset, output, mode=mode, top_k=top_k)
     click.echo(f"Wrote {len(results)} results to {output}")
     click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
+
+
+@evaluate.command("run-comparison")
+@click.option(
+    "--dataset",
+    type=click.Path(path_type=Path),
+    default=Path("services/rag_system/evaluation/mock_questions.jsonl"),
+    help="Input JSONL evaluation dataset",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    default=Path("data/evaluation/rag_eval_comparison.jsonl"),
+    help="Output JSONL path; CSV is written next to it",
+)
+@click.option(
+    "--mode",
+    "modes",
+    type=click.Choice(RAG_MODES),
+    multiple=True,
+    help="Mode to run; repeat for multiple modes. Defaults to all modes.",
+)
+@click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
+def evaluate_run_comparison(dataset, output, modes, top_k):
+    """Run multiple RAG modes over a JSONL question set."""
+    from services.rag_system.evaluation.runner import ALL_MODES, run_dataset_for_modes
+
+    selected_modes = list(modes) or ALL_MODES
+    click.echo(f"Dataset: {dataset}")
+    click.echo(f"Modes: {', '.join(selected_modes)}")
+    click.echo(f"Top-K: {top_k}")
+    click.echo(f"Output: {output}")
+    results = run_dataset_for_modes(dataset, output, modes=selected_modes, top_k=top_k)
+    click.echo(f"Wrote {len(results)} results to {output}")
+    click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
+
+
+@evaluate.command("score")
+@click.option(
+    "--results",
+    type=click.Path(path_type=Path),
+    required=True,
+    help="Generated evaluation JSONL from evaluate run or run-comparison",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    default=Path("data/evaluation/rag_eval_scored.jsonl"),
+    help="Scored JSONL path; CSV and summary CSV are written next to it",
+)
+@click.option(
+    "--metric",
+    "metrics",
+    multiple=True,
+    help="RAGAS metric to run; repeat for multiple metrics. Defaults to the standard metric set.",
+)
+def evaluate_score(results, output, metrics):
+    """Score saved RAG outputs with RAGAS."""
+    from services.rag_system.evaluation.scoring import RagasScoringError, RagasUnavailableError, score_results, summarize_scores
+
+    click.echo(f"Results: {results}")
+    click.echo(f"Output: {output}")
+    try:
+        scored = score_results(results, output, metrics=list(metrics) or None)
+    except (RagasScoringError, RagasUnavailableError) as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(f"Wrote {len(scored)} scored rows to {output}")
+    click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
+    click.echo(f"Wrote summary CSV to {output.with_suffix('.summary.csv')}")
+    click.echo("Summary:")
+    for mode, row in summarize_scores(scored).items():
+        click.echo(
+            f"  {mode}: total={row['total_samples']}, ok={row['successful_samples']}, scored={row['scored_samples']}"
+        )
 
 
 @cli.command()
