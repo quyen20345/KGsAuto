@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import csv
 import json
+import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 from services.rag_system.config import RAGConfig
 from services.rag_system.core.unified_pipeline import UnifiedRetrievalPipeline
@@ -18,6 +19,7 @@ class EvaluationSample:
     question: str
     reference: str = ""
     tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -31,6 +33,32 @@ class EvaluationResult:
     citations: list[str]
     latency_ms: float | None
     tags: list[str]
+    top_k: int
+    context_count: int
+    status: str
+    error: str | None
+    metadata: dict[str, Any]
+
+
+RESULT_FIELDNAMES = [
+    "id",
+    "question",
+    "reference",
+    "mode",
+    "answer",
+    "contexts",
+    "citations",
+    "latency_ms",
+    "tags",
+    "top_k",
+    "context_count",
+    "status",
+    "error",
+    "metadata",
+]
+
+
+ALL_MODES = ["semantic_search", "graph_search", "naive_grag", "hybrid"]
 
 
 def load_jsonl(path: str | Path) -> list[dict[str, Any]]:
@@ -43,6 +71,22 @@ def load_jsonl(path: str | Path) -> list[dict[str, Any]]:
     return rows
 
 
+def load_csv(path: str | Path) -> list[dict[str, Any]]:
+    rows = []
+    with Path(path).open("r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+    return rows
+
+
+def load_dataset(path: str | Path) -> list[dict[str, Any]]:
+    path = Path(path)
+    if path.suffix.lower() == ".csv":
+        return load_csv(path)
+    return load_jsonl(path)
+
+
 def write_jsonl(path: str | Path, rows: Iterable[dict[str, Any]]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -51,27 +95,43 @@ def write_jsonl(path: str | Path, rows: Iterable[dict[str, Any]]) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def write_csv(path: str | Path, rows: Iterable[dict[str, Any]]) -> None:
+def write_csv(path: str | Path, rows: Iterable[dict[str, Any]], fieldnames: Sequence[str] | None = None) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["id", "question", "reference", "mode", "answer", "contexts", "citations", "latency_ms", "tags"]
+    fields = list(fieldnames or RESULT_FIELDNAMES)
     with output.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         for row in rows:
-            csv_row = {key: row.get(key) for key in fieldnames}
-            csv_row["contexts"] = json.dumps(csv_row.get("contexts") or [], ensure_ascii=False)
-            csv_row["citations"] = json.dumps(csv_row.get("citations") or [], ensure_ascii=False)
-            csv_row["tags"] = json.dumps(csv_row.get("tags") or [], ensure_ascii=False)
+            csv_row = {key: row.get(key) for key in fields}
+            for key in ("contexts", "citations", "tags", "metadata"):
+                if key in csv_row:
+                    csv_row[key] = json.dumps(csv_row.get(key) or ([] if key != "metadata" else {}), ensure_ascii=False)
             writer.writerow(csv_row)
 
 
 def parse_sample(row: dict[str, Any]) -> EvaluationSample:
+    question = str(row.get("user_input") or row.get("question") or "")
+    sample_id = str(row.get("id") or uuid.uuid4())
+    reference = str(row.get("reference") or "")
+    
+    tags = list(row.get("tags") or [])
+    if row.get("synthesizer_name"):
+        tags.append(str(row["synthesizer_name"]))
+    if row.get("persona_name"):
+        tags.append(str(row["persona_name"]))
+        
+    metadata = dict(row.get("metadata") or {})
+    for k, v in row.items():
+        if k not in ["id", "question", "user_input", "reference", "tags", "metadata"]:
+            metadata[k] = v
+
     return EvaluationSample(
-        id=str(row["id"]),
-        question=str(row["question"]),
-        reference=str(row.get("reference") or ""),
-        tags=list(row.get("tags") or []),
+        id=sample_id,
+        question=question,
+        reference=reference,
+        tags=tags,
+        metadata=metadata,
     )
 
 
@@ -105,8 +165,64 @@ def extract_contexts(response: dict[str, Any]) -> list[str]:
         text = _first_text(graph_context, "fact_text", "description", "text", "content")
         if text:
             contexts.append(text)
+        else:
+            for value in graph_context.values():
+                text = _first_text(value, "fact_text", "description", "text", "content")
+                if text:
+                    contexts.append(text)
 
     return contexts
+
+
+def run_sample(
+    pipeline: UnifiedRetrievalPipeline,
+    sample: EvaluationSample,
+    mode: str,
+    top_k: int,
+) -> dict[str, Any]:
+    try:
+        response = pipeline.query(
+            question=sample.question,
+            mode=mode,
+            top_k=top_k,
+            include_evidence=True,
+        )
+        contexts = extract_contexts(response)
+        result = EvaluationResult(
+            id=sample.id,
+            question=sample.question,
+            reference=sample.reference,
+            mode=response.get("mode") or mode,
+            answer=response.get("answer") or "",
+            contexts=contexts,
+            citations=list(response.get("citations") or []),
+            latency_ms=response.get("total_time_ms"),
+            tags=sample.tags,
+            top_k=top_k,
+            context_count=len(contexts),
+            status="ok",
+            error=None,
+            metadata=sample.metadata,
+        )
+        return asdict(result)
+    except Exception as exc:
+        result = EvaluationResult(
+            id=sample.id,
+            question=sample.question,
+            reference=sample.reference,
+            mode=mode,
+            answer="",
+            contexts=[],
+            citations=[],
+            latency_ms=None,
+            tags=sample.tags,
+            top_k=top_k,
+            context_count=0,
+            status="error",
+            error=str(exc),
+            metadata=sample.metadata,
+        )
+        return asdict(result)
 
 
 def run_dataset(
@@ -115,29 +231,24 @@ def run_dataset(
     mode: str = "semantic_search",
     top_k: int = 5,
 ) -> list[dict[str, Any]]:
-    samples = [parse_sample(row) for row in load_jsonl(dataset_path)]
+    results = run_dataset_for_modes(dataset_path, output_path, modes=[mode], top_k=top_k)
+    return results
+
+
+def run_dataset_for_modes(
+    dataset_path: str | Path,
+    output_path: str | Path,
+    modes: Sequence[str] | None = None,
+    top_k: int = 5,
+) -> list[dict[str, Any]]:
+    samples = [parse_sample(row) for row in load_dataset(dataset_path)]
     pipeline = UnifiedRetrievalPipeline(RAGConfig())
+    selected_modes = list(modes or ALL_MODES)
     results = []
 
     for sample in samples:
-        response = pipeline.query(
-            question=sample.question,
-            mode=mode,
-            top_k=top_k,
-            include_evidence=True,
-        )
-        result = EvaluationResult(
-            id=sample.id,
-            question=sample.question,
-            reference=sample.reference,
-            mode=response.get("mode") or mode,
-            answer=response.get("answer") or "",
-            contexts=extract_contexts(response),
-            citations=list(response.get("citations") or []),
-            latency_ms=response.get("total_time_ms"),
-            tags=sample.tags,
-        )
-        results.append(asdict(result))
+        for mode in selected_modes:
+            results.append(run_sample(pipeline, sample, mode=mode, top_k=top_k))
 
     write_jsonl(output_path, results)
     csv_path = Path(output_path).with_suffix(".csv")
