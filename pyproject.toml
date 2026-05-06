@@ -34,6 +34,13 @@ dependencies = [
     "python-Levenshtein>=0.21.0",
 ]
 
+[project.optional-dependencies]
+ragas = [
+    "ragas",
+    "datasets",
+    "langchain-openai",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["services*", "legacy*", "apps*"]

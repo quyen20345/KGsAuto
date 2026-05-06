@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from dotenv import find_dotenv, load_dotenv
+
 from services.rag_system.evaluation.runner import load_jsonl, write_csv, write_jsonl
 
 
@@ -36,6 +38,7 @@ def score_results(
     output_path: str | Path,
     metrics: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
+    _load_environment()
     rows = load_jsonl(results_path)
     selected_metrics = list(metrics or DEFAULT_METRICS)
     scored_rows = [_empty_scored_row(row) for row in rows]
@@ -149,24 +152,26 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
     dataset = Dataset.from_list(
         [
             {
-                "question": str(row.get("question") or ""),
-                "answer": str(row.get("answer") or ""),
-                "contexts": _normalize_contexts(row.get("contexts")),
-                "ground_truth": str(row.get("reference") or ""),
+                "user_input": str(row.get("question") or ""),
+                "response": str(row.get("answer") or ""),
+                "retrieved_contexts": _normalize_contexts(row.get("contexts")),
+                "reference": str(row.get("reference") or ""),
             }
             for row in rows
         ]
     )
+    llm = _build_ragas_llm()
     try:
         result = evaluate(
             dataset,
             metrics=[metric_registry[metric] for metric in metric_names],
-            llm=_build_ragas_llm(),
+            llm=llm,
         )
     except Exception as exc:
         raise RagasScoringError(
-            "RAGAS scoring failed with the configured evaluator. Check OPENAI_API_KEY/OPENAI_BASE_URL/OPENAI_MODEL "
-            "or OPENAI_COMPATIBLE_* fallback values."
+            "RAGAS scoring failed with the configured evaluator "
+            f"({type(exc).__name__}: {_safe_error_message(exc)}). "
+            "Check OPENAI_API_KEY/OPENAI_BASE_URL/OPENAI_MODEL or OPENAI_COMPATIBLE_* fallback values."
         ) from exc
     dataframe = result.to_pandas()
     scored = []
@@ -210,12 +215,22 @@ def _resolve_ragas_openai_config() -> dict[str, str]:
     return {"api_key": api_key, "base_url": base_url, "model": model}
 
 
+def _load_environment() -> None:
+    dotenv_path = find_dotenv(usecwd=True)
+    load_dotenv(dotenv_path or None)
+
+
 def _env_first(*names: str) -> str | None:
     for name in names:
         value = os.getenv(name)
         if value:
             return value
     return None
+
+
+def _safe_error_message(exc: Exception) -> str:
+    message = str(exc).strip()
+    return message or "no details"
 
 
 def _empty_scored_row(row: dict[str, Any]) -> dict[str, Any]:

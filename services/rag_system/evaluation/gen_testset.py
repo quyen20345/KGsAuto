@@ -1,204 +1,237 @@
-"""
-RAG Testset Generation Pipeline
-================================
-Generates a synthetic evaluation testset from local Markdown documents
-using the Ragas library.
+"""Generate a synthetic RAG evaluation testset with Ragas.
 
-Steps:
-  1. Load Markdown docs from a local folder
-  2. Configure LLM (OpenAI-compatible) + Embeddings (NVIDIA NIM)
-  3. Build & enrich a KnowledgeGraph
-  4. Generate a testset with multi-hop query distribution
-  5. Export results to CSV / pandas
-
-Requirements:
-  pip install ragas langchain-community openai
-
-Security note:
-  Avoid hardcoding API keys in source files.
-  Prefer environment variables or a .env file (python-dotenv).
+This manual script can either load an existing Ragas knowledge graph or rebuild
+one from local Markdown files. Credentials are read from environment variables;
+do not hardcode API keys in this file.
 """
 
-# ─────────────────────────────────────────────
-# 1. LOAD DOCUMENTS
-# ─────────────────────────────────────────────
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from __future__ import annotations
 
-DOCS_PATH = "/home/quyen/Documents/KGsAuto/data/rawtest"   # <-- change this to your folder path
-
-# TextLoader avoids the `unstructured[md]` dependency and correctly
-# handles UTF-8 Vietnamese characters in filenames/content.
-loader = DirectoryLoader(
-    DOCS_PATH,
-    glob="**/*.md",
-    loader_cls=TextLoader,
-    loader_kwargs={"encoding": "utf-8"},
-    silent_errors=True,   # skip unreadable files instead of crashing
-)
-docs = loader.load()
-print(f"Loaded {len(docs)} documents from '{DOCS_PATH}'")
-
-
-# ─────────────────────────────────────────────
-# 2. CONFIGURE LLM & EMBEDDINGS
-# ─────────────────────────────────────────────
+import argparse
+import asyncio
 import os
 import time
-import typing as t
+from pathlib import Path
+
+import pandas as pd
+from dotenv import load_dotenv
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from openai import OpenAI
-from ragas.llms import llm_factory
 from ragas.embeddings.base import BaseRagasEmbeddings
-
-# ── LLM: OpenAI-compatible endpoint (cx/gpt-5.2) ─────────────────────
-os.environ["CX_API_KEY"] = "---"
-
-llm_client = OpenAI(
-    api_key=os.environ["CX_API_KEY"],
-    base_url="http://localhost:20128/v1",
+from ragas.llms import llm_factory
+from ragas.run_config import RunConfig
+from ragas.testset import TestsetGenerator
+from ragas.testset.graph import KnowledgeGraph, Node, NodeType, Relationship
+from ragas.testset.persona import Persona
+from ragas.testset.synthesizers import (
+    MultiHopAbstractQuerySynthesizer,
+    MultiHopSpecificQuerySynthesizer,
+    SingleHopSpecificQuerySynthesizer,
+)
+from ragas.testset.transforms import (
+    CosineSimilarityBuilder,
+    EmbeddingExtractor,
+    HeadlineSplitter,
+    HeadlinesExtractor,
+    KeyphrasesExtractor,
+    SummaryExtractor,
+    apply_transforms,
 )
 
-generator_llm = llm_factory(
-    model="cx/gpt-5.2",
-    client=llm_client,
-)
 
-# ── Embeddings: NVIDIA NIM (llama-3.2-nemoretriever-300m-embed-v1) ────
-# NVIDIA's API is OpenAI-compatible — no extra SDK needed.
-os.environ["NVIDIA_API_KEY"] = "---"
+DEFAULT_INPUT_DIR = Path("data/rawtest")
+DEFAULT_GRAPH_PATH = Path("data/evaluation/ragas/knowledge_graph.json")
+DEFAULT_OUTPUT_PATH = Path("data/evaluation/ragas/testset.csv")
+DEFAULT_TESTSET_SIZE = 150
+DEFAULT_GENERATOR_MODEL = "cx/gpt-5.2"
+DEFAULT_GENERATOR_BASE_URL = "http://localhost:20128/v1"
+DEFAULT_EMBED_MODEL = "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
+DEFAULT_EMBED_BASE_URL = "https://integrate.api.nvidia.com/v1"
+HEADLINE_SPLITTER_MIN_TOKENS = 200
+VIETNAMESE_CHARS = set("ăâđêôơưáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
 
-NVIDIA_EMBED_MODEL  = "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
-NVIDIA_BASE_URL     = "https://integrate.api.nvidia.com/v1"
-EMBED_DELAY_SECONDS = 0.5  
 
-nvidia_embed_client = OpenAI(
-    api_key=os.environ["NVIDIA_API_KEY"],
-    base_url=NVIDIA_BASE_URL,
-)
+def env_value(*names: str, default: str | None = None) -> str | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return default
 
-import asyncio
+
+def require_env(*names: str) -> str:
+    value = env_value(*names)
+    if value:
+        return value
+    raise SystemExit(f"Missing required environment variable: {' or '.join(names)}")
+
+
+def load_environment() -> None:
+    load_dotenv()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate a Ragas testset for RAG evaluation.")
+    parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
+    parser.add_argument("--graph-path", type=Path, default=DEFAULT_GRAPH_PATH)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
+    parser.add_argument("--rebuild-graph", action="store_true", help="Build and save a new knowledge graph first.")
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        action="store_true",
+        help="Resume graph rebuild from the latest transform checkpoint for the same graph path.",
+    )
+    parser.add_argument("--testset-size", type=int, default=DEFAULT_TESTSET_SIZE)
+    parser.add_argument("--max-workers", type=int, default=2)
+    parser.add_argument("--embed-delay-seconds", type=float, default=0.5)
+    parser.add_argument(
+        "--generator-model",
+        default=env_value("OPENAI_COMPATIBLE_MODEL", "OPENAI_MODEL", default=DEFAULT_GENERATOR_MODEL),
+    )
+    parser.add_argument(
+        "--generator-base-url",
+        default=env_value("OPENAI_COMPATIBLE_BASE_URL", "OPENAI_BASE_URL", default=DEFAULT_GENERATOR_BASE_URL),
+    )
+    parser.add_argument("--embed-model", default=env_value("NVIDIA_EMBED_MODEL", default=DEFAULT_EMBED_MODEL))
+    parser.add_argument("--embed-base-url", default=env_value("NVIDIA_BASE_URL", default=DEFAULT_EMBED_BASE_URL))
+    return parser.parse_args()
+
+
 class NvidiaEmbeddings(BaseRagasEmbeddings):
-    """
-    Ragas-compatible wrapper around NVIDIA NIM embedding endpoint.
-    Includes proper handling for asymmetric models (query vs. passage).
-    """
-    def _sync_embed(self, text: str, input_type: str) -> t.List[float]:
-        """Internal synchronous method to handle the actual API call."""
-        time.sleep(EMBED_DELAY_SECONDS)
-        response = nvidia_embed_client.embeddings.create(
-            model=NVIDIA_EMBED_MODEL,
+    """Ragas-compatible wrapper around NVIDIA's OpenAI-compatible embedding API."""
+
+    def __init__(self, client: OpenAI, model: str, delay_seconds: float) -> None:
+        self.client = client
+        self.model = model
+        self.delay_seconds = delay_seconds
+
+    def _sync_embed(self, text: str, input_type: str) -> list[float]:
+        time.sleep(self.delay_seconds)
+        response = self.client.embeddings.create(
+            model=self.model,
             input=text,
             encoding_format="float",
-            # THE FIX: Asymmetric models require the input_type parameter
-            extra_body={"input_type": input_type} 
+            extra_body={"input_type": input_type},
         )
         return response.data[0].embedding
 
-    def embed_documents(self, texts: t.List[str]) -> t.List[t.List[float]]:
-        # Documents are stored as "passages"
-        return [self._sync_embed(t_, input_type="passage") for t_ in texts]
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [self._sync_embed(text, input_type="passage") for text in texts]
 
-    def embed_query(self, text: str) -> t.List[float]:
-        # Search queries are embedded as "queries"
+    def embed_query(self, text: str) -> list[float]:
         return self._sync_embed(text, input_type="query")
 
-    # ── ASYNC METHODS REQUIRED BY RAGAS ─────────────────────
-    
-    async def aembed_query(self, text: str) -> t.List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         return await asyncio.to_thread(self._sync_embed, text, "query")
 
-    async def aembed_documents(self, texts: t.List[str]) -> t.List[t.List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         return await asyncio.to_thread(self.embed_documents, texts)
 
-    # Note: Ragas specifically awaits `embed_text` during the EmbeddingExtractor phase.
-    # Making this an async def prevents an 'awaiting a list' TypeError.
-    async def embed_text(self, text: str) -> t.List[float]:
-        # During the extraction phase, it is embedding document chunks (passages)
+    async def embed_text(self, text: str) -> list[float]:
         return await asyncio.to_thread(self._sync_embed, text, "passage")
 
-generator_embeddings = NvidiaEmbeddings()
+
+def load_markdown_documents(input_dir: Path):
+    loader = DirectoryLoader(
+        str(input_dir),
+        glob="**/*.md",
+        loader_cls=TextLoader,
+        loader_kwargs={"encoding": "utf-8"},
+        silent_errors=True,
+    )
+    docs = loader.load()
+    print(f"Loaded {len(docs)} markdown documents from '{input_dir}'")
+    return docs
 
 
-# ─────────────────────────────────────────────
-# 3. BUILD & ENRICH THE KNOWLEDGE GRAPH
-# ─────────────────────────────────────────────
-from ragas.testset.graph import KnowledgeGraph, Node, NodeType, Relationship
-from ragas.testset.transforms import (
-    apply_transforms,
-    HeadlinesExtractor,
-    HeadlineSplitter,
-    SummaryExtractor,
-    KeyphrasesExtractor,
-    EmbeddingExtractor,
-    CosineSimilarityBuilder,
-)
-from ragas.run_config import RunConfig
+def create_generator_llm(model: str, base_url: str):
+    api_key = require_env("OPENAI_COMPATIBLE_API_KEY", "OPENAI_API_KEY", "CX_API_KEY")
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    return llm_factory(model=model, client=client)
 
-# RunConfig controls retry/backoff for all LLM calls during transforms.
-# max_workers=2 is safe for most endpoints; raise to 4 for higher throughput.
-run_config = RunConfig(
-    max_retries=10,
-    max_wait=120,
-    timeout=180,
-    max_workers=2,
-)
 
-# # ── Option A: Build graph from scratch ────────────────────────────────
-# Use this on first run or whenever you add/change documents.
-# Delete these lines and switch to Option B for subsequent runs.
-# print("Building KnowledgeGraph...")
-# kg = KnowledgeGraph()
-# for doc in docs:
-#     kg.nodes.append(
-#         Node(
-#             type=NodeType.DOCUMENT,
-#             properties={
-#                 "page_content": doc.page_content,
-#                 "document_metadata": doc.metadata,
-#             },
-#         )
-#     )
-# print(f"  Initial graph: {kg}")
+def create_embeddings(model: str, base_url: str, delay_seconds: float) -> NvidiaEmbeddings:
+    api_key = require_env("NVIDIA_API_KEY")
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    return NvidiaEmbeddings(client=client, model=model, delay_seconds=delay_seconds)
 
-# print("Applying transforms (this may take several minutes)...")
-# transforms = [
-#     # Extracts markdown H1/H2/H3 headlines from each document.
-#     # Documents without headers are silently skipped by HeadlineSplitter.
-#     HeadlinesExtractor(llm=generator_llm),
 
-#     # Splits documents into per-section chunk nodes.
-#     # min_tokens=100 avoids tiny, low-quality chunks.
-#     HeadlineSplitter(min_tokens=100),
+def make_run_config(max_workers: int) -> RunConfig:
+    return RunConfig(max_retries=10, max_wait=120, timeout=180, max_workers=max_workers)
 
-#     # Generates a short summary for every node (documents + chunks).
-#     SummaryExtractor(llm=generator_llm),
 
-#     # Extracts key phrases for retrieval-aware query generation.
-#     KeyphrasesExtractor(llm=generator_llm),
+def build_knowledge_graph(
+    input_dir: Path,
+    graph_path: Path,
+    generator_llm,
+    embeddings: NvidiaEmbeddings,
+    config: RunConfig,
+    resume_from_checkpoint: bool = False,
+) -> KnowledgeGraph:
+    transforms = [
+        ("headlines", HeadlinesExtractor(llm=generator_llm)),
+        ("headline_split", HeadlineSplitter(min_tokens=HEADLINE_SPLITTER_MIN_TOKENS)),
+        ("summary", SummaryExtractor(llm=generator_llm)),
+        ("keyphrases", KeyphrasesExtractor(llm=generator_llm)),
+        ("embeddings", EmbeddingExtractor(embedding_model=embeddings)),
+        ("cosine_similarity", CosineSimilarityBuilder(threshold=0.85)),
+    ]
 
-#     # Embeds every node using NVIDIA NIM.
-#     EmbeddingExtractor(embedding_model=generator_embeddings),
+    latest_checkpoint = find_latest_transform_checkpoint(graph_path, len(transforms)) if resume_from_checkpoint else None
+    if latest_checkpoint:
+        completed_index, checkpoint_path = latest_checkpoint
+        kg = KnowledgeGraph.load(str(checkpoint_path))
+        start_index = completed_index
+        print(f"Resuming graph rebuild from checkpoint '{checkpoint_path}'")
+    else:
+        docs = load_markdown_documents(input_dir)
+        if not docs:
+            raise SystemExit(f"No markdown documents found in {input_dir}")
 
-#     # Builds cosine-similarity edges between semantically related nodes.
-#     # 0.5 balances relationship density vs. quality for a mixed corpus.
-#     # Lower → denser graph, more multi-hop paths.
-#     # Higher → fewer but higher-quality relationships.
-#     CosineSimilarityBuilder(threshold=0.85),
-# ]
-# apply_transforms(kg, transforms, run_config=run_config)
-# print(f"  Enriched graph: {kg}")
+        kg = KnowledgeGraph()
+        for doc in docs:
+            kg.nodes.append(
+                Node(
+                    type=NodeType.DOCUMENT,
+                    properties={"page_content": doc.page_content, "document_metadata": doc.metadata},
+                )
+            )
+        start_index = 0
 
-# GRAPH_PATH = "~/Documents/KGsAuto/services/rag_system/evaluation/knowledge_graph.json"
+    print("Applying Ragas transforms with per-stage checkpoints. This can take several minutes...")
+    for index, (name, transform) in enumerate(transforms[start_index:], start=start_index + 1):
+        print(f"Applying transform {index}/{len(transforms)}: {name}")
+        apply_transforms(kg, transform, run_config=config)
+        checkpoint_path = transform_checkpoint_path(graph_path, index, name)
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        kg.save(str(checkpoint_path))
+        print(f"Saved transform checkpoint to '{checkpoint_path}'")
 
-# kg.save(GRAPH_PATH)
-# print(f"  Graph saved to '{GRAPH_PATH}'")
+    graph_path.parent.mkdir(parents=True, exist_ok=True)
+    kg.save(str(graph_path))
+    print(f"Saved knowledge graph to '{graph_path}'")
+    return kg
 
-# ── Option B: Load a previously saved graph ───────────────────────────
-# Uncomment these two lines and comment out Option A above to skip
-# re-enrichment on subsequent runs — saves significant time and API cost.
-#
-GRAPH_PATH = "knowledge_graph.json"
-kg = KnowledgeGraph.load(GRAPH_PATH)
-print(f"  Loaded graph: {kg}")
+
+def transform_checkpoint_path(graph_path: Path, index: int, transform_name: str) -> Path:
+    suffix = graph_path.suffix or ".json"
+    return graph_path.with_name(f"{graph_path.stem}.{index:02d}_{transform_name}{suffix}")
+
+
+def find_latest_transform_checkpoint(graph_path: Path, transform_count: int) -> tuple[int, Path] | None:
+    for index in range(transform_count, 0, -1):
+        matches = sorted(graph_path.parent.glob(f"{graph_path.stem}.{index:02d}_*{graph_path.suffix or '.json'}"))
+        if matches:
+            return index, matches[-1]
+    return None
+
+
+def load_knowledge_graph(graph_path: Path) -> KnowledgeGraph:
+    if not graph_path.exists():
+        raise SystemExit(f"Knowledge graph not found: {graph_path}. Use --rebuild-graph first.")
+    kg = KnowledgeGraph.load(str(graph_path))
+    print(f"Loaded knowledge graph from '{graph_path}': {kg}")
+    return kg
 
 
 def prepare_multihop_compatibility_graph(kg: KnowledgeGraph) -> None:
@@ -207,12 +240,12 @@ def prepare_multihop_compatibility_graph(kg: KnowledgeGraph) -> None:
         if keyphrases and not node.get_property("themes"):
             node.properties["themes"] = keyphrases
 
-    existing_keyphrase_pairs = {
+    existing_pairs = {
         frozenset((rel.source.id, rel.target.id))
         for rel in kg.relationships
         if rel.type == "keyphrases_overlap"
     }
-    added_overlap_relationships = 0
+    added = 0
 
     for rel in list(kg.relationships):
         if rel.type != "cosine_similarity":
@@ -226,7 +259,8 @@ def prepare_multihop_compatibility_graph(kg: KnowledgeGraph) -> None:
         target_keyphrases = set(rel.target.get_property("keyphrases") or [])
         overlapped_items = sorted(source_keyphrases & target_keyphrases)
         pair_key = frozenset((rel.source.id, rel.target.id))
-        if overlapped_items and pair_key not in existing_keyphrase_pairs:
+
+        if overlapped_items and pair_key not in existing_pairs:
             kg.relationships.append(
                 Relationship(
                     type="keyphrases_overlap",
@@ -236,170 +270,153 @@ def prepare_multihop_compatibility_graph(kg: KnowledgeGraph) -> None:
                     properties={"overlapped_items": overlapped_items},
                 )
             )
-            existing_keyphrase_pairs.add(pair_key)
-            added_overlap_relationships += 1
+            existing_pairs.add(pair_key)
+            added += 1
 
-    print(f"  Added keyphrase-overlap relationships for multi-hop generation: {added_overlap_relationships}")
-
-
-prepare_multihop_compatibility_graph(kg)
+    print(f"Added {added} keyphrase-overlap relationships for multi-hop generation")
 
 
-# # ─────────────────────────────────────────────
-# # 4. GENERATE THE TESTSET
-# # ─────────────────────────────────────────────
-# from ragas.testset import TestsetGenerator
-# from ragas.testset.synthesizers import (
-#     SingleHopSpecificQuerySynthesizer,
-#     MultiHopAbstractQuerySynthesizer,
-#     MultiHopSpecificQuerySynthesizer,
-# )
-# from ragas.testset.persona import Persona
+def make_personas() -> list[Persona]:
+    return [
+        Persona(
+            name="Sinh viên UET",
+            role_description=(
+                "Một sinh viên Trường Đại học Công nghệ cần hỏi bằng tiếng Việt có dấu về thông tin trong tài liệu. "
+                "Ưu tiên câu hỏi tự nhiên về khoa, viện, phòng ban, chương trình đào tạo, học bổng, công tác sinh viên, "
+                "nhân sự, nghiên cứu và hợp tác. Không hỏi về metadata kỹ thuật như URL, ID, slug, loại bài viết, "
+                "ngày đăng hoặc ngày sửa."
+            ),
+        ),
+        Persona(
+            name="Chuyên gia tri thức UET",
+            role_description=(
+                "Một chuyên gia kiểm định tri thức đặt câu hỏi chính xác bằng tiếng Việt có dấu để kiểm tra khả năng "
+                "truy xuất và suy luận từ tài liệu UET. Câu hỏi phải bám vào nội dung nghiệp vụ như chức năng, nhiệm vụ, "
+                "quan hệ trực thuộc, đơn vị phụ trách, chương trình đào tạo, người liên quan, địa chỉ liên hệ, học bổng, "
+                "nghiên cứu hoặc hợp tác. Không hỏi về metadata kỹ thuật như URL, ID, slug, loại bài viết, ngày đăng hoặc ngày sửa."
+            ),
+        ),
+    ]
 
-# # ── Personas ───────────────────────────────────────────────────────────
-# # Tailor role descriptions to match your document domain.
-# persona_list = [
-#     Persona(
-#         name="Curious Student",
-#         role_description="A student seeking to understand key concepts and facts from the documents.",
-#     ),
-#     Persona(
-#         name="Domain Expert",
-#         role_description="An expert who asks precise, detailed questions to verify specific information.",
-#     ),
-#     Persona(
-#         name="General Reader",
-#         role_description="A non-specialist who asks broad, conceptual questions about the topic.",
-#     ),
-# ]
 
-# # ── Query distribution ─────────────────────────────────────────────────
-# # With 10+ documents, all three synthesizers are active.
-# # Weights must sum to 1.0.
-# #
-# #   SingleHopSpecific → direct fact retrieval    (tests recall & precision)
-# #   MultiHopAbstract  → cross-doc reasoning      (tests conceptual depth)
-# #   MultiHopSpecific  → multi-doc fact chaining  (tests multi-hop retrieval)
-# query_distribution = [
-#     # (SingleHopSpecificQuerySynthesizer(llm=generator_llm), 0.5),
-#     # (MultiHopAbstractQuerySynthesizer(llm=generator_llm),  0.25),
-#     # (MultiHopSpecificQuerySynthesizer(llm=generator_llm),  0.25),
-# ]
+def make_query_distribution(generator_llm):
+    return [
+        (SingleHopSpecificQuerySynthesizer(llm=generator_llm, property_name="keyphrases"), 0.5),
+        (
+            MultiHopAbstractQuerySynthesizer(
+                llm=generator_llm,
+                relation_property="summary_similarity",
+                abstract_property_name="themes",
+            ),
+            0.25,
+        ),
+        (
+            MultiHopSpecificQuerySynthesizer(
+                llm=generator_llm,
+                property_name="keyphrases",
+                relation_type="keyphrases_overlap",
+            ),
+            0.25,
+        ),
+    ]
 
-# generator = TestsetGenerator(
-#     llm=generator_llm,
-#     embedding_model=generator_embeddings,
-#     knowledge_graph=kg,
-#     persona_list=persona_list,
-# )
 
-# # Rule of thumb: 3–5 samples per document.
-# #   10 docs  → TESTSET_SIZE = 30–50
-# #   20 docs  → TESTSET_SIZE = 60–100
-# TESTSET_SIZE = 10
-
-# print(f"Generating testset ({TESTSET_SIZE} samples)...")
-# testset = generator.generate(
-#     testset_size=TESTSET_SIZE,
-#     query_distribution=query_distribution,
-#     run_config=run_config,
-# )
-
-# ─────────────────────────────────────────────
-# 4. GENERATE THE TESTSET
-# ─────────────────────────────────────────────
-from ragas.testset import TestsetGenerator
-from ragas.testset.synthesizers import (
-    SingleHopSpecificQuerySynthesizer,
-    MultiHopAbstractQuerySynthesizer,
-    MultiHopSpecificQuerySynthesizer,
-)
-from ragas.testset.persona import Persona
-
-# 1. Explicit Personas (Prevents the 'ValueError: No nodes that satisfied...' crash)
-persona_list = [
-    Persona(name="Curious Student", role_description="A student seeking to understand key concepts."),
-    Persona(name="Domain Expert", role_description="An expert who asks precise, detailed questions."),
-]
-
-nodes_with_keyphrases = sum(
-    1 for node in kg.nodes if node.type.name in {"CHUNK", "DOCUMENT"} and node.get_property("keyphrases")
-)
-if nodes_with_keyphrases == 0:
-    raise ValueError(
-        "The loaded knowledge graph has no nodes with `keyphrases`. "
-        "Rebuild it with KeyphrasesExtractor before generating a testset."
+def validate_graph_for_generation(kg: KnowledgeGraph) -> None:
+    nodes_with_keyphrases = sum(
+        1 for node in kg.nodes if node.type.name in {"CHUNK", "DOCUMENT"} and node.get_property("keyphrases")
     )
-print(f"  Nodes available for single-hop generation: {nodes_with_keyphrases}")
-
-# 2. Explicit Distribution
-#   SingleHopSpecific → direct fact retrieval
-#   MultiHopAbstract  → cross-section / cross-document reasoning
-#   MultiHopSpecific  → fact chaining through shared keyphrases
-query_distribution = [
-    (SingleHopSpecificQuerySynthesizer(llm=generator_llm, property_name="keyphrases"), 0.5),
-    (
-        MultiHopAbstractQuerySynthesizer(
-            llm=generator_llm,
-            relation_property="summary_similarity",
-            abstract_property_name="themes",
-        ),
-        0.25,
-    ),
-    (
-        MultiHopSpecificQuerySynthesizer(
-            llm=generator_llm,
-            property_name="keyphrases",
-            relation_type="keyphrases_overlap",
-        ),
-        0.25,
-    ),
-]
-
-# 3. Initialize Generator
-generator = TestsetGenerator(
-    llm=generator_llm,
-    embedding_model=generator_embeddings,
-    knowledge_graph=kg,
-    persona_list=persona_list, 
-)
-
-# 4. Set a high buffer. Ragas aggressively drops questions if the LLM 
-# formats the JSON slightly wrong or judges the question as "too vague".
-# Asking for 30 gives the system enough runway to output at least a few valid rows.
-TESTSET_SIZE = 30
-
-print(f"Generating testset (Targeting {TESTSET_SIZE} samples)...")
-testset = generator.generate(
-    testset_size=TESTSET_SIZE,
-    query_distribution=query_distribution,
-    run_config=run_config,
-)
+    if nodes_with_keyphrases == 0:
+        raise SystemExit("The knowledge graph has no nodes with `keyphrases`. Rebuild it first.")
+    print(f"Nodes available for single-hop generation: {nodes_with_keyphrases}")
 
 
-# ─────────────────────────────────────────────
-# 5. EXPORT & INSPECT RESULTS
-# ─────────────────────────────────────────────
-import pandas as pd
-
-df: pd.DataFrame = testset.to_pandas()
-if df.empty:
-    raise RuntimeError(
-        "Ragas generated an empty testset. Check the LLM endpoint output and rerun with "
-        "with_debugging_logs=True in generator.generate() for dropped-question details."
+def generate_testset(
+    kg: KnowledgeGraph,
+    generator_llm,
+    embeddings: NvidiaEmbeddings,
+    config: RunConfig,
+    testset_size: int,
+) -> pd.DataFrame:
+    validate_graph_for_generation(kg)
+    generator = TestsetGenerator(
+        llm=generator_llm,
+        embedding_model=embeddings,
+        knowledge_graph=kg,
+        persona_list=make_personas(),
     )
 
-print("\n── Testset Preview ──────────────────────────────")
-# Print the exact column names Ragas generated so you know what you have
-print("Available columns:", df.columns.tolist())
+    print(f"Generating testset with target size {testset_size}...")
+    testset = generator.generate(
+        testset_size=testset_size,
+        query_distribution=make_query_distribution(generator_llm),
+        run_config=config,
+    )
 
-# Safely print the first few rows of the entire dataframe
-print(df.head())
+    df: pd.DataFrame = testset.to_pandas()
+    if df.empty:
+        raise SystemExit("Ragas generated an empty testset. Check endpoint output and graph quality.")
+    return df
 
-CSV_PATH = "~/Documents/KGsAuto/services/rag_system/evaluation/testset.csv"
-df.to_csv(CSV_PATH, index=False)
-print(f"\nFull testset saved to '{CSV_PATH}'")
 
-# Optional: convert to HuggingFace Dataset for Ragas evaluation
-# from datasets import Dataset
-# hf_dataset = Dataset.from_pandas(df)
+def print_generation_summary(df: pd.DataFrame, target_size: int) -> None:
+    question_column = "user_input" if "user_input" in df.columns else "question" if "question" in df.columns else None
+    actual_size = len(df)
+
+    print("\nGeneration summary:")
+    print(f"Target size: {target_size}")
+    print(f"Actual rows: {actual_size}")
+    if actual_size < target_size:
+        print(f"Warning: Ragas returned {actual_size}/{target_size} rows after internal filtering.")
+
+    if not question_column:
+        print("Vietnamese question ratio: unavailable (no user_input/question column)")
+        return
+
+    questions = [str(value) for value in df[question_column].dropna().tolist()]
+    if not questions:
+        print("Vietnamese question ratio: unavailable (no questions)")
+        return
+
+    vietnamese_count = sum(1 for question in questions if looks_vietnamese(question))
+    print(f"Vietnamese question ratio: {vietnamese_count}/{len(questions)} ({vietnamese_count / len(questions):.1%})")
+
+
+def looks_vietnamese(text: str) -> bool:
+    normalized = text.lower()
+    return any(char in normalized for char in VIETNAMESE_CHARS)
+
+
+def main() -> None:
+    load_environment()
+    args = parse_args()
+    generator_llm = create_generator_llm(args.generator_model, args.generator_base_url)
+    embeddings = create_embeddings(args.embed_model, args.embed_base_url, args.embed_delay_seconds)
+    config = make_run_config(args.max_workers)
+
+    kg = (
+        build_knowledge_graph(
+            args.input_dir,
+            args.graph_path,
+            generator_llm,
+            embeddings,
+            config,
+            resume_from_checkpoint=args.resume_from_checkpoint,
+        )
+        if args.rebuild_graph
+        else load_knowledge_graph(args.graph_path)
+    )
+    prepare_multihop_compatibility_graph(kg)
+
+    df = generate_testset(kg, generator_llm, embeddings, config, args.testset_size)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(args.output, index=False)
+    print_generation_summary(df, args.testset_size)
+
+    print("\nTestset preview:")
+    print("Columns:", df.columns.tolist())
+    print(df.head())
+    print(f"\nSaved testset to '{args.output}'")
+
+
+if __name__ == "__main__":
+    main()

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from services.rag_system.config import RAGConfig
-from services.rag_system.core.unified_pipeline import UnifiedRetrievalPipeline
+from services.rag_system.pipeline import UnifiedRetrievalPipeline
 
 
 @dataclass
@@ -114,13 +114,13 @@ def parse_sample(row: dict[str, Any]) -> EvaluationSample:
     question = str(row.get("user_input") or row.get("question") or "")
     sample_id = str(row.get("id") or uuid.uuid4())
     reference = str(row.get("reference") or "")
-    
+
     tags = list(row.get("tags") or [])
     if row.get("synthesizer_name"):
         tags.append(str(row["synthesizer_name"]))
     if row.get("persona_name"):
         tags.append(str(row["persona_name"]))
-        
+
     metadata = dict(row.get("metadata") or {})
     for k, v in row.items():
         if k not in ["id", "question", "user_input", "reference", "tags", "metadata"]:

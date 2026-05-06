@@ -30,7 +30,7 @@ def cli():
 @click.option("--collection", default=None, help="Qdrant collection name (default: from config)")
 def create_collection(collection):
     """Create Qdrant collection for markdown chunks"""
-    from services.rag_system.storage import DocumentStore
+    from services.rag_system.retrieval.document import DocumentStore
 
     config = RAGConfig()
     if collection:
@@ -44,7 +44,7 @@ def create_collection(collection):
 @click.option("--collection", default=None, help="Qdrant collection name (default: from config)")
 def delete_collection(collection):
     """Delete Qdrant collection"""
-    from services.rag_system.storage import DocumentStore
+    from services.rag_system.retrieval.document import DocumentStore
 
     config = RAGConfig()
     if collection:
@@ -60,7 +60,7 @@ def delete_collection(collection):
 @click.option("--force", is_flag=True, help="Force re-indexing (delete existing collection)")
 def index(limit, force):
     """Index markdown documents to Qdrant"""
-    from services.rag_system.retrieval import MarkdownIndexer
+    from services.rag_system.retrieval.indexing import MarkdownIndexer
 
     config = RAGConfig()
     indexer = MarkdownIndexer(config)
@@ -88,7 +88,7 @@ def index(limit, force):
 @click.option("--show-evidence", is_flag=True, help="Show retrieved evidence")
 def query(question, mode, top_k, show_evidence):
     """Query the unified retrieval system"""
-    from services.rag_system.core import UnifiedRetrievalPipeline
+    from services.rag_system.pipeline import UnifiedRetrievalPipeline
 
     config = RAGConfig()
     pipeline = UnifiedRetrievalPipeline(config)
@@ -294,7 +294,8 @@ def evaluate_score(results, output, metrics):
 @cli.command()
 def test_connections():
     """Test connections to Qdrant and Neo4j"""
-    from services.rag_system.storage import DocumentStore, GraphStore
+    from services.rag_system.retrieval.document import DocumentStore
+    from apps.backend.app.db.neo4j import get_driver
 
     config = RAGConfig()
 
@@ -318,12 +319,13 @@ def test_connections():
     # Test Neo4j
     click.echo("2. Testing Neo4j connection...")
     try:
-        graph_store = GraphStore(config)
-        if graph_store.test_connection():
-            count = graph_store.get_entity_count()
-            click.echo(f"   ✓ Neo4j connected: {count} entities in graph")
-        else:
-            click.echo("   ✗ Neo4j connection failed")
+        driver = get_driver()
+        with driver.session() as session:
+            result = session.run("RETURN 1 as test")
+            result.single()
+            count_result = session.run("MATCH (n) WHERE n.id IS NOT NULL RETURN count(n) as count")
+            count = count_result.single()["count"]
+        click.echo(f"   ✓ Neo4j connected: {count} entities in graph")
     except Exception as e:
         click.echo(f"   ✗ Neo4j connection failed: {e}")
 
