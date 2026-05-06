@@ -1,12 +1,11 @@
 """Markdown document indexing"""
 
-from pathlib import Path
 from typing import Optional
 
 from tqdm import tqdm
 
 from services.rag_system.retrieval.chunking import MarkdownChunker
-from services.rag_system.storage import DocumentStore
+from services.rag_system.retrieval.document import DocumentStore
 
 
 class MarkdownIndexer:
@@ -86,35 +85,3 @@ class MarkdownIndexer:
         print("=" * 60)
 
         return stats
-
-    def index_file(self, md_path: Path) -> int:
-        store = DocumentStore(self.config)
-
-        if not store.collection_exists():
-            store.create_collection()
-
-        print(f"Chunking {md_path.name}...")
-        chunks = self.chunker.chunk_file(md_path)
-        print(f"✓ Created {len(chunks)} chunks")
-
-        chunk_payloads = []
-        for chunk in chunks:
-            payload = {
-                "chunk_id": chunk.chunk_id,
-                "doc_id": chunk.doc_id,
-                "source_path": chunk.source_path,
-                "title": chunk.title,
-                "section": chunk.section,
-                "text": chunk.text,
-                "char_start": chunk.char_start,
-                "char_end": chunk.char_end,
-                "chunk_index": chunk.chunk_index,
-                **chunk.metadata,
-            }
-            chunk_payloads.append(payload)
-
-        print("Indexing to Qdrant...")
-        chunks_indexed = store.upsert_chunks(chunk_payloads, show_progress=False)
-        print(f"✓ Indexed {chunks_indexed} chunks")
-
-        return chunks_indexed

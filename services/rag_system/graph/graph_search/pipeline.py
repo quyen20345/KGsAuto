@@ -13,7 +13,7 @@ def _looks_negative(verification: str) -> bool:
     lowered = " ".join(normalize(verification))
     return lowered.startswith("no") or " no" in lowered
 
-from services.rag_system.components.llm.components import (
+from services.rag_system.graph.graph_search.components import (
     answer_generation,
     answer_generation_deep,
     evidence_verification,
@@ -25,14 +25,14 @@ from services.rag_system.components.llm.components import (
     question_decomposition_deep_kg,
     text_summary,
 )
-from services.rag_system.workflows.deep_graph_search.parsing import (
+from services.rag_system.graph.graph_search.parsing import (
     parse_expanded_queries,
     parse_relational_sub_queries,
     parse_semantic_sub_queries,
     relational_query_to_retrieval_text,
 )
-from services.rag_system.retrieval.adapters.neo4j_adapter import Neo4jAdapter
-from services.rag_system.workflows.deep_graph_search.utils import format_history_context, normalize
+from services.rag_system.graph.neo4j_context_adapter import Neo4jAdapter
+from services.rag_system.graph.graph_search.utils import format_history_context, normalize
 
 
 SUPPORTED_MODES = {"naive_grag", "graph_search"}
@@ -52,7 +52,7 @@ class GraphSearchMethod(Protocol):
     async def aquery_context(self, question: str) -> str:
         ...
 
-    async def aquery_answer(self, question: str) -> str:
+    async def aquery_answer(self, question: str, context: str | None = None) -> str:
         ...
 
     def context_filter(self, context_data: str, filter_type: str) -> str:
@@ -73,7 +73,7 @@ async def naive_grag_reasoning(question: str, grag_method: GraphSearchMethod) ->
     retrieval_time_ms = (time.perf_counter() - retrieval_start) * 1000
 
     synthesis_start = time.perf_counter()
-    answer = await grag_method.aquery_answer(question=question)
+    answer = await grag_method.aquery_answer(question=question, context=context)
     synthesis_time_ms = (time.perf_counter() - synthesis_start) * 1000
 
     return {

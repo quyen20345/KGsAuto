@@ -6,7 +6,6 @@ import asyncio
 import json
 import os
 import re
-import unicodedata
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -39,11 +38,6 @@ def _chunk_ids(properties: dict[str, Any]) -> list[str]:
             if text and text not in ids:
                 ids.append(text)
     return ids
-
-
-def _fold_text(value: str) -> str:
-    normalized = unicodedata.normalize("NFD", value.lower().replace("đ", "d"))
-    return "".join(char for char in normalized if unicodedata.category(char) != "Mn")
 
 
 def _dedupe_text(values: Iterable[str]) -> list[str]:
@@ -114,14 +108,9 @@ class Neo4jAdapter:
         self.config = config or RAGConfig()
         self.top_k = top_k
         self.raw_markdown_dir = Path(raw_markdown_dir or os.getenv("RAG_MARKDOWN_DIR", "data/raw/uet"))
-        self.keyword_extraction_mode = getattr(self.config, "graph_keyword_extraction_mode", "llm_with_fallback")
         self.keyword_max_terms = getattr(self.config, "graph_keyword_max_terms", 12)
         self.keyword_timeout_seconds = getattr(self.config, "graph_keyword_timeout_seconds", 15.0)
         self._markdown_index: dict[str, Path] | None = None
-
-    def init_graphrag(self, working_dir: str, EMBED_MODEL):
-        """No-op: graph already exists in Neo4j."""
-        pass
 
     async def aquery_context(self, question: str) -> str:
         keywords = await self._extract_keywords_async(question)
@@ -195,14 +184,18 @@ class Neo4jAdapter:
                 add_chunk(chunk_id)
 
         for keyword in keywords[:8]:
-            for entity in self._search_entities(keyword, limit=max(3, self.top_k)):
-                add_entity_from_details(self._get_entity_details(entity["id"]))
-                for rel in self._get_relationships(entity["id"], limit=self.top_k * 2):
+            entities = await self._asearch_entities(keyword, limit=max(3, self.top_k))
+            for entity in entities:
+                details = await self._aget_entity_details(entity["id"])
+                add_entity_from_details(details)
+                rels = await self._aget_relationships(entity["id"], limit=self.top_k * 2)
+                for rel in rels:
                     add_relationship(rel)
                     add_entity_from_details(self._details_from_rel(rel, "source"))
                     add_entity_from_details(self._details_from_rel(rel, "target"))
 
-            for rel in self._search_relationships(keyword, limit=self.top_k * 2):
+            rels = await self._asearch_relationships(keyword, limit=self.top_k * 2)
+            for rel in rels:
                 add_relationship(rel)
                 add_entity_from_details(self._details_from_rel(rel, "source"))
                 add_entity_from_details(self._details_from_rel(rel, "target"))
@@ -220,10 +213,11 @@ class Neo4jAdapter:
             list(sources_by_id.values())[: self.top_k],
         )
 
-    async def aquery_answer(self, question: str) -> str:
-        from services.rag_system.workflows.deep_graph_search.utils import openai_complete
+    async def aquery_answer(self, question: str, context: str | None = None) -> str:
+        from services.rag_system.graph.graph_search.utils import openai_complete
 
-        context = await self.aquery_context(question)
+        if context is None:
+            context = await self.aquery_context(question)
         prompt = f"""Based only on the following knowledge graph and document evidence, answer the question in Vietnamese.
 
 Question: {question}
@@ -271,123 +265,52 @@ Knowledge Graph Data (Relationship):
         return context_data
 
     async def _extract_keywords_async(self, query: str) -> List[str]:
-        normalized_query = self._normalize_query(query)
-        heuristic = self._extract_keywords_heuristic(normalized_query)
-        mode = self.keyword_extraction_mode
-        if mode == "heuristic_only":
-            return heuristic[: self.keyword_max_terms]
-
-        llm_keywords = await self._extract_llm_keywords(normalized_query)
-        if not any(llm_keywords.values()):
-            fallback = [] if mode == "llm_only" else heuristic[: self.keyword_max_terms]
-            return fallback
-
-        merged = self._merge_keyword_candidates(normalized_query, heuristic, llm_keywords)
-        selected = merged[: self.keyword_max_terms]
-        if merged or mode == "llm_only":
-            return selected
-        return heuristic[: self.keyword_max_terms]
-
-    async def _extract_llm_keywords(self, query: str) -> dict[str, list[str]]:
-        from services.rag_system.components.llm.components import empty_keyword_extraction, keywords_extraction
-
-        try:
-            return await asyncio.wait_for(keywords_extraction(query), timeout=self.keyword_timeout_seconds)
-        except Exception:
-            return empty_keyword_extraction()
-
-    def _merge_keyword_candidates(
-        self,
-        normalized_query: str,
-        heuristic_keywords: list[str],
-        llm_keywords: dict[str, list[str]],
-    ) -> list[str]:
+        llm_keywords = await self._extract_llm_keywords(query)
         candidates = [
-            *self._domain_priority_terms(normalized_query),
             *llm_keywords.get("must_keep_phrases", []),
             *llm_keywords.get("low_level_keywords", []),
             *llm_keywords.get("expanded_keywords", []),
             *llm_keywords.get("high_level_keywords", []),
-            *heuristic_keywords,
-            normalized_query.strip(),
         ]
-        return _dedupe_text(candidates)
-
-    def _extract_keywords_heuristic(self, query: str) -> List[str]:
-        normalized_query = self._normalize_query(query)
-        return _dedupe_text([*self._domain_priority_terms(normalized_query), *self._token_keywords(normalized_query)]) or [normalized_query.strip()]
-
-    def _domain_priority_terms(self, query: str) -> list[str]:
-        folded_query = _fold_text(query)
-        role_query = any(term in folded_query for term in ("hieu truong", "rector"))
-        uet_query = any(
-            term in folded_query
-            for term in (
-                "dai hoc cong nghe",
-                "dh cong nghe",
-                "dhcn",
-                "uet",
-                "vnu-uet",
-                "university of engineering and technology",
-            )
-        )
-
-        priority_terms: list[str] = []
-        if role_query and uet_query:
-            priority_terms.extend(
-                [
-                    "Hiệu trưởng Trường Đại học Công nghệ",
-                    "Hiệu trưởng Trường ĐH Công nghệ",
-                    "Hiệu trưởng Trường ĐHCN",
-                    "Ban Giám hiệu",
-                ]
-            )
-        elif role_query:
-            priority_terms.extend(["Hiệu trưởng", "Ban Giám hiệu"])
-        if uet_query:
-            priority_terms.extend(
-                [
-                    "Trường Đại học Công nghệ",
-                    "Trường ĐH Công nghệ",
-                    "Trường ĐHCN",
-                    "UET",
-                    "VNU University of Engineering and Technology",
-                ]
-            )
-        return priority_terms
-
-    def _token_keywords(self, query: str) -> list[str]:
-        stop_words = {
-            "là", "của", "các", "có", "được", "này", "đó", "cho", "và", "với",
-            "ai", "gì", "nào", "trong", "theo", "một", "những", "quan", "hệ",
-            "the", "of", "in", "on", "and", "or", "to", "is", "are", "was",
-            "đại", "học", "công", "nghệ", "trường",
-            "dai", "hoc", "cong", "nghe", "truong",
-        }
-        words = re.findall(r"\w+", query.lower(), flags=re.UNICODE)
-        keywords: list[str] = []
-        for word in words:
-            if len(word) <= 2 or word in stop_words:
-                continue
-            if word not in keywords:
-                keywords.append(word)
+        keywords = _dedupe_text(candidates)[: self.keyword_max_terms]
+        if not keywords:
+            query_preview = " ".join(query.split())[:160]
+            raise RuntimeError(f"Graph keyword extraction returned no keywords for query: {query_preview}")
         return keywords
 
-    def _normalize_query(self, query: str) -> str:
-        normalized = " ".join(query.split())
-        replacements = {
-            "hiểu trưởng": "hiệu trưởng",
-            "hỉệu trưởng": "hiệu trưởng",
-            "hiệu trưỏng": "hiệu trưởng",
-            "hiệu truong": "hiệu trưởng",
-            "hieu truong": "hiệu trưởng",
-        }
-        folded = _fold_text(normalized)
-        for typo, replacement in replacements.items():
-            if _fold_text(typo) in folded:
-                normalized = re.sub(typo, replacement, normalized, flags=re.IGNORECASE)
-                folded = _fold_text(normalized)
-        return normalized
+    async def _extract_llm_keywords(self, query: str) -> dict[str, list[str]]:
+        from services.rag_system.graph.graph_search.components import GraphKeywordExtractionError, keywords_extraction
+
+        try:
+            return await asyncio.wait_for(keywords_extraction(query), timeout=self.keyword_timeout_seconds)
+        except asyncio.TimeoutError as exc:
+            query_preview = " ".join(query.split())[:160]
+            raise RuntimeError(
+                f"Graph keyword extraction timed out after {self.keyword_timeout_seconds:.1f}s for query: {query_preview}"
+            ) from exc
+        except GraphKeywordExtractionError as exc:
+            query_preview = " ".join(query.split())[:160]
+            raise RuntimeError(f"Graph keyword extraction failed for query: {query_preview}: {exc}") from exc
+
+    async def _asearch_entities(self, fragment: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Async wrapper for _search_entities using thread pool."""
+        import asyncio
+        return await asyncio.to_thread(self._search_entities, fragment, limit)
+
+    async def _asearch_relationships(self, fragment: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Async wrapper for _search_relationships using thread pool."""
+        import asyncio
+        return await asyncio.to_thread(self._search_relationships, fragment, limit)
+
+    async def _aget_entity_details(self, entity_id: str) -> Dict[str, Any] | None:
+        """Async wrapper for _get_entity_details using thread pool."""
+        import asyncio
+        return await asyncio.to_thread(self._get_entity_details, entity_id)
+
+    async def _aget_relationships(self, entity_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Async wrapper for _get_relationships using thread pool."""
+        import asyncio
+        return await asyncio.to_thread(self._get_relationships, entity_id, limit)
 
     def _search_entities(self, fragment: str, limit: int = 10) -> List[Dict[str, Any]]:
         query = """

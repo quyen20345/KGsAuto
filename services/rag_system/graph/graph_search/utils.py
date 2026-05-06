@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-import os
 import re
 import string
 from typing import Any
 
-from dotenv import load_dotenv
+from services.llms import get_llm
 
-load_dotenv()
 
-LLM_BASE_URL = os.getenv("OPENAI_COMPATIBLE_BASE_URL", "http://192.168.190.8:8000/v1/")
-LLM_API_KEY = os.getenv("OPENAI_COMPATIBLE_API_KEY", "NONE")
-MODEL_NAME = os.getenv("OPENAI_COMPATIBLE_MODEL", "Qwen2.5-32B-Instruct")
+def _get_llm_client(model_name: str | None = None):
+    """Get the unified LLM client from RAG config / env defaults."""
+    from services.rag_system.config import RAGConfig
+
+    config = RAGConfig()
+    return get_llm(config.llm_provider, model_name=model_name or config.llm_model)
 
 
 async def openai_complete(
@@ -24,23 +25,20 @@ async def openai_complete(
     temperature: float = 0.0,
     **kwargs: Any,
 ) -> str:
-    """Call the configured OpenAI-compatible chat endpoint."""
-    from openai import AsyncOpenAI
+    """Call the configured LLM via the unified services.llms client."""
+    # Build combined prompt if history messages are provided
+    effective_prompt = prompt
+    if history_messages:
+        parts = []
+        for msg in history_messages:
+            role = msg.get("role", "user")
+            parts.append(f"[{role}]: {msg.get('content', '')}")
+        parts.append(f"[user]: {prompt}")
+        effective_prompt = "\n".join(parts)
 
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.extend(history_messages or [])
-    messages.append({"role": "user", "content": prompt})
-
-    async with AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL) as client:
-        response = await client.chat.completions.create(
-            model=model or MODEL_NAME,
-            messages=messages,
-            temperature=temperature,
-            **kwargs,
-        )
-    return response.choices[0].message.content or ""
+    llm = _get_llm_client(model)
+    response = await llm.agenerate(prompt=effective_prompt, system_prompt=system_prompt)
+    return response.content or ""
 
 
 def format_history_context(history: list[tuple[str, str, str]]) -> str:

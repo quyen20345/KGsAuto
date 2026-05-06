@@ -53,9 +53,8 @@ class RAGConfig:
     markdown_weight: float = 0.4
 
     # GraphSearch keyword extraction
-    graph_keyword_extraction_mode: str = field(default_factory=lambda: os.getenv("GRAPH_KEYWORD_EXTRACTION_MODE", "llm_with_fallback"))
     graph_keyword_max_terms: int = field(default_factory=lambda: int(os.getenv("GRAPH_KEYWORD_MAX_TERMS", "12")))
-    graph_keyword_timeout_seconds: float = field(default_factory=lambda: float(os.getenv("GRAPH_KEYWORD_TIMEOUT_SECONDS", "15.0")))
+    graph_keyword_timeout_seconds: float = field(default_factory=lambda: float(os.getenv("GRAPH_KEYWORD_TIMEOUT_SECONDS", "60.0")))
 
     # Evaluation configuration (based on user decision: 30 questions pilot)
     eval_pilot_size: int = 30  # Start with 30 questions

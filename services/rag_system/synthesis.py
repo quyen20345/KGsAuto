@@ -136,57 +136,6 @@ class AnswerSynthesizer:
             user_prompt=user_prompt,
         )
 
-    def synthesize_graph_only(self, question: str, facts: List[Dict[str, Any]]) -> Answer:
-        system_prompt = BASE_SYSTEM_PROMPT + """
-Chế độ: Graph-only (chỉ sử dụng thông tin từ knowledge graph)
-
-Quy tắc bổ sung:
-1. CHỈ sử dụng thông tin từ các fact được cung cấp bên dưới
-2. KHÔNG sử dụng kiến thức bên ngoài
-3. Trích dẫn nguồn bằng cách sử dụng [entity_name] ở cuối mỗi thông tin
-4. Nếu không đủ thông tin, nói rõ phần nào còn thiếu
-""" + CITATION_INSTRUCTIONS
-
-        context_parts = []
-        for i, fact in enumerate(facts, 1):
-            entity_name = fact.get('entity_name', 'unknown')
-            fact_type = fact.get('fact_type', 'property')
-            fact_text = fact.get('fact_text', '')
-            score = _score(fact.get('score'))
-
-            context_parts.append(
-                f"""[{i}] Entity: {entity_name}
-Type: {fact_type}
-Relevance: {score:.3f}
-
-Fact: {fact_text}
-"""
-            )
-
-        context = "\n" + "=" * 60 + "\n".join(context_parts)
-
-        user_prompt = f"""Ngữ cảnh (các fact từ knowledge graph):
-{context}
-
-{"="*60}
-
-Câu hỏi: {question}
-
-Hướng dẫn trả lời:
-- Dựa vào các fact trên để trả lời
-- Trích dẫn nguồn bằng [entity_name]
-- Nếu không đủ thông tin, nói rõ thiếu gì
-
-Trả lời:"""
-
-        return self.synthesize(
-            question=question,
-            evidence=facts,
-            mode="graph_search",
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-        )
-
     def _format_markdown_evidence(self, markdown_chunks: List[Dict[str, Any]]) -> str:
         markdown_parts = []
         for i, chunk in enumerate(markdown_chunks, 1):
@@ -201,62 +150,6 @@ Nội dung:
 """
             )
         return chr(10).join(markdown_parts) if markdown_parts else "Không có markdown evidence."
-
-    def synthesize_hybrid(
-        self,
-        question: str,
-        markdown_chunks: List[Dict[str, Any]],
-        graph_facts: List[Dict[str, Any]],
-    ) -> Answer:
-        system_prompt = BASE_SYSTEM_PROMPT + """
-Chế độ: Hybrid (kết hợp semantic search trên markdown và graph search trên knowledge graph)
-
-Quy tắc bổ sung:
-1. CHỈ sử dụng thông tin từ hai nhóm evidence được cung cấp bên dưới
-2. Phân biệt rõ nguồn từ tài liệu markdown và nguồn từ knowledge graph khi lập luận
-3. Nếu hai nguồn mâu thuẫn, nêu rõ mâu thuẫn và ưu tiên trả lời có điều kiện thay vì suy đoán
-4. Trích dẫn markdown bằng [chunk_id] và graph bằng [entity_name] khi có thể
-5. Nếu cả hai nguồn không đủ thông tin, nói rõ thiếu thông tin gì
-""" + CITATION_INSTRUCTIONS
-
-        graph_parts = []
-        for i, fact in enumerate(graph_facts, 1):
-            graph_parts.append(
-                f"""[G{i}] Entity: {fact.get('entity_name', 'unknown')}
-Type: {fact.get('fact_type', 'fact')}
-Relevance: {_score(fact.get('score')):.3f}
-
-Fact:
-{fact.get('fact_text', '')}
-"""
-            )
-
-        user_prompt = f"""Semantic evidence từ markdown:
-{"=" * 60}
-{self._format_markdown_evidence(markdown_chunks)}
-
-Graph evidence từ knowledge graph:
-{"=" * 60}
-{chr(10).join(graph_parts) if graph_parts else "Không có graph evidence."}
-
-{"=" * 60}
-
-Câu hỏi: {question}
-
-Hướng dẫn trả lời:
-- Tổng hợp cả hai nhóm evidence nếu chúng bổ sung cho nhau
-- Nêu rõ khi câu trả lời chỉ được hỗ trợ bởi một nguồn
-- Không dùng kiến thức ngoài context
-
-Trả lời:"""
-
-        return self.synthesize(
-            question=question,
-            evidence=[*markdown_chunks, *graph_facts],
-            mode="hybrid",
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-        )
 
     def synthesize_hybrid_graphsearch(
         self,

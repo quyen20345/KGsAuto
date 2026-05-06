@@ -2,53 +2,23 @@ from typing import Any
 
 PROMPTS: dict[str, Any] = {}
 
-PROMPTS["keywords_extraction"] = """---Role---
+PROMPTS["keywords_extraction"] = """Extract Neo4j retrieval keywords for this Vietnamese/UET knowledge graph query.
 
-You are an accuracy-first query planner for Vietnamese knowledge graph retrieval.
+Return ONLY valid JSON with this exact schema and string arrays:
+{{"must_keep_phrases":[],"low_level_keywords":[],"expanded_keywords":[],"high_level_keywords":[]}}
 
----Goal---
+Rules:
+- Put exact entity names, event names, organization names, role titles, and complete quoted phrases in "must_keep_phrases".
+- Put short exact lookup terms and relationship phrases in "low_level_keywords".
+- Put aliases, acronyms, abbreviations, and typo-corrected variants in "expanded_keywords".
+- Put broader intents/concepts in "high_level_keywords".
+- Preserve Vietnamese diacritics when present; infer canonical terms for noisy/no-diacritic text.
+- Avoid filler words such as "toi", "em", "hoi", "cho", "ve", "thi", "la", "duoc".
+- Do not return all arrays empty. If uncertain, return the best meaningful terms from the query.
+- No markdown fences, no explanation, no comments.
 
-Extract retrieval terms that maximize recall and precision for Neo4j entity and relationship lookup. Prefer exact entity names, organization names, role titles, aliases, acronyms, relation phrases, and typo-corrected canonical terms.
-
----Instructions---
-
-- Output only valid JSON. Do not include markdown fences or explanations.
-- Preserve Vietnamese diacritics when present.
-- Infer the intended canonical terms for noisy or misspelled Vietnamese queries.
-- Include aliases, abbreviations, and acronyms that may appear in graph node names or relationship descriptions.
-- Keep important multiword phrases intact.
-- Avoid generic filler words that are unlikely to identify graph evidence.
-- Use this exact schema:
-  - "high_level_keywords": broader concepts or intents.
-  - "low_level_keywords": exact entities, people, organizations, roles, and relationship phrases.
-  - "expanded_keywords": aliases, acronyms, abbreviations, paraphrases, and typo-corrected variants.
-  - "must_keep_phrases": complete phrases that should be queried without splitting.
-
----Examples---
-
-Query: "Ai là hiểu trưởng đại học công nghệ?"
-Output:
-{{
-  "high_level_keywords": ["lãnh đạo trường đại học", "ban giám hiệu"],
-  "low_level_keywords": ["Hiệu trưởng", "Trường Đại học Công nghệ"],
-  "expanded_keywords": ["UET", "Trường ĐHCN", "Đại học Công nghệ", "Hiệu trưởng Trường ĐH Công nghệ"],
-  "must_keep_phrases": ["Hiệu trưởng Trường Đại học Công nghệ"]
-}}
-
-Query: "Ban giám hiệu UET gồm những ai?"
-Output:
-{{
-  "high_level_keywords": ["ban giám hiệu", "lãnh đạo đơn vị"],
-  "low_level_keywords": ["Ban Giám hiệu", "UET"],
-  "expanded_keywords": ["Trường Đại học Công nghệ", "Trường ĐHCN", "VNU University of Engineering and Technology"],
-  "must_keep_phrases": ["Ban Giám hiệu UET", "Ban Giám hiệu Trường Đại học Công nghệ"]
-}}
-
----Query---
-{query}
-
----JSON Output---
-"""
+Query: {query}
+JSON:"""
 
 PROMPTS["query_decomposition_deep"] = """---Role---
 

@@ -1,14 +1,23 @@
 import logging
 
-from services.rag_system.workflows.deep_graph_search.parsing import KEYWORD_FIELDS, parse_keyword_extraction
-from services.rag_system.components.prompts.prompts import PROMPTS
-from services.rag_system.workflows.deep_graph_search.utils import openai_complete
+from services.rag_system.graph.graph_search.parsing import KEYWORD_FIELDS, parse_keyword_extraction
+from services.rag_system.graph.graph_search.prompts import PROMPTS
+from services.rag_system.graph.graph_search.utils import openai_complete
 
 logger = logging.getLogger(__name__)
 
 
+class GraphKeywordExtractionError(RuntimeError):
+    pass
+
+
 def _log_component_error(component: str, error: Exception) -> None:
     logger.warning("GraphSearch %s failed: %s", component, error)
+
+
+def _has_keywords(keyword_groups: dict[str, list[str]]) -> bool:
+    return any(keyword_groups.get(field) for field in KEYWORD_FIELDS)
+
 
 def empty_keyword_extraction() -> dict[str, list[str]]:
     return {field: [] for field in KEYWORD_FIELDS}
@@ -19,10 +28,14 @@ async def keywords_extraction(query):
         keyword_prompt = PROMPTS["keywords_extraction"].format(query=query)
         keywords_response = await openai_complete(prompt=keyword_prompt)
         parsed = parse_keyword_extraction(keywords_response)
+        if not _has_keywords(parsed):
+            raise GraphKeywordExtractionError("keyword LLM returned no parseable keywords")
         return parsed
     except Exception as error:
         _log_component_error("keywords_extraction", error)
-        return empty_keyword_extraction()
+        if isinstance(error, GraphKeywordExtractionError):
+            raise
+        raise GraphKeywordExtractionError(str(error)) from error
 
 async def question_decomposition_deep(query):
     try:

@@ -2,7 +2,7 @@ import os
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 from services.llms.base import BaseLLM
 from services.llms.factory import register_llm
@@ -74,6 +74,57 @@ class OpenAICompatibleClient(BaseLLM):
                 content=f"{self.provider_name} Error (host={self.host}): {str(e)}",
                 model=self.model_name,
             )
+
+    async def agenerate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+        """Async generate text from prompt using AsyncOpenAI."""
+        client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.host,
+            timeout=None,
+        )
+        try:
+            messages: List[Dict[str, str]] = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            if prompt:
+                messages.append({"role": "user", "content": prompt})
+
+            response = await client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+            )
+
+            usage_tokens = response.usage.total_tokens if response.usage else None
+            response_model = getattr(response, "model", None) or self.model_name
+
+            message = response.choices[0].message if response.choices else None
+            content = message.content if message else None
+            if not content and message is not None:
+                content = getattr(message, "reasoning_content", None)
+            if not content:
+                content = self._extract_text_from_message_parts(message)
+            if content is None:
+                finish_reason = response.choices[0].finish_reason if response.choices else "unknown"
+                content = (
+                    f"{self.provider_name} returned empty assistant content "
+                    f"(finish_reason={finish_reason})."
+                )
+
+            return LLMResponse(
+                content=content,
+                model=response_model,
+                usage_tokens=usage_tokens,
+            )
+        except Exception as e:
+            return LLMResponse(
+                content=f"{self.provider_name} Error (host={self.host}): {str(e)}",
+                model=self.model_name,
+            )
+        finally:
+            try:
+                await client.close()
+            except Exception:
+                pass
 
     @staticmethod
     def _env(name: Optional[str]) -> Optional[str]:

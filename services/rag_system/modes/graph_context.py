@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Optional
 
 from services.rag_system.modes.common import base_response, empty_evidence, run_async
-from services.rag_system.retrieval.adapters.neo4j_adapter import Neo4jAdapter
-from services.rag_system.workflows.deep_graph_search import pipeline as graph_search_pipeline
+from services.rag_system.graph.neo4j_context_adapter import Neo4jAdapter
+from services.rag_system.graph.graph_search import pipeline as graph_search_pipeline
 
 
 def run_naive_grag(pipeline, question: str, top_k: Optional[int], include_evidence: bool) -> dict:

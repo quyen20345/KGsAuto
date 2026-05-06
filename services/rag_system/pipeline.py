@@ -7,7 +7,7 @@ import time
 from typing import Any, Optional
 
 from services.rag_system.config import RAGConfig
-from services.rag_system.components.synthesis import AnswerSynthesizer
+from services.rag_system.synthesis import AnswerSynthesizer
 from services.rag_system.modes import (
     arun_graph_search,
     arun_hybrid,
@@ -17,8 +17,6 @@ from services.rag_system.modes import (
     run_naive_grag,
     run_semantic_search,
 )
-from services.rag_system.retrieval.graph import GraphRetriever
-from services.rag_system.retrieval.hybrid import HybridRetriever
 from services.rag_system.retrieval.markdown import MarkdownRetriever
 
 
@@ -40,8 +38,6 @@ class UnifiedRetrievalPipeline:
     def __init__(self, config: Optional[RAGConfig] = None):
         self.config = config or RAGConfig()
         self.markdown_retriever = MarkdownRetriever(self.config)
-        self.graph_retriever = GraphRetriever(self.config)
-        self.hybrid_retriever = HybridRetriever(self.config)
         self.synthesizer = AnswerSynthesizer(self.config)
 
     def query(
@@ -87,4 +83,3 @@ class UnifiedRetrievalPipeline:
 
         result["total_time_ms"] = (time.perf_counter() - start_time) * 1000
         return result
-

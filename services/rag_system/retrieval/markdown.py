@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Any
 
-from services.rag_system.storage import DocumentStore
+from services.rag_system.retrieval.document import DocumentStore
 
 
 class MarkdownRetriever:
@@ -10,12 +10,18 @@ class MarkdownRetriever:
 
     def __init__(self, config):
         self.config = config
+        self._store = None
+
+    def _get_store(self) -> DocumentStore:
+        if self._store is None:
+            self._store = DocumentStore(self.config)
+        return self._store
 
     def retrieve(self, query: str, top_k: int = None) -> List[Dict[str, Any]]:
         if top_k is None:
             top_k = self.config.top_k_markdown
 
-        store = DocumentStore(self.config)
+        store = self._get_store()
 
         if not store.collection_exists():
             print(f"Warning: Collection '{self.config.markdown_collection}' does not exist")
@@ -23,11 +29,3 @@ class MarkdownRetriever:
             return []
 
         return store.search(query, top_k=top_k)
-
-    def retrieve_by_doc_id(self, doc_id: str, top_k: int = None) -> List[Dict[str, Any]]:
-        if top_k is None:
-            top_k = self.config.top_k_markdown
-
-        store = DocumentStore(self.config)
-        chunks = store.search(doc_id, top_k=top_k)
-        return [c for c in chunks if c.get('doc_id') == doc_id]

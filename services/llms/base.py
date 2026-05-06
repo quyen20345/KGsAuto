@@ -9,3 +9,8 @@ class BaseLLM(ABC):
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
         """Generate text from prompt."""
         pass
+
+    async def agenerate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+        """Async generate text from prompt. Default: run sync in thread."""
+        import asyncio
+        return await asyncio.to_thread(self.generate, prompt, system_prompt)
