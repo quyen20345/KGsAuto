@@ -44,6 +44,12 @@ Health: `http://localhost:8001/health`
 Docs: `http://localhost:8001/docs`
 Modes: `semantic_search`, `graph_search`, `naive_grag`, `hybrid`.
 
+### Python package
+```bash
+pip install -e .
+pip install -e '.[ragas]'  # optional, only for RAGAS evaluation scoring
+```
+
 ### Frontend
 ```bash
 cd apps/frontend && npm install
@@ -110,9 +116,14 @@ python -m apps.backend.neo4j.scripts.create_vector_index
 ```bash
 python -m services.rag_system.cli test-connections
 python -m services.rag_system.cli create-collection
+python -m services.rag_system.cli delete-collection
 python -m services.rag_system.cli index --limit 100
 python -m services.rag_system.cli query --question "Hiệu trưởng là ai?" --mode semantic_search --top-k 5 --show-evidence
 python -m services.rag_system.cli info
+
+python -m services.rag_system.cli evaluate run --dataset services/rag_system/evaluation/mock_questions.jsonl --output data/evaluation/semantic_search.jsonl --mode semantic_search --top-k 5
+python -m services.rag_system.cli evaluate run-comparison --dataset services/rag_system/evaluation/mock_questions.jsonl --output data/evaluation/comparison.jsonl --mode semantic_search --mode graph_search --mode naive_grag --mode hybrid --top-k 5
+python -m services.rag_system.cli evaluate score --results data/evaluation/comparison.jsonl --output data/evaluation/comparison.scored.jsonl
 ```
 
 ## Architecture (big picture)
@@ -176,7 +187,14 @@ Use online merge for production corrections; use offline merge for pipeline proc
 
 `apps/rag_api/main.py` is a thin FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` needs Qdrant markdown indexing; `hybrid` needs both Qdrant markdown indexing and Neo4j because it combines semantic retrieval with deep GraphSearch.
 
-### 7) Shared infrastructure patterns
+### 7) RAG evaluation workflow
+- Testsets are JSONL with required `id` and `question`; optional fields include `reference`, `tags`, and `metadata`.
+- `evaluate run` executes one mode and writes JSONL plus CSV outputs.
+- `evaluate run-comparison` compares multiple modes; if no `--mode` is provided, all public modes run.
+- Generated rows include `question`, `answer`, `contexts`, `reference`, `mode`, `latency_ms`, `status`, and `error`, so per-sample failures are preserved instead of aborting the comparison.
+- `evaluate score` is optional and requires the `ragas` extra plus evaluator credentials from `OPENAI_API_KEY`/`OPENAI_BASE_URL`/`OPENAI_MODEL` or the `OPENAI_COMPATIBLE_*` fallback variables.
+
+### 8) Shared infrastructure patterns
 - LLM access goes through `services.llms.get_llm(...)` provider abstraction.
 - Neo4j driver is centralized in `apps/backend/app/db/neo4j.py` and reused by backend, RAG graph storage, and GraphSearch reasoning.
 - Qdrant is used in two separate contexts:

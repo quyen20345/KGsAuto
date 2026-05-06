@@ -7,7 +7,7 @@
 - markdown chunks stored in Qdrant
 - entity and relationship data stored in Neo4j
 
-The package exists to let the application answer the same user question through different retrieval strategies without changing the caller. The main entrypoint is `services/rag_system/core/unified_pipeline.py`, which dispatches to user-facing mode implementations in `services/rag_system/modes/`.
+The package exists to let the application answer the same user question through different retrieval strategies without changing the caller. The main entrypoint is `services/rag_system/pipeline.py`, which dispatches to user-facing mode implementations in `services/rag_system/modes/`.
 
 ```mermaid
 flowchart TB
@@ -36,7 +36,7 @@ flowchart TB
 
 ## Public modes
 
-`services/rag_system/core/unified_pipeline.py` supports exactly four public modes:
+`services/rag_system/pipeline.py` supports exactly four public modes:
 
 - `semantic_search`: retrieve markdown chunks from Qdrant, then synthesize one answer from text evidence only.
 - `graph_search`: run a multi-step Neo4j-only reasoning workflow with decomposition, verification, and optional query expansion.
@@ -51,32 +51,28 @@ services/rag_system/
   config.py                      # RAGConfig
   schemas.py                     # Chunk/evidence/response schemas
   README.md
-  core/
-    unified_pipeline.py          # main orchestration entrypoint
-    pipeline.py                  # compatibility alias
+  pipeline.py                    # main orchestration entrypoint
   modes/
     semantic_search.py           # Qdrant markdown mode
-    hybrid.py                    # semantic markdown + deep graph_search mode
+    hybrid.py                    # semantic markdown + graph_search mode
     graph_search.py              # multi-step graph reasoning mode
-    naive_grag.py                # one-pass graph context mode
+    graph_context.py             # one-pass graph context mode for naive_grag
     common.py                    # shared response/evidence helpers
   components/
     synthesis.py                 # LLM answer synthesis for semantic/hybrid
-    llm/components.py            # async GraphSearch helper calls
+    llm/graph_search.py          # async GraphSearch helper calls
     prompts/prompts.py           # GraphSearch prompts
   retrieval/
     markdown.py                  # Qdrant markdown retrieval
-    graph.py                     # simple Neo4j fact retrieval
-    hybrid.py                    # legacy weighted markdown + basic graph retrieval helper
     indexing.py                  # markdown indexing into Qdrant
     chunking.py                  # markdown chunking strategies
-    adapters/
-      neo4j_adapter.py           # Neo4j -> GraphSearch context adapter
+  graph/
+    neo4j_context_adapter.py     # Neo4j -> GraphSearch context adapter
   storage/
     document.py                  # Qdrant client + embedding upsert/search
     graph.py                     # Neo4j lookup helpers
   workflows/
-    deep_graph_search/
+    graph_search/
       pipeline.py                # graph_search and naive_grag workflows
       parsing.py                 # decomposition/expansion parsing helpers
       utils.py                   # normalization and formatting helpers
@@ -96,7 +92,7 @@ services/rag_system/
 There are two separate retrieval backends:
 
 - **Document retrieval** via `storage/document.py` and `retrieval/markdown.py`
-- **Graph retrieval** via `storage/graph.py`, `retrieval/graph.py`, and `retrieval/adapters/neo4j_adapter.py`
+- **Graph retrieval** via `storage/graph.py` and `graph/neo4j_context_adapter.py`
 
 ### 2. Two graph-only modes
 
@@ -109,7 +105,7 @@ The codebase intentionally keeps two Neo4j-only paths:
 
 - `semantic_search` uses `components/synthesis.py` over markdown evidence only.
 - `hybrid` uses `components/synthesis.py` over markdown evidence plus deep GraphSearch context/reasoning.
-- `graph_search` and `naive_grag` generate graph-backed answers inside `workflows/deep_graph_search/pipeline.py` through async workflow components.
+- `graph_search` and `naive_grag` generate graph-backed answers inside `workflows/graph_search/pipeline.py` through async workflow components.
 
 ## Architecture
 
@@ -123,16 +119,15 @@ flowchart LR
     end
 
     subgraph Core
-        U[core/unified_pipeline.py]
+        U[pipeline.py]
         M[modes/*.py]
         S[components/synthesis.py]
     end
 
     subgraph Retrieval
         MR[retrieval/markdown.py]
-        GR[retrieval/graph.py]
-        HR[retrieval/hybrid.py]
-        NA[retrieval/adapters/neo4j_adapter.py]
+
+        NA[graph/neo4j_context_adapter.py]
     end
 
     subgraph Storage
@@ -141,8 +136,8 @@ flowchart LR
     end
 
     subgraph Workflow
-        WG[workflows/deep_graph_search/pipeline.py]
-        LC[components/llm/components.py]
+        WG[workflows/graph_search/pipeline.py]
+        LC[components/llm/graph_search.py]
     end
 
     CLI --> U
@@ -210,7 +205,7 @@ sequenceDiagram
 
 Relevant files:
 - `services/rag_system/modes/semantic_search.py`
-- `services/rag_system/core/unified_pipeline.py`
+- `services/rag_system/pipeline.py`
 - `services/rag_system/retrieval/markdown.py`
 - `services/rag_system/storage/document.py`
 - `services/rag_system/components/synthesis.py`
@@ -244,10 +239,10 @@ sequenceDiagram
 ```
 
 Relevant files:
-- `services/rag_system/modes/naive_grag.py`
-- `services/rag_system/core/unified_pipeline.py`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py`
-- `services/rag_system/retrieval/adapters/neo4j_adapter.py`
+- `services/rag_system/modes/graph_context.py`
+- `services/rag_system/pipeline.py`
+- `services/rag_system/workflows/graph_search/pipeline.py`
+- `services/rag_system/graph/neo4j_context_adapter.py`
 
 ### `graph_search`
 
@@ -288,14 +283,14 @@ flowchart TB
 
 Relevant files:
 - `services/rag_system/modes/graph_search.py`
-- `services/rag_system/core/unified_pipeline.py`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py`
-- `services/rag_system/workflows/deep_graph_search/parsing.py`
-- `services/rag_system/components/llm/components.py`
+- `services/rag_system/pipeline.py`
+- `services/rag_system/workflows/graph_search/pipeline.py`
+- `services/rag_system/workflows/graph_search/parsing.py`
+- `services/rag_system/components/llm/graph_search.py`
 
 ### `hybrid`
 
-`hybrid` runs markdown retrieval and deep `graph_search` concurrently, then synthesizes one answer from markdown chunks plus GraphSearch context/reasoning. Public `hybrid` no longer uses the legacy `HybridRetriever`/`GraphRetriever` weighted fusion path.
+`hybrid` runs markdown retrieval and deep `graph_search` concurrently, then synthesizes one answer from markdown chunks plus GraphSearch context/reasoning.
 
 ```mermaid
 sequenceDiagram
@@ -327,9 +322,9 @@ sequenceDiagram
 Relevant files:
 - `services/rag_system/modes/hybrid.py`
 - `services/rag_system/modes/graph_search.py`
-- `services/rag_system/core/unified_pipeline.py`
-- `services/rag_system/retrieval/adapters/neo4j_adapter.py`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py`
+- `services/rag_system/pipeline.py`
+- `services/rag_system/graph/neo4j_context_adapter.py`
+- `services/rag_system/workflows/graph_search/pipeline.py`
 - `services/rag_system/components/synthesis.py`
 
 ## Data flow for markdown indexing
@@ -437,12 +432,75 @@ python -m services.rag_system.cli index --limit 100
 python -m services.rag_system.cli query --question "Hiệu trưởng là ai?" --mode semantic_search --top-k 5 --show-evidence
 python -m services.rag_system.cli info
 
-python -m services.rag_system.cli evaluate generate-dataset
-python -m services.rag_system.cli evaluate generate-pilot
-python -m services.rag_system.cli evaluate run --dataset <jsonl> --output <jsonl>
-python -m services.rag_system.cli evaluate run-comparison --dataset <jsonl>
-python -m services.rag_system.cli evaluate score --dataset <jsonl> --results <jsonl>
+python -m services.rag_system.cli evaluate run --dataset <jsonl> --output <jsonl> --mode semantic_search --top-k 5
+python -m services.rag_system.cli evaluate run-comparison --dataset <jsonl> --output <jsonl> --mode semantic_search --mode graph_search --top-k 5
+python -m services.rag_system.cli evaluate score --results <jsonl> --output <jsonl>
 ```
+
+## Evaluation workflow
+
+The evaluation pipeline is intentionally split into two stages:
+
+```text
+manual testset JSONL -> run RAG modes -> generated JSONL/CSV -> RAGAS scoring -> scored JSONL/CSV + summary
+```
+
+Manual testset rows use JSONL. Required fields are `id` and `question`; optional fields are `reference`, `tags`, and `metadata`:
+
+```json
+{"id":"mock_001","question":"Hiệu trưởng Trường Đại học Công nghệ là ai?","reference":"Câu trả lời cần nêu đúng người giữ vai trò Hiệu trưởng nếu thông tin có trong dữ liệu.","tags":["single_hop","entity_lookup"],"metadata":{"source":"manual"}}
+```
+
+Run one mode and save JSONL plus CSV:
+
+```bash
+python -m services.rag_system.cli evaluate run \
+  --dataset services/rag_system/evaluation/mock_questions.jsonl \
+  --output data/evaluation/semantic_search.jsonl \
+  --mode semantic_search \
+  --top-k 5
+```
+
+Run a comparison across modes. If no `--mode` is provided, all public modes are used:
+
+```bash
+python -m services.rag_system.cli evaluate run-comparison \
+  --dataset services/rag_system/evaluation/mock_questions.jsonl \
+  --output data/evaluation/comparison.jsonl \
+  --mode semantic_search \
+  --mode graph_search \
+  --mode naive_grag \
+  --mode hybrid \
+  --top-k 5
+```
+
+Generated rows include `question`, `answer`, `contexts`, `reference`, `mode`, `latency_ms`, `status`, and `error`, so failed mode/sample runs are saved instead of aborting the whole comparison.
+
+RAGAS is optional and only required for scoring saved outputs. Install it with:
+
+```bash
+pip install '.[ragas]'
+```
+
+Scoring reads evaluator credentials from `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL` first, then falls back to `OPENAI_COMPATIBLE_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL`, and `OPENAI_COMPATIBLE_MODEL`.
+
+Load `.env` before scoring:
+
+```bash
+set -a
+source .env
+set +a
+```
+
+Then score generated outputs:
+
+```bash
+python -m services.rag_system.cli evaluate score \
+  --results data/evaluation/comparison.jsonl \
+  --output data/evaluation/comparison.scored.jsonl
+```
+
+Scoring writes a scored JSONL, a scored CSV, and a summary CSV grouped by mode. Rows are marked `scored` only when all selected metrics return valid numeric values; failed or missing metric outputs are marked `partial`, `error`, or `skipped`.
 
 ## Runtime requirements
 
@@ -485,7 +543,7 @@ The markdown retriever explicitly returns an empty list when the collection does
 `UnifiedRetrievalPipeline.query()` cannot execute async graph workflows when an event loop is already active. In async callers, use `await UnifiedRetrievalPipeline.aquery(...)` instead.
 
 Relevant file:
-- `services/rag_system/core/unified_pipeline.py:71`
+- `services/rag_system/pipeline.py:71`
 
 ### Hybrid mode returns weak fused evidence
 
@@ -504,15 +562,15 @@ The Neo4j adapter applies domain-specific keyword normalization and boosting for
 - `graph_keyword_timeout_seconds`
 
 Relevant file:
-- `services/rag_system/retrieval/adapters/neo4j_adapter.py:272`
+- `services/rag_system/graph/neo4j_context_adapter.py:272`
 
 ## Source map
 
 Primary files to read first:
 
-- `services/rag_system/core/unified_pipeline.py`
-- `services/rag_system/retrieval/hybrid.py`
-- `services/rag_system/retrieval/adapters/neo4j_adapter.py`
-- `services/rag_system/workflows/deep_graph_search/pipeline.py`
+- `services/rag_system/pipeline.py`
+- `services/rag_system/modes/hybrid.py`
+- `services/rag_system/graph/neo4j_context_adapter.py`
+- `services/rag_system/workflows/graph_search/pipeline.py`
 - `services/rag_system/components/synthesis.py`
 - `services/rag_system/cli.py`

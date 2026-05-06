@@ -1,26 +1,81 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-KGsAuto is a Python/React knowledge-graph system. FastAPI apps live in `apps/`: `apps/backend` is the main graph API and `apps/rag_api` is the unified retrieval/RAG API. Core packages are in `services/`, including `entity_resolution`, `rag_system`, `llms`, and `crawler`. Unified RAG code lives in `services/rag_system`: `core/` orchestrates modes, `retrieval/` handles Qdrant/Neo4j retrieval, `graph_search/` contains Neo4j-only GraphSearch reasoning, `storage/` wraps stores, and `evaluation/` contains scoring utilities. The Vite UI is in `apps/frontend/src`, with components in `components/` and route pages in `pages/`. Generated or local artifacts should stay under `data/`.
+## Project Structure
+KGsAuto is a Python/React knowledge-graph system. FastAPI apps live in `apps/`: `apps/backend` is the main graph API and `apps/rag_api` is the unified retrieval/RAG API. Core packages are in `services/`: `entity_resolution`, `rag_system`, `llms`, `crawler`, `extraction`.
 
-## Build, Test, and Development Commands
-- `docker compose up -d`: start local Neo4j, Qdrant, and Ollama infrastructure.
-- `uvicorn apps.backend.app.main:app --host 0.0.0.0 --port 8000 --reload`: run the main backend API.
-- `uvicorn apps.rag_api.main:app --host 0.0.0.0 --port 8001 --reload`: run the unified RAG API with `semantic_search`, `graph_search`, `naive_grag`, and `hybrid` modes.
-- `python -m services.rag_system.cli query --question "Hiệu trưởng là ai?" --mode semantic_search --top-k 5 --show-evidence`: run a local CLI query.
-- `cd apps/frontend && npm install && npm run dev`: install frontend dependencies and start Vite.
-- `cd apps/frontend && npm run build`: build the frontend for production.
-- `cd apps/frontend && npm run lint`: run ESLint.
-- `conda run -n py312 python -m pytest services/rag_system/tests apps/rag_api/tests -q`: run unified RAG/API tests.
+- `services/rag_system/`: Unified RAG with `pipeline.py` (main entry), `modes/` (semantic_search, graph_search, naive_grag, hybrid), `storage/`, `retrieval/`, `graph/`, `workflows/graph_search/`, `evaluation/`. Read `services/rag_system/README.md` for detailed architecture.
+- `services/extraction/`: Extracts knowledge graphs from documents via CLI (`python -m services.extraction.cli`).
+- `services/entity_resolution/`: 3-stage entity resolution pipeline via CLI (`python -m services.entity_resolution.cli --stage all`).
+- `apps/frontend/src/`: Vite React UI with components in `components/` and pages in `pages/`.
+- `data/`: Generated artifacts and extracted data.
 
-## Coding Style & Naming Conventions
-Use Python 3.10+ with 4-space indentation, `snake_case` modules/functions, and `PascalCase` classes and Pydantic models. Keep API routers thin and reusable logic in `services/`. For React, use `PascalCase` component files such as `EntityPopover.jsx`, keep route views in `pages/`, and keep API calls in `src/services/api.js`. Frontend linting uses ESLint; no central Python formatter is configured, so keep Python changes PEP 8 compatible.
+## Developer Commands
 
-## Testing Guidelines
-Use `pytest` for Python tests. Prefer colocated test packages such as `apps/backend/tests`, `apps/rag_api/tests`, or `services/rag_system/tests`. Name files `test_*.py` and cover changed pipeline stages, API routes, and storage adapters. For frontend changes, run `npm run lint`.
+### Infrastructure
+```bash
+docker compose up -d          # Start Neo4j, Qdrant, Ollama
+docker compose down           # Stop infra
+```
 
-## Commit & Pull Request Guidelines
-Recent history uses short imperative subjects, often with scopes, for example `feat(entity_resolution): ...` and `feat(frontend): ...`. Prefer focused commits that name the affected area. Pull requests should include a summary, test results, linked issue or task when available, and screenshots for UI changes. Note required `.env` values, data migrations, or Neo4j/Qdrant setup.
+### APIs
+```bash
+uvicorn apps.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn apps.rag_api.main:app --host 0.0.0.0 --port 8001 --reload
+```
 
-## Security & Configuration Tips
-Do not commit secrets. Copy `.env.example` files for local setup and keep provider keys, Neo4j credentials, and model routing values in `.env`. Commit only reproducible fixtures or reviewed sample data.
+### RAG CLI (services/rag_system)
+```bash
+python -m services.rag_system.cli test-connections
+python -m services.rag_system.cli create-collection
+python -m services.rag_system.cli index --limit 100
+python -m services.rag_system.cli query --question "Hiệu trưởng là ai?" --mode semantic_search --top-k 5 --show-evidence
+python -m services.rag_system.cli evaluate run --dataset <jsonl> --output <jsonl> --mode semantic_search --top-k 5
+```
+
+### Extraction CLI (services/extraction)
+```bash
+python -m services.extraction.cli --input-dir data/raw/uet --output-dir data/extracted --provider OpenAICompatible --model cx/gpt-5.3-codex
+python -m services.extraction.cli --input-dir data/raw/uet --output-dir data/extracted --provider OpenAICompatible --model cx/gpt-5.3-codex --no-skip-existing
+```
+
+### Entity Resolution CLI (services/entity_resolution)
+```bash
+# Run all 3 stages with memory backend (fast, non-persistent)
+python -m services.entity_resolution.cli --stage all --input-dir data/extracted --store-backend memory --run-id demo_run
+
+# Run with qdrant backend for persistence between stages
+python -m services.entity_resolution.cli --stage stage1 --input-dir data/extracted --store-backend qdrant --run-id my_run
+python -m services.entity_resolution.cli --stage stage2 --store-backend qdrant --run-id my_run
+python -m services.entity_resolution.cli --stage stage3 --store-backend qdrant --run-id my_run
+```
+
+### Neo4j Import
+```bash
+python apps/backend/neo4j/scripts/import_to_neo4j.py --dir data/entity_resolution/artifacts/final/stage3/output_graph
+python -m apps.backend.neo4j.scripts.add_embeddings_to_neo4j
+python -m apps.backend.neo4j.scripts.create_vector_index
+```
+
+### Frontend
+```bash
+cd apps/frontend && npm install && npm run dev  # dev server at localhost:5173
+cd apps/frontend && npm run build               # production build
+cd apps/frontend && npm run lint                # ESLint
+```
+
+### Testing
+```bash
+conda run -n py312 python -m pytest services/rag_system/tests apps/rag_api/tests -q
+```
+
+## Coding Style
+- Python 3.10+, 4-space indentation, `snake_case` functions/modules, `PascalCase` classes and Pydantic models.
+- React: `PascalCase` component files, route views in `pages/`, API calls in `src/services/api.js`.
+- Keep API routers thin; put reusable logic in `services/`.
+
+## Testing
+- Use `pytest`. Test files: `services/rag_system/tests/`, `apps/rag_api/tests/`, `apps/backend/tests/`. Name files `test_*.py`.
+- For frontend changes, run `npm run lint`.
+
+## Security
+- Do not commit secrets. Copy `.env.example` files for setup. Keep keys in `.env`.
