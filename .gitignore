@@ -9,7 +9,8 @@
 !docs/
 data/
 *tests/
-thesis/
+!services/rag_system/tests/
+# thesis/
 *.txt
 */lib
 # AI tooling
