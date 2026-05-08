@@ -1,13 +1,53 @@
 # Knowledge Graph Extraction Service
 
 ## Overview
-`services/extraction` là pipeline trích xuất tri thức từ tài liệu Markdown để tạo ra dữ liệu Knowledge Graph chuẩn JSON (`nodes`, `relationships`) bằng LLM.
-Module này hỗ trợ chạy batch, retry khi lỗi, validation cấu trúc output, logging và metrics tổng hợp theo từng run.
+
+`services/extraction` extracts structured Knowledge Graph data from Markdown documents with an LLM. It is the first stage that converts raw documents into JSON artifacts containing `nodes` and `relationships` for downstream entity resolution, Neo4j import, and RAG workflows.
+
+For the full architecture, runtime sequence, Mermaid diagrams, output schema, and troubleshooting guide, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
+```mermaid
+flowchart LR
+    Raw[Markdown files] --> CLI[Extraction CLI]
+    CLI --> Extractor[KGExtractor]
+    Extractor --> LLM[LLM Provider]
+    LLM --> KG[KG JSON output]
+    Extractor --> Logs[Logs and metrics]
+    Extractor --> Failed[Failed responses]
+```
+
+## What It Does
+
+- Reads Markdown files from an input directory.
+- Groups related files into filename-based clusters.
+- Builds an extraction prompt with optional cluster-local context.
+- Calls an LLM provider through `services.llms.get_llm`.
+- Parses the LLM response as JSON.
+- Validates the extracted Knowledge Graph structure.
+- Writes one `*_kg.json` output per Markdown file.
+- Records logs, failed raw responses, and batch summary metrics.
+
+## Project Structure
+
+```text
+services/extraction/
+├── README.md          # Quick start and entrypoint documentation
+├── ARCHITECTURE.md    # Detailed architecture and diagrams
+├── cli.py             # CLI entrypoint
+├── config.py          # Runtime configuration and output paths
+├── extract.py         # Main extraction orchestrator
+├── prompt.py          # Prompt template and JSON contract
+├── validation.py      # KG output validation helpers
+├── metrics.py         # Batch metrics aggregation
+├── clustering.py      # Filename-based document clustering
+└── cluster_state.py   # Per-cluster context state
+```
 
 ## Quick Start
 
+Run from the repository root:
+
 ```bash
-# Từ root project
 python -m services.extraction.cli \
   --input-dir data/raw/uet \
   --output-dir data/extracted \
@@ -15,113 +55,66 @@ python -m services.extraction.cli \
   --model cx/gpt-5.3-codex
 ```
 
-Ví dụ chạy lại toàn bộ file (không skip file đã có output):
+Re-extract files even when outputs already exist:
 
 ```bash
-python -m services.extraction.cli --no-skip-existing
+python -m services.extraction.cli \
+  --input-dir data/raw/uet \
+  --output-dir data/extracted \
+  --no-skip-existing
 ```
 
-Các tham số hữu ích:
-- `--max-retries`: số lần retry khi lỗi LLM/parse JSON
-- `--save-failed` / `--no-save-failed`: lưu raw response lỗi để debug
-- `--failed-dir`: thư mục chứa failed responses
+Save failed LLM responses for debugging:
 
-## Architecture (detailed architecture diagram)
-Kiến trúc extraction gồm 6 lớp chính:
-1. **CLI Layer (`cli.py`)**: nhận args, validate input, khởi chạy pipeline.
-2. **Config Layer (`config.py`)**: quản lý cấu hình runtime và đường dẫn output/log/summary.
-3. **Core Orchestration (`extract.py`)**: điều phối đọc file, gọi LLM, parse, validate, save output.
-4. **Prompt Contract (`prompt.py`)**: định nghĩa schema JSON + extraction rules cho LLM.
-5. **Validation (`validation.py`)**: kiểm tra cấu trúc KG output (soft validation, warning-based).
-6. **Metrics & Observability (`metrics.py`)**: thu thập thống kê batch và ghi summary JSON.
-
-### Component Diagram
-
-```mermaid
-flowchart TB
-    U[User / Scheduler] --> CLI[cli.py\nargparse entrypoint]
-
-    CLI --> CFG[config.py\nExtractionConfig]
-    CFG -->|create dirs, run_id| FS[(File System)]
-
-    CLI --> EXT[extract.py\nKGExtractor]
-    CFG --> EXT
-
-    EXT --> PROMPT[prompt.py\nget_extraction_prompt]
-    EXT --> LLMF[services.llms.get_llm]
-    LLMF --> LLM[(LLM Provider\nOpenAICompatible/gemini/ollama)]
-
-    EXT --> VAL[validation.py\nvalidate_and_log]
-    EXT --> MET[metrics.py\nExtractionMetrics]
-
-    EXT -->|read .md| IN[(Input Dir\n*.md)]
-    EXT -->|write *_kg.json| OUT[(Output Dir)]
-    EXT -->|write failed raw response| FAIL[(Failed Dir)]
-    EXT -->|write extraction_<run_id>.log| LOG[(Log File)]
-    MET -->|write summary json| SUM[(Summary File)]
-
-    VAL -. warnings .-> LOG
-    EXT -. progress .-> LOG
+```bash
+python -m services.extraction.cli \
+  --save-failed \
+  --failed-dir data/failed_responses
 ```
 
-### Runtime Sequence Diagram
+Process multiple clusters concurrently:
 
-```mermaid
-sequenceDiagram
-    participant C as cli.py
-    participant G as ExtractionConfig
-    participant E as KGExtractor
-    participant P as prompt.py
-    participant L as LLM Client
-    participant V as validation.py
-    participant M as ExtractionMetrics
-    participant F as FileSystem
-
-    C->>G: Build config from args
-    G->>F: Ensure output and failed dirs
-    C->>E: Create extractor with config
-    E->>L: Initialize LLM client
-
-    C->>E: extract_from_dir()
-    E->>F: List markdown input files
-
-    loop for each markdown file
-        E->>F: Read markdown content
-        E->>P: Build extraction prompt
-        P-->>E: Prompt text
-
-        loop retry up to max retries
-            E->>L: generate(prompt)
-            L-->>E: raw response and token usage
-            E->>E: Clean and parse JSON
-
-            alt parse or exception error
-                E->>E: Backoff with jitter
-                opt final retry failed
-                    E->>F: Save failed raw response
-                end
-            else parsed successfully
-                E->>V: validate_and_log(kg_data)
-                V-->>E: valid or invalid with warning
-                E->>F: Write KG json output
-                E->>M: Update counters tokens and time
-            end
-        end
-    end
-
-    E->>M: Compute averages
-    E->>F: Write summary json
-    E->>F: Finalize logs
+```bash
+python -m services.extraction.cli \
+  --cluster-max-workers 4
 ```
 
-## Project Structure
-```text
-services/extraction/
-├── cli.py          # CLI entrypoint, parse args, start pipeline
-├── config.py       # ExtractionConfig: runtime config + output/log paths
-├── extract.py      # KGExtractor: core orchestration and batch processing
-├── prompt.py       # Prompt template + JSON schema contract for LLM
-├── validation.py   # Output structure validation (nodes/relationships)
-├── metrics.py      # Batch metrics aggregation and summary export
-└── tests/          # Unit/integration tests for extraction module
+> Note: Use parallel workers only if the configured LLM provider/client is safe for concurrent requests and your provider rate limits allow it.
+
+## Common CLI Options
+
+| Option | Default | Description |
+|---|---:|---|
+| `--input-dir` | `data/raw/uet` | Directory containing Markdown input files. |
+| `--output-dir` | `data/extracted` | Directory for extracted `*_kg.json`, logs, and summary files. |
+| `--provider` | `OpenAICompatible` | LLM provider name. |
+| `--model` | `cx/gpt-5.3-codex` | LLM model name. |
+| `--max-retries` | `3` | Maximum attempts per file after parse/API failures. |
+| `--skip-existing` / `--no-skip-existing` | `True` | Skip or overwrite existing output files. |
+| `--save-failed` / `--no-save-failed` | `True` | Save raw failed LLM responses. |
+| `--failed-dir` | `data/failed_responses` | Directory for failed response text files. |
+| `--cluster-max-workers` | `1` | Number of document clusters to process in parallel. |
+| `--cluster-similarity-threshold` | `0.3` | Filename-token Jaccard threshold used for clustering. |
+
+## Generated Artifacts
+
+| Artifact | Default location | Purpose |
+|---|---|---|
+| Extracted KG JSON | `data/extracted/*_kg.json` | Per-file Knowledge Graph output. |
+| Run log | `data/extracted/extraction_<run_id>.log` | Runtime events and warnings. |
+| Metrics summary | `data/extracted/extraction_summary_<run_id>.json` | Batch counters and averages. |
+| Failed response | `data/failed_responses/*_failed_v2.txt` | Raw invalid LLM response for debugging. |
+
+## Next Steps
+
+After extraction, the generated KG JSON files are typically consumed by the entity-resolution pipeline:
+
+```bash
+python -m services.entity_resolution.cli \
+  --stage all \
+  --input-dir data/extracted \
+  --store-backend memory \
+  --run-id demo_run
 ```
+
+Then import the resolved graph into Neo4j with the backend import scripts documented in the repository root guidelines.

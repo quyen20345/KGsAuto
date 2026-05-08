@@ -2,7 +2,7 @@
 
 ## Overview
 
-`services/rag_system` is the runtime retrieval layer behind `apps/rag_api`. It provides one query surface over two evidence stores:
+`services/rag_system` is the runtime retrieval layer behind `apps/chat_api` and the RAG CLI. It provides one query surface over two evidence stores:
 
 - markdown chunks stored in Qdrant
 - entity and relationship data stored in Neo4j
@@ -11,7 +11,7 @@ The package exists to let the application answer the same user question through 
 
 ```mermaid
 flowchart TB
-    User[User question] --> API[apps.rag_api or CLI]
+    User[User question] --> API[apps.chat_api or CLI]
     API --> Pipeline[UnifiedRetrievalPipeline]
 
     Pipeline --> Semantic[semantic_search]
@@ -115,7 +115,7 @@ The codebase intentionally keeps two Neo4j-only paths:
 flowchart LR
     subgraph EntryPoints
         CLI[services.rag_system.cli]
-        API[apps.rag_api.main]
+        API[apps.chat_api.main]
     end
 
     subgraph Core
@@ -479,7 +479,8 @@ Generated rows include `question`, `answer`, `contexts`, `reference`, `mode`, `l
 RAGAS is optional and only required for scoring saved outputs. Install it with:
 
 ```bash
-pip install '.[ragas]'
+pip install -r requirements.txt
+pip install -e . --no-deps
 ```
 
 Scoring reads evaluator credentials from `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL` first, then falls back to `OPENAI_COMPATIBLE_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL`, and `OPENAI_COMPATIBLE_MODEL`.

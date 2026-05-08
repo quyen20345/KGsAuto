@@ -1,16 +1,17 @@
 // src/services/api.js
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Graph/Admin API. VITE_API_BASE_URL is kept as a backward-compatible alias.
+const GRAPH_API_BASE = import.meta.env.VITE_GRAPH_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const api = {
   // Home page - Random triplets
   getRandomTriplets: async (limit = 8) => {
-    const res = await fetch(`${API_BASE}/api/random_triplets?limit=${limit}`);
+    const res = await fetch(`${GRAPH_API_BASE}/api/random_triplets?limit=${limit}`);
     return res.json();
   },
 
   // Search page - Entity search
   search: async (query) => {
-    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`${GRAPH_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
     return res.json();
   },
 
@@ -19,7 +20,7 @@ export const api = {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      let url = `${API_BASE}/api/search/lexical?q=${encodeURIComponent(query)}&top_k=${topK}`;
+      let url = `${GRAPH_API_BASE}/api/search/lexical?q=${encodeURIComponent(query)}&top_k=${topK}`;
       if (labelFilter) {
         url += `&label_filter=${encodeURIComponent(labelFilter)}`;
       }
@@ -48,7 +49,7 @@ export const api = {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      let url = `${API_BASE}/api/search/hybrid?q=${encodeURIComponent(query)}&top_k=${topK}`;
+      let url = `${GRAPH_API_BASE}/api/search/hybrid?q=${encodeURIComponent(query)}&top_k=${topK}`;
       if (labelFilter) {
         url += `&label_filter=${encodeURIComponent(labelFilter)}`;
       }
@@ -64,7 +65,7 @@ export const api = {
       return await res.json();
     } catch (error) {
       if (error?.name === 'AbortError') {
-        throw new Error('Search took too long. The first request may need extra time while the embedding model loads in the backend.');
+        throw new Error('Search took too long. The first request may need extra time while the embedding model loads in the Graph API.');
       }
       throw error;
     } finally {
@@ -74,12 +75,12 @@ export const api = {
 
   // Entity page - Entity details
   getEntity: async (id) => {
-    const res = await fetch(`${API_BASE}/api/entity/${encodeURIComponent(id)}`);
+    const res = await fetch(`${GRAPH_API_BASE}/api/entity/${encodeURIComponent(id)}`);
     return res.json();
   },
 
   mergeEntities: async ({ canonical_id, merge_ids }) => {
-    const res = await fetch(`${API_BASE}/api/entity/merge`, {
+    const res = await fetch(`${GRAPH_API_BASE}/api/entity/merge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ canonical_id, merge_ids }),
@@ -89,7 +90,7 @@ export const api = {
 
   // Run custom Cypher query
   runCypher: async (cypher) => {
-    const res = await fetch(`${API_BASE}/api/query`, {
+    const res = await fetch(`${GRAPH_API_BASE}/api/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cypher }),
@@ -99,7 +100,7 @@ export const api = {
 
   // Get graph metadata (labels and relationship types)
   getGraphMetadata: async () => {
-    const res = await fetch(`${API_BASE}/api/graph/metadata`);
+    const res = await fetch(`${GRAPH_API_BASE}/api/graph/metadata`);
     return res.json();
   },
 };

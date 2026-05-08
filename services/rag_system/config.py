@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os
 
+from services.config import LLM_MODEL, LLM_PROVIDER, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER, QDRANT_URL
+
 
 @dataclass
 class RAGConfig:
@@ -14,14 +16,14 @@ class RAGConfig:
     output_dir: Path = Path("data/rag_system")
 
     # Qdrant configuration
-    qdrant_url: str = field(default_factory=lambda: os.getenv("QDRANT_URL", "http://localhost:6333"))
+    qdrant_url: str = field(default_factory=lambda: QDRANT_URL)
     markdown_collection: str = "rag_markdown_chunks"
     entity_collection: str = "rag_entities"
 
     # Neo4j configuration
-    neo4j_uri: str = field(default_factory=lambda: os.getenv("NEO4J_URI", "bolt://localhost:7687"))
-    neo4j_user: str = field(default_factory=lambda: os.getenv("NEO4J_USER", "neo4j"))
-    neo4j_password: str = field(default_factory=lambda: os.getenv("NEO4J_PASSWORD", "12345678"))
+    neo4j_uri: str = field(default_factory=lambda: NEO4J_URI)
+    neo4j_user: str = field(default_factory=lambda: NEO4J_USER)
+    neo4j_password: str = field(default_factory=lambda: NEO4J_PASSWORD)
 
     # Embedding configuration
     embedding_model: str = "paraphrase-multilingual-mpnet-base-v2"
@@ -42,8 +44,8 @@ class RAGConfig:
     max_relations: int = 20
 
     # LLM configuration
-    llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "OpenAICompatible"))
-    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "cx/gpt-5.3-codex"))
+    llm_provider: str = field(default_factory=lambda: LLM_PROVIDER)
+    llm_model: str = field(default_factory=lambda: LLM_MODEL)
     llm_temperature: float = 0.0
     llm_max_tokens: int = 2000
 

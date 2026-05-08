@@ -37,11 +37,11 @@ services:
       - ${Browser}/qdrant/data:/qdrant/storage
     restart: always
 
-  # backend:
+  # graph_api:
   #   build: 
-  #     context: ./backend
+  #     context: ./apps/graph_api
   #     dockerfile: Dockerfile
-  #   container_name: backend
+  #   container_name: graph_api
   #   ports:
   #     - "8000:8000"
   #   environment:
@@ -62,7 +62,7 @@ services:
   #   ports:
   #     - "3000:3000"
   #   depends_on:
-  #     - backend
+  #     - graph_api
   #   restart: always
 
   # frontend:
@@ -73,7 +73,7 @@ services:
   #   ports:
   #     - "3000:80" # <-- Đã sửa: Nginx chạy ở cổng 80 trong container
   #   depends_on:
-  #     - backend
+  #     - graph_api
   #   restart: always
 
 volumes:

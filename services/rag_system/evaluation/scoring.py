@@ -136,6 +136,7 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
         from datasets import Dataset
         from ragas import evaluate
         from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+        from ragas.run_config import RunConfig
     except ImportError as exc:
         raise RagasUnavailableError("RAGAS is not installed. Install it with: pip install '.[ragas]'") from exc
 
@@ -161,11 +162,19 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
         ]
     )
     llm = _build_ragas_llm()
+    max_workers = int(os.getenv("RAGAS_SCORE_MAX_WORKERS", "2"))
+    run_config = RunConfig(
+        max_workers=max_workers,
+        max_retries=10,
+        max_wait=120,
+        timeout=300,
+    )
     try:
         result = evaluate(
             dataset,
             metrics=[metric_registry[metric] for metric in metric_names],
             llm=llm,
+            run_config=run_config,
         )
     except Exception as exc:
         raise RagasScoringError(

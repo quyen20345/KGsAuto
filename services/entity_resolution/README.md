@@ -112,17 +112,17 @@ Relevant file:
 
 The pipeline supports two vector backends:
 
-- `memory`: ephemeral, process-local storage
-- `qdrant`: persistent vector storage in Qdrant
+- `memory`: ephemeral, process-local storage (class-level dict in `MemoryVectorStore`)
+- `qdrant`: persistent vector storage in Qdrant with `COSINE` distance metric, batched upsert (1,000 points/batch), and UUID5-based point IDs
 
-This is why `stage all` is the safest mode when using the memory backend: Stage 2 and Stage 3 depend on vectors created by Stage 1.
+This is why `stage all` is the safest mode when using the memory backend: Stage 2 and Stage 3 depend on vectors created by Stage 1, and the memory registry only survives within a single Python process.
 
 Relevant file:
 - `services/entity_resolution/storage/entity_store_adapter.py:114`
 
 ### 3. Stage 2 is recall-oriented
 
-Stage 2 is deliberately permissive. Its job is to create candidate duplicate clusters, not to make final merge decisions.
+Stage 2 is deliberately permissive. Its job is to create candidate duplicate clusters, not to make final merge decisions. All validation is explicitly delegated to Stage 3.
 
 ### 4. Stage 3 is precision-oriented
 
@@ -221,7 +221,7 @@ sequenceDiagram
     alt stage2 or all
         CLI->>S2: run_stage2(config)
         S2->>VS: fetch embeddings
-        S2->>S2: apply blocking
+        S2->>S2: apply blocking (LLM or primary-type)
         S2->>S2: cluster within blocks
         S2->>FS: write assignments, metrics, dashboard
     end
@@ -304,17 +304,17 @@ Stage 1 reads extracted KG JSON files, extracts node records, normalizes propert
 
 ### What Stage 1 writes
 
-- `stage1/index.json`
+- `stage1/index.json` — metadata including all indexed node IDs, primary types, source files
 - `stage1/stage1.log`
 
 ### Main responsibilities
 
-- load files with `load_kg_files(...)`
-- extract records with `extract_node_records(...)`
-- normalize with `normalize_properties(...)`
-- compute `primary_type(...)`
-- generate embedding text with `build_embedding_text(...)`
-- create embeddings with semantic embedding by default, falling back to hash if needed
+- load files with `load_kg_files(...)` — loads all `*.json` files from the input directory
+- extract records with `extract_node_records(...)` — deduplicates and merges properties of same-ID nodes across files
+- normalize with `normalize_properties(...)` — normalizes aliases, strips diacritics
+- compute `primary_type(...)` — maps label sets to PERSON, ORGANIZATION, ORGANIZATIONAL_UNIT, or UNKNOWN
+- generate embedding text with `build_embedding_text(...)` — uses name only, with type-specific normalization (e.g., stripping academic titles from PERSON names)
+- create embeddings with semantic embedding by default, falling back to stable hash (SHA256-based deterministic vector) on model failure
 - upsert vectors into memory or Qdrant
 
 ```mermaid
@@ -330,6 +330,46 @@ flowchart LR
 
 Relevant file:
 - `services/entity_resolution/pipelines/stage1_pipeline.py:14`
+
+### Preprocessing detail: normalization pipeline
+
+Text normalization is critical for Vietnamese entity resolution. The pipeline handles:
+
+```mermaid
+flowchart TB
+    subgraph normalize[normalize.py]
+        A[Raw entity properties] --> B[strip_accents]
+        B --> C[normalize_text]
+        C --> D{primary_type}
+        D -->|PERSON| E[normalize_person_name<br/>strip academic titles]
+        D -->|other| F[normalize_name_by_type]
+        E --> G[build_embedding_text]
+        F --> G
+    end
+
+    subgraph titles[Academic Titles Stripped]
+        H[GS.TS, PGS.TS, TS, ThS, CN, KS]
+    end
+
+    subgraph representation[representation.py]
+        G --> I{semantic model<br/>available?}
+        I -->|yes| J[sentence-transformers<br/>multilingual embedding]
+        I -->|no| K[stable_hash_embedding<br/>SHA256-based fallback]
+        J --> L[768-dim vector]
+        K --> L
+    end
+
+    titles -.-> E
+```
+
+Key design points:
+- **Academic title stripping**: PERSON names undergo removal of Vietnamese academic titles (`GS.TS`, `PGS.TS`, `TS`, `ThS`, `CN`, `KS`) so that "GS.TS Nguyễn Văn A" and "Nguyễn Văn A" produce identical embedding text
+- **Semantic with hash fallback**: `create_embedding` is the unified interface that tries sentence-transformers first, falls back to deterministic hash
+- **Model caching**: `get_embedding_model` caches the loaded model so subsequent calls reuse it
+
+Relevant files:
+- `services/entity_resolution/preprocessing/normalize.py`
+- `services/entity_resolution/preprocessing/representation.py`
 
 ## Stage 2: blocking and clustering
 
@@ -354,29 +394,116 @@ Relevant file:
 
 ```mermaid
 flowchart TB
-    A[Fetch embeddings from vector store] --> B[Apply blocking strategy]
-    B --> C[Create blocks]
-    C --> D[Cluster embeddings per block]
-    D --> E[Generate cluster assignments]
-    E --> F[Enrich with node metadata]
-    F --> G[Compute cluster metrics]
-    G --> H[Write review dashboard]
+    A[Fetch embeddings from vector store] --> B{LLM blocking<br/>enabled?}
+    B -->|Yes| C[LLMBlockingStrategy]
+    B -->|No| D[PrimaryTypeBlockingStrategy]
+    C --> E[Create blocks]
+    D --> E
+    E --> F[Cluster embeddings per block<br/>HDBSCAN or greedy fallback]
+    F --> G[Generate cluster assignments]
+    G --> H[Enrich with node metadata]
+    H --> I[Compute cluster metrics<br/>silhouette score]
+    I --> J[Write review dashboard<br/>interactive HTML]
 ```
 
-### Blocking behavior
+### Blocking strategies in depth
 
-Blocking is configurable:
+Blocking determines which nodes can compete with each other during clustering. Only nodes in the same block are compared.
 
-- `--enable-llm-blocking`: use LLM-guided blocking logic
-- `--no-llm-blocking`: use hard-coded primary-type blocking
+#### Primary Type Blocking (hard-coded)
 
-This affects which nodes are allowed to compete with each other during clustering.
+`--no-llm-blocking` uses `PrimaryTypeBlockingStrategy` which groups nodes by `primary_type` derived from labels:
 
-Relevant files:
-- `services/entity_resolution/pipelines/stage2_pipeline.py:20`
-- `services/entity_resolution/blocking/vector_fetch.py`
+```mermaid
+flowchart LR
+    A[Nodes with labels] --> B[Determine primary_type]
+    B --> C[Block: PERSON<br/>PERSON, LECTURER, RESEARCHER, etc.]
+    B --> D[Block: ORGANIZATION<br/>ORGANIZATION, UNIVERSITY, FACULTY, etc.]
+    B --> E[Block: ORGANIZATIONAL_UNIT<br/>DEPARTMENT, DIVISION, etc.]
+    B --> F[Block: UNKNOWN<br/>unclassified labels]
+```
+
+Simple and fast, but may not capture all meaningful co-reference opportunities.
+
+#### LLM Blocking Strategy (LLM-guided)
+
+`--enable-llm-blocking` (default: True) uses `LLMBlockingStrategy` which calls an LLM once to analyze unique label combinations and produce a blocking plan:
+
+```mermaid
+flowchart TB
+    subgraph Input[Input: ~10K entities]
+        A[All entity items<br/>with labels]
+    end
+
+    subgraph Extract[Extract unique labels]
+        B[Deduplicate: ~10K entities<br/>→ ~20 unique label sets]
+        C[Cache key:<br/>frozenset of sorted label tuples]
+    end
+
+    subgraph LLM[LLM call (once, cached)]
+        D{Cache hit?}
+        D -->|Yes| E[Return cached strategy]
+        D -->|No| F[Send Vietnamese prompt<br/>with unique label combinations]
+        F --> G[Parse JSON response]
+        G --> H{Valid?}
+        H -->|Yes| I[Cache and return strategy]
+        H -->|No| J[Fallback: per-label-combo blocks]
+    end
+
+    subgraph Apply[Apply strategy]
+        K[Build type → block_id mapping]
+        L[Assign each entity to its block<br/>by matching labels]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    I --> K
+    E --> K
+    J --> K
+    K --> L
+```
+
+**Key design points:**
+- **Drastic input reduction**: ~10,000 entities with labels → ~20 unique label combinations, reducing LLM input
+- **Caching**: Strategy is cached by `frozenset` of label tuples, so repeated runs with the same entity types skip LLM calls
+- **Vietnamese prompt**: LLM understands Vietnamese entity types and their co-reference patterns (e.g., "PERSON" and "LECTURER" together, "ORGANIZATIONAL_UNIT" separate from "ORGANIZATION")
+- **Validation**: LLM output is validated to ensure all types are covered; missing types get warnings
+- **Fallback**: If JSON parsing fails, each unique label combination gets its own block
+- **Unique block assignment**: Each type belongs to exactly one block to avoid conflicts during relationship rewiring
+
+Example LLM blocking strategy JSON:
+```json
+{
+  "blocks": [
+    {
+      "block_id": "person_related",
+      "types": ["PERSON", "LECTURER", "RESEARCHER"],
+      "reasoning": "Các type này đều chỉ con người, có thể đồng tham chiếu"
+    },
+    {
+      "block_id": "organization_related",
+      "types": ["ORGANIZATION", "UNIVERSITY", "FACULTY"],
+      "reasoning": "Các type tổ chức cấp cao, có thể có tên gọi khác nhau"
+    }
+  ]
+}
+```
+
+Relevant file:
 - `services/entity_resolution/blocking/llm_blocking_strategy.py`
-- `services/entity_resolution/blocking/primary_type_blocking.py`
+
+### Clustering within blocks
+
+`cluster_embeddings()` runs on each block independently:
+
+1. **HDBSCAN** (if sklearn available and block has ≥ `min_cluster_size` items): cosine metric, `allow_single_cluster=True`
+2. **Greedy graph-components fallback**: builds adjacency graph from cosine similarity threshold (default 0.72), finds connected components, discards singleton components as noise
+
+Cluster IDs are block-prefixed (e.g., `person_related_0000`, `organization_related_0001`). Noise points get `cluster_id = "noise"` and `probability = 0.0`.
+
+Relevant file:
+- `services/entity_resolution/clustering/cluster.py`
 
 ## Stage 3: canonical resolution and graph rewiring
 
@@ -422,7 +549,7 @@ Relevant file:
 
 ### Two-pass LLM resolution
 
-`matching/two_pass_llm.py` implements a simpler replacement for the older multi-step design.
+`matching/two_pass_llm.py` implements a two-pass approach:
 
 - **Pass 1**: partition a cluster into sub-groups of same-entity records
 - **Pass 2**: synthesize one canonical entity per multi-record sub-group
@@ -431,21 +558,114 @@ If Pass 1 produces only singletons or fails embedding-based validation, the reso
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pass1
-    Pass1 --> ValidatePass1
-    ValidatePass1 --> ConservativeFallback: all singletons or invalid groups
-    ValidatePass1 --> Pass2: valid sub-groups
-    Pass2 --> CanonicalEntities
+    [*] --> Pass1Subclustering
+
+    state Pass1Subclustering {
+        [*] --> BuildPrompt
+        BuildPrompt --> LLMCall: Send entities with guidelines
+        LLMCall --> ParseJSON: Extract sub_groups + singletons
+        ParseJSON --> [*]
+    }
+
+    Pass1Subclustering --> AllSingletonsCheck
+    AllSingletonsCheck --> ConservativeFallback: all singletons
+    AllSingletonsCheck --> ValidateSubgroups: has multi-entity groups
+
+    ValidateSubgroups --> ConservativeFallback: intra-group cosine < 0.83
+    ValidateSubgroups --> Pass2Merge: valid sub-groups
+
+    state Pass2Merge {
+        [*] --> ForEachSubgroup
+        ForEachSubgroup --> SingleEntity: size = 1
+        ForEachSubgroup --> LLMSynthesize: size ≥ 2
+        LLMSynthesize --> CanonicalEntity
+        SingleEntity --> CanonicalEntity
+    }
+
+    Pass2Merge --> CanonicalEntities
     ConservativeFallback --> CanonicalEntities
     CanonicalEntities --> [*]
 ```
 
+**Pass 1 guidelines** (Vietnamese prompt):
+1. **Aliases are strong signals** — if entity A has an alias matching entity B's name, they likely co-refer
+2. **Vietnamese abbreviations** — "ĐHCN" = "Đại học Công nghệ", "UET" = "University of Engineering and Technology", "ĐHQGHN" = "Đại học Quốc gia Hà Nội"
+3. **Institutional names with/without parent** — "Trường Đại học Công nghệ" and "Trường Đại học Công nghệ, ĐHQGHN" are the same university
+4. **Systematic field comparison** — names, aliases, labels, descriptions, source documents
+5. **Balance precision and recall** — ambiguity alone is not reason to separate; use all available signals
+
+**Pass 2 guidelines** (Vietnamese prompt):
+1. Choose the clearest canonical name
+2. Merge labels by union
+3. Include all distinct aliases
+4. Collect all chunk_id and model_extracted references
+5. Keep informative, non-duplicate descriptions
+6. Do not invent new fields or add unsupported information
+
+**Pass 1 validation**:
+- After Pass 1 returns sub-groups, compute intra-group embedding similarity (mean pairwise cosine)
+- If any multi-entity sub-group has intra-similarity below threshold (0.83), the group is considered suspicious and the entire cluster triggers conservative fallback
+
 Relevant file:
 - `services/entity_resolution/matching/two_pass_llm.py:21`
 
+### Conservative fallback
+
+When Pass 1 fails (all singletons, or validation fails), `_conservative_fallback()` applies rule-based merging:
+
+```mermaid
+flowchart TB
+    A[Cluster entities] --> B[Extract names, aliases, vectors]
+
+    B --> C[Pairwise comparison]
+
+    C --> D{Cosine similarity<br/>≥ threshold (0.88)?}
+    D -->|No| E[Don't merge]
+    D -->|Yes| F{Name or alias overlap?}
+
+    F -->|No| G[Don't merge<br/>even if high similarity]
+    F -->|Yes| H[Add to merge group]
+
+    H --> I[Build merged canonical entity]
+    I --> J[select_canonical_name<br/>scored selection algorithm]
+    J --> K[build_canonical_id<br/>from canonical name]
+    K --> L[Output: merged entity<br/>with merged_from list]
+```
+
+**Key rules:**
+1. Only merge if cosine similarity ≥ `conservative_merge_threshold` (default 0.88)
+2. Only merge if name or alias overlap exists (exact set intersection OR substring match)
+3. Name/alias overlap is a hard requirement — high similarity without name overlap won't trigger a merge (prevents false positives from similar but unrelated entities)
+4. Canonical name is selected using `select_canonical_name()` which scores candidates on frequency, preference, alias fit, display quality, and penalties for very short or long names
+5. Canonical ID is generated from the selected name using `build_canonical_id()` (strips diacritics, lowercases, replaces spaces with underscores, truncates to 200 chars, prefixes `node_`)
+
+Relevant files:
+- `services/entity_resolution/matching/two_pass_llm.py:607`
+- `services/entity_resolution/utils/canonical_name_selector.py`
+- `services/entity_resolution/utils/id_builder.py`
+
 ### Canonical ID regeneration
 
-After the resolver returns canonical entities, Stage 3 regenerates canonical IDs from canonical names. This keeps canonical IDs stable and readable rather than blindly trusting the resolver’s initial ID string.
+After the resolver returns canonical entities, Stage 3 regenerates canonical IDs from canonical names. This keeps canonical IDs stable and readable rather than blindly trusting the resolver's initial ID string.
+
+```mermaid
+flowchart LR
+    A[LLM-synthesized<br/>canonical entity] --> B[Extract canonical name<br/>from properties.name]
+    B --> C{Has name?}
+    C -->|Yes| D[build_canonical_id<br/>strip diacritics, lowercase,<br/>replace spaces with underscores]
+    D --> E[ensure_unique_canonical_id<br/>append _2, _3 if collision]
+    C -->|No| F[Keep original ID<br/>with warning]
+    E --> G[Store legacy_canonical_id<br/>for traceability]
+    F --> G
+```
+
+**`build_canonical_id()` rules:**
+- Strip Vietnamese diacritics (e.g., "Đại học" → "dai_hoc")
+- Lowercase
+- Replace spaces with underscores
+- Remove unsafe characters (only `[a-z0-9_]` allowed, plus Vietnamese chars which get stripped by diacritic removal)
+- Truncate to 200 characters
+- Prefix with `node_`
 
 It also preserves `legacy_canonical_id` for traceability.
 
@@ -459,9 +679,11 @@ Relevant files:
 
 It also:
 
-- removes self-loops and dangling relationships
+- deduplicates nodes (same canonical ID across files → one node)
+- removes self-loops (start == end after canonicalization) and dangling relationships (endpoints not in node set)
 - merges duplicate relationships with identical `(source, target, type)`
-- merges relationship properties conservatively
+- merges relationship properties conservatively (scalars: keep first non-null; lists: union and deduplicate)
+- adds `merged_from_ids` and `merge_count` metadata to deduplicated relationships
 - writes per-file before/after counts for audit
 
 ```mermaid
@@ -486,8 +708,46 @@ sequenceDiagram
     Rewire-->>Stage3: rewrite stats
 ```
 
+### Relationship deduplication in detail
+
+One of the most important (and non-obvious) rewiring operations:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Filter as _filter_relationships
+    participant Dedup as _deduplicate_relationships
+    participant Merge as _merge_relationship_properties
+
+    Filter->>Filter: resolve endpoints via canonical_map
+    Filter->>Filter: remove self-loops and dangling refs
+    Filter->>Dedup: pass filtered relationships
+
+    Dedup->>Dedup: group by (source, target, type)
+    loop each group
+        alt single relationship
+            Dedup->>Dedup: keep as-is
+        else multiple relationships
+            Dedup->>Merge: merge properties from duplicates
+            Merge->>Merge: scalar → keep first non-null
+            Merge->>Merge: list → union and deduplicate
+            Merge->>Merge: conflicting → keep first, log warning
+            Merge-->>Dedup: merged properties + merged_from_ids + merge_count
+            Dedup->>Dedup: add merge metadata to canonical
+        end
+    end
+    Dedup-->>Filter: deduplicated list + stats (removed count, group count)
+```
+
+**Property merging strategy:**
+- **Scalar values**: first non-null wins; conflicting values keep first and log warning
+- **List values**: concatenate and deduplicate (via `set`)
+- **Merge metadata**: `merged_from_ids` (list of all original relationship IDs) and `merge_count` (total count in group) are added to the kept relationship
+
+For example, if extraction produces 47 duplicate `HAS_MEMBER` relationships between the same two nodes, they become one relationship with `merge_count: 47`.
+
 Relevant file:
-- `services/entity_resolution/merging/rewire.py:258`
+- `services/entity_resolution/merging/rewire.py:66`
 
 ## Configuration
 
@@ -565,7 +825,7 @@ Important flags:
 --stage stage1|stage2|stage3|all
 --store-backend qdrant|memory
 --qdrant-url http://localhost:6333
---cluster-threshold 0.6
+--cluster-threshold 0.72
 --min-cluster-size 2
 --min-samples 1
 --enable-llm-blocking
@@ -599,16 +859,37 @@ artifacts/<run_id>/
     stage3.log
 ```
 
+## Integration with downstream services
+
+### Neo4j import
+
+After entity resolution completes, the rewritten graph files are imported into Neo4j:
+
+```bash
+python -m services.neo4j_import.import_to_neo4j --dir data/entity_resolution/artifacts/<run_id>/stage3/output_graph
+```
+
+The Neo4j import script also performs its own relationship deduplication at import time, complementing the pre-import deduplication done in `rewire.py`.
+
+### RAG System
+
+The resolved entities in Neo4j are queried by `services/rag_system` for graph_search and hybrid retrieval modes.
+
 ## Testing surface
 
 The current tests focus on regression-heavy behavior around Stage 3, canonicalization, and graph rewiring.
 
 Examples:
 
-- `services/entity_resolution/tests/test_stage3_under_merge.py` checks that Stage 3 produces valid merge artifacts and writes canonical decisions.
-- `services/entity_resolution/tests/test_two_pass_llm_detailed.py` exercises two-pass resolution behavior.
-- `services/entity_resolution/tests/test_relationship_deduplication.py` covers duplicate-edge handling.
-- `services/entity_resolution/tests/test_id_builder.py` covers canonical ID generation rules.
+- `services/entity_resolution/tests/test_stage3_under_merge.py` checks that Stage 3 produces valid merge artifacts and writes canonical decisions with regenerated IDs.
+- `services/entity_resolution/tests/test_two_pass_llm_detailed.py` exercises two-pass resolution behavior including Pass 1 sub-clustering with hard negatives, Pass 2 merging with label mismatches, same-name-different-entity disambiguation, and description-driven separation.
+- `services/entity_resolution/tests/test_two_pass_llm_uet_entities.py` tests UET-specific entity cases (service entity separation, organizational unit separation, name variant merging).
+- `services/entity_resolution/tests/test_relationship_deduplication.py` covers duplicate-edge handling, property merging strategies, and full `rewire_graph` end-to-end.
+- `services/entity_resolution/tests/test_id_builder.py` covers canonical ID generation rules (diacritics, special characters, long names, uniqueness).
+- `services/entity_resolution/tests/test_canonical_name_selector.py` tests name selection with Vietnamese/English variants, person names, abbreviations.
+- `services/entity_resolution/tests/test_merge_engine.py` tests `build_id_remap_from_proposals` — singleton warnings, correct remapping.
+- `services/entity_resolution/tests/test_preprocessing_normalize.py` tests that `build_embedding_text` uses name only and strips PERSON titles.
+- `services/entity_resolution/tests/test_e2e_mock_data.py` runs full pipeline on mock data, verifies structure.
 
 ## Troubleshooting
 
@@ -626,10 +907,11 @@ Relevant file:
 
 Check:
 
-- `cluster_assignments.json` from Stage 2
-- whether Pass 1 is returning all singletons
-- whether subgroup validation triggers conservative fallback
+- `cluster_assignments.json` from Stage 2 — are the clusters large enough?
+- whether Pass 1 is returning all singletons (all-singletons triggers conservative fallback)
+- whether subgroup validation triggers conservative fallback (intra-group cosine < 0.83)
 - whether `canonical_decisions.json` contains mostly `merge_count: 1`
+- whether `conservative_merge_threshold` is too high (default 0.88)
 
 Relevant files:
 - `services/entity_resolution/matching/two_pass_llm.py:83`
@@ -655,6 +937,18 @@ Check `rewire_audit.json` and the per-file stats returned by `rewire_graph(...)`
 Relevant file:
 - `services/entity_resolution/merging/rewire.py:227`
 
+### LLM blocking produces unexpected blocks
+
+Check the Stage 2 log file at `stage2/stage2.log`. It logs:
+- Input: all unique label combinations sent to LLM
+- Output: all blocks with types and reasoning
+- Whether cache was used or a fresh LLM call was made
+
+If the LLM returns unparseable JSON, the fallback creates per-label-combination blocks (each unique label set gets its own block).
+
+Relevant file:
+- `services/entity_resolution/blocking/llm_blocking_strategy.py:132`
+
 ## Source map
 
 Primary files to read first:
@@ -667,3 +961,8 @@ Primary files to read first:
 - `services/entity_resolution/matching/two_pass_llm.py`
 - `services/entity_resolution/merging/rewire.py`
 - `services/entity_resolution/storage/entity_store_adapter.py`
+- `services/entity_resolution/blocking/llm_blocking_strategy.py`
+- `services/entity_resolution/preprocessing/normalize.py`
+- `services/entity_resolution/preprocessing/representation.py`
+- `services/entity_resolution/utils/id_builder.py`
+- `services/entity_resolution/utils/canonical_name_selector.py`

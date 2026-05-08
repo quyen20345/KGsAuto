@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 KGsAuto is a knowledge-graph pipeline for Vietnamese markdown sources:
 1. Extract structured graph data from markdown with LLMs
 2. Resolve duplicate entities and relationships in a 3-stage entity-resolution pipeline
-3. Import the resolved graph into Neo4j and optionally add vector indexes/embeddings
+3. Import the resolved graph into Neo4j
 4. Serve graph/search/query APIs through FastAPI services
 5. Browse, search, merge, and visualize graph data from a React/Vite frontend
 
@@ -30,24 +30,24 @@ docker compose down
 ```
 Docker Compose is used mainly for local infrastructure such as Neo4j, Qdrant, and Ollama. In normal development, run the FastAPI services and React frontend directly from the repo.
 
-### Backend API (main graph API)
+### Graph API (main graph/admin API)
 ```bash
-uvicorn apps.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn apps.graph_api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 Docs: `http://localhost:8000/docs`
 
-### Unified RAG API
+### Chat API
 ```bash
-uvicorn apps.rag_api.main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn apps.chat_api.main:app --host 0.0.0.0 --port 8002 --reload
 ```
-Health: `http://localhost:8001/health`  
-Docs: `http://localhost:8001/docs`
+Health: `http://localhost:8002/health`  
+Docs: `http://localhost:8002/docs`
 Modes: `semantic_search`, `graph_search`, `naive_grag`, `hybrid`.
 
 ### Python package
 ```bash
-pip install -e .
-pip install -e '.[ragas]'  # optional, only for RAGAS evaluation scoring
+pip install -r requirements.txt
+pip install -e . --no-deps
 ```
 
 ### Frontend
@@ -61,9 +61,9 @@ cd apps/frontend && npm run preview
 
 ### Tests
 ```bash
-python -m pytest apps/backend/tests -q
-python -m pytest apps/backend/tests/api -v
-python -m pytest apps/backend/tests/unit -v
+python -m pytest apps/graph_api/tests -q
+python -m pytest apps/graph_api/tests/api -v
+python -m pytest apps/graph_api/tests/unit -v
 
 python -m pytest services/entity_resolution/tests -q
 python -m pytest services/extraction/tests -v
@@ -107,9 +107,7 @@ Current CLI defaults include `--input-dir mock_data`, `--artifacts-dir data/enti
 
 ### Neo4j import/index
 ```bash
-python apps/backend/neo4j/scripts/import_to_neo4j.py --dir data/extracted
-python -m apps.backend.neo4j.scripts.add_embeddings_to_neo4j
-python -m apps.backend.neo4j.scripts.create_vector_index
+python -m services.neo4j_import.import_to_neo4j --dir data/extracted
 ```
 
 ### RAG system CLI
@@ -131,10 +129,10 @@ python -m services.rag_system.cli evaluate score --results data/evaluation/compa
 ### 1) End-to-end data flow
 - `services/extraction`: markdown -> extracted JSON graph fragments.
 - `services/entity_resolution`: deduplicates entities/relations through staged artifacts and rewrites graph data before import.
-- `apps/backend/neo4j/scripts/import_to_neo4j.py`: writes graph JSON into Neo4j.
+- `services/neo4j_import/import_to_neo4j.py`: writes graph JSON into Neo4j.
 - Runtime consumers:
-  - `apps/backend`: main graph CRUD/search/query API.
-  - `services/rag_system` + `apps/rag_api`: unified retrieval-augmented QA over markdown and/or graph data.
+  - `apps/graph_api`: main graph CRUD/search/query API.
+  - `services/rag_system` + `apps/chat_api`: chatbot/RAG QA over markdown and/or graph data.
   - `apps/frontend`: UI for home/search/entity/merge workflows.
 
 ### 2) Local runtime shape
@@ -143,7 +141,7 @@ python -m services.rag_system.cli evaluate score --results data/evaluation/compa
 - Graph-backed runtime modes require Neo4j data to be imported first.
 
 ### 3) Backend and frontend surface area
-- Backend main graph API entrypoint: `apps.backend.app.main:app`.
+- Graph API entrypoint: `apps.graph_api.main:app`.
 - Frontend routes currently include `/`, `/search`, `/search/:query`, `/entity/:id`, and `/merge`.
 - Frontend API configuration uses `VITE_API_BASE_URL` when provided and otherwise falls back to `http://localhost:8000`.
 
@@ -185,7 +183,7 @@ Use online merge for production corrections; use offline merge for pipeline proc
   - `mock_questions.jsonl`: small mock evaluation question set
 - `config.py`, `schemas.py`, `cli.py`: config/types/operational CLI
 
-`apps/rag_api/main.py` is a thin FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` needs Qdrant markdown indexing; `hybrid` needs both Qdrant markdown indexing and Neo4j because it combines semantic retrieval with deep GraphSearch.
+`apps/chat_api/main.py` is the product chatbot FastAPI wrapper over `UnifiedRetrievalPipeline`. Graph-backed modes need Neo4j data already imported; `semantic_search` needs Qdrant markdown indexing; `hybrid` needs both Qdrant markdown indexing and Neo4j because it combines semantic retrieval with deep GraphSearch.
 
 ### 7) RAG evaluation workflow
 - Testsets are JSONL with required `id` and `question`; optional fields include `reference`, `tags`, and `metadata`.
@@ -196,7 +194,7 @@ Use online merge for production corrections; use offline merge for pipeline proc
 
 ### 8) Shared infrastructure patterns
 - LLM access goes through `services.llms.get_llm(...)` provider abstraction.
-- Neo4j driver is centralized in `apps/backend/app/db/neo4j.py` and reused by backend, RAG graph storage, and GraphSearch reasoning.
+- Neo4j driver is centralized in `apps/graph_api/neo4j.py` and reused by Graph API, RAG graph storage, and GraphSearch reasoning.
 - Qdrant is used in two separate contexts:
   - entity resolution vector backend
   - RAG markdown retrieval store
@@ -211,7 +209,7 @@ Key env settings are loaded via `.env` (see `.env.example`):
 Operational constraints:
 - Backend and graph-backed RAG modes require Neo4j to be running and populated.
 - RAG markdown retrieval requires Qdrant collection setup/indexing.
-- `apps/rag_api` uses the same Neo4j env vars as the main backend.
+- `apps/chat_api` uses the same Neo4j/Qdrant/LLM env vars as the RAG system.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

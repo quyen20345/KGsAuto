@@ -101,7 +101,7 @@ class Neo4jAdapter:
     """Adapter to use the imported Neo4j graph with GraphSearch."""
 
     def __init__(self, top_k: int = 5, raw_markdown_dir: str | Path | None = None, config: Any | None = None):
-        from apps.backend.app.db.neo4j import get_driver
+        from apps.graph_api.neo4j import get_driver
         from services.rag_system.config import RAGConfig
 
         self.driver = get_driver()

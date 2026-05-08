@@ -69,10 +69,11 @@ def test_score_with_ragas_uses_v2_dataset_schema(monkeypatch):
 
             return FakeFrame()
 
-    def fake_evaluate(dataset, metrics, llm):
+    def fake_evaluate(dataset, metrics, llm, run_config=None):
         captured["dataset"] = dataset
         captured["metrics"] = metrics
         captured["llm"] = llm
+        captured["run_config"] = run_config
         return FakeResult()
 
     monkeypatch.setitem(__import__("sys").modules, "datasets", type("DatasetsModule", (), {"Dataset": FakeDataset}))
@@ -96,7 +97,12 @@ def test_score_with_ragas_uses_v2_dataset_schema(monkeypatch):
             },
         ),
     )
-
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "ragas.run_config",
+        type("RunConfigModule", (), {"RunConfig": type("RunConfig", (), {"__init__": lambda self, **kw: None})}),
+    )
+    
     scores = scoring._score_with_ragas(
         [
             {

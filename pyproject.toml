@@ -8,38 +8,9 @@ version = "0.1.0"
 description = "Knowledge Graph Automation System"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-    # LLM services
-    "google-genai>=0.2.0",
-    "ollama==0.6.1",
-    "openai==2.20.0",
 
-    # Transformers
-    "sentence-transformers>=2.2.0",
-
-    # Database
-    "qdrant-client>=1.7.0",
-    "neo4j>=5.10.0",
-
-    # Utilities
-    "python-dotenv>=1.0.0",
-    "numpy>=1.24.0",
-
-    # For crawler
-    "requests==2.32.5",
-    "beautifulsoup4==4.12.2",
-    "lxml==4.9.3",
-
-    # Entity linking enhancements
-    "python-Levenshtein>=0.21.0",
-]
-
-[project.optional-dependencies]
-ragas = [
-    "ragas",
-    "datasets",
-    "langchain-openai",
-]
+# Runtime and development dependencies are intentionally kept in requirements.txt.
+# Install with: pip install -r requirements.txt && pip install -e . --no-deps
 
 [tool.setuptools.packages.find]
 where = ["."]

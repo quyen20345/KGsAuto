@@ -295,7 +295,7 @@ def evaluate_score(results, output, metrics):
 def test_connections():
     """Test connections to Qdrant and Neo4j"""
     from services.rag_system.retrieval.document import DocumentStore
-    from apps.backend.app.db.neo4j import get_driver
+    from apps.graph_api.neo4j import get_driver
 
     config = RAGConfig()
 
