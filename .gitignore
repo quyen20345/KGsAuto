@@ -4,13 +4,14 @@
 .git/
 # *.md
 !README.md
-!AGENTS.md
-!CLAUDE.md
 !docs/
-data/
+data:
 # thesis/
 *.txt
 */lib
+# AI agent instructions (local only)
+AGENTS.md
+CLAUDE.md
 # AI tooling
 .continue/
 .claude/
