@@ -36,4 +36,6 @@ def graph_search_response(question: str, result: dict, include_evidence: bool) -
         metadata=result.get("metadata", {}) or {},
         evidence=evidence if include_evidence else None,
         reasoning_steps=result.get("reasoning_steps"),
+        retrieved_evidence=result.get("retrieved_evidence"),
+        derived_evidence=result.get("derived_evidence", {}) or {},
     )

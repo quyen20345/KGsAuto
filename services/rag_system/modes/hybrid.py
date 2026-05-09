@@ -61,6 +61,14 @@ def hybrid_response(question: str, result: dict[str, Any], include_evidence: boo
     evidence["graph_context"] = graph_result.get("evidence")
     evidence["graph_reasoning"] = graph_result.get("reasoning_steps")
 
+    retrieved_evidence = {
+        "markdown_chunks": evidence["markdown_chunks"],
+        "graph_retrieval": graph_result.get("retrieved_evidence"),
+    }
+    derived_evidence = {
+        "graph_derived": graph_result.get("derived_evidence", {}) or {},
+    }
+
     metadata = answer.metadata | {
         "hybrid_strategy": HYBRID_STRATEGY,
         "top_k_markdown": result.get("markdown_top_k"),
@@ -78,4 +86,6 @@ def hybrid_response(question: str, result: dict[str, Any], include_evidence: boo
         metadata=metadata,
         evidence=evidence if include_evidence else None,
         reasoning_steps=graph_result.get("reasoning_steps"),
+        retrieved_evidence=retrieved_evidence,
+        derived_evidence=derived_evidence,
     )

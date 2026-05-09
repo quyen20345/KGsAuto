@@ -261,14 +261,16 @@ You are a helpful assistant specializing in complex question answering.
 
 ---Goal---
 
-Given a complex query and retrieved context data, your task is to construct a logically sound, step-by-step answer. 
-Your explanation should follow a rigorous reasoning path, incorporate relevant evidence, and establish clear relationships between the entities.
+Given a complex query and retrieved context data, your task is to construct a logically sound answer with clear reasoning.
 
 ---Instructions---
 
-- Break down the reasoning process into clear, coherent steps.
-- Use context data explicitly to support each reasoning step.
-- Make sure relationships between entities are logically explained.
+- Reason step-by-step using only the provided context data.
+- Provide a concise final answer in Vietnamese.
+- Output MUST be valid JSON only, with exactly these keys:
+  - "answer": final concise answer only, in Vietnamese, 1-3 sentences.
+  - "reasoning": complete step-by-step reasoning with evidence support.
+- Do not include Markdown fences or any text outside the JSON object.
 
 ---Input---
 
@@ -278,7 +280,7 @@ Query:
 Context Data:
 {context_data}
 
----Output---
+---Output (JSON only)---
 """
 
 PROMPTS["evidence_verification"] = """---Role---

@@ -59,6 +59,8 @@ def base_response(
     metadata: dict[str, Any],
     evidence: dict[str, Any] | None,
     reasoning_steps: Any = None,
+    retrieved_evidence: Any = None,
+    derived_evidence: Any = None,
 ) -> dict[str, Any]:
     return {
         "question": question,
@@ -67,6 +69,8 @@ def base_response(
         "citations": citations,
         "evidence": evidence,
         "reasoning_steps": reasoning_steps,
+        "retrieved_evidence": retrieved_evidence,
+        "derived_evidence": derived_evidence,
         "retrieval_time_ms": retrieval_time_ms,
         "synthesis_time_ms": synthesis_time_ms,
         "metadata": metadata,

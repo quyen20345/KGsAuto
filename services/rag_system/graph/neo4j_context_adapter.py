@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import re
-from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 CONTEXT_PATTERN = (
@@ -55,11 +53,6 @@ def _dedupe_text(values: Iterable[str]) -> list[str]:
     return deduped
 
 
-def _doc_id_from_chunk_id(chunk_id: str) -> str:
-    doc_id, separator, _ = chunk_id.rpartition("_chunk_")
-    return doc_id if separator else chunk_id
-
-
 def format_graphsearch_context(
     entities: Iterable[dict[str, Any]],
     relationships: Iterable[dict[str, Any]],
@@ -100,17 +93,16 @@ Reference Document List (Each entry starts with a [reference_id] that correspond
 class Neo4jAdapter:
     """Adapter to use the imported Neo4j graph with GraphSearch."""
 
-    def __init__(self, top_k: int = 5, raw_markdown_dir: str | Path | None = None, config: Any | None = None):
+    def __init__(self, top_k: int = 5, config: Any | None = None):
         from apps.graph_api.neo4j import get_driver
         from services.rag_system.config import RAGConfig
 
         self.driver = get_driver()
         self.config = config or RAGConfig()
         self.top_k = top_k
-        self.raw_markdown_dir = Path(raw_markdown_dir or os.getenv("RAG_MARKDOWN_DIR", "data/raw/uet"))
         self.keyword_max_terms = getattr(self.config, "graph_keyword_max_terms", 12)
         self.keyword_timeout_seconds = getattr(self.config, "graph_keyword_timeout_seconds", 15.0)
-        self._markdown_index: dict[str, Path] | None = None
+        self._store = None
 
     async def aquery_context(self, question: str) -> str:
         keywords = await self._extract_keywords_async(question)
@@ -119,21 +111,25 @@ class Neo4jAdapter:
         chunks_by_id: dict[str, dict[str, Any]] = {}
         sources_by_id: dict[str, dict[str, Any]] = {}
 
-        def add_chunk(chunk_id: str) -> None:
-            if chunk_id in chunks_by_id:
+        def add_vector_chunk(chunk: dict[str, Any]) -> None:
+            chunk_id = str(chunk.get("chunk_id") or "").strip()
+            content = str(chunk.get("text") or "").strip()
+            if not chunk_id or not content or chunk_id in chunks_by_id:
                 return
-            source_path, content = self._load_markdown_chunk(chunk_id)
-            if not content:
-                return
+            source = chunk.get("source_path") or chunk.get("doc_id") or chunk_id
             reference_id = len(sources_by_id)
             chunks_by_id[chunk_id] = {
                 "chunk_id": chunk_id,
+                "doc_id": chunk.get("doc_id"),
+                "title": chunk.get("title"),
+                "section": chunk.get("section"),
                 "content": content,
                 "reference_id": reference_id,
+                "score": chunk.get("score"),
             }
             sources_by_id[chunk_id] = {
                 "reference_id": reference_id,
-                "source": source_path or chunk_id,
+                "source": source,
             }
 
         def add_entity_from_details(details: dict[str, Any] | None) -> None:
@@ -152,8 +148,6 @@ class Neo4jAdapter:
                     "chunk_id": _chunk_ids(properties),
                     "retrieval_score": retrieval_score,
                 }
-                for chunk_id in _chunk_ids(properties)[:2]:
-                    add_chunk(chunk_id)
             else:
                 entities_by_id[entity_id]["retrieval_score"] = max(
                     float(entities_by_id[entity_id].get("retrieval_score") or 0.0),
@@ -180,9 +174,6 @@ class Neo4jAdapter:
                 "target_id": rel.get("target_id"),
                 "retrieval_score": float(rel.get("score") or rel.get("retrieval_score") or 0.0),
             }
-            for chunk_id in chunk_ids[:2]:
-                add_chunk(chunk_id)
-
         for keyword in keywords[:8]:
             entities = await self._asearch_entities(keyword, limit=max(3, self.top_k))
             for entity in entities:
@@ -199,6 +190,10 @@ class Neo4jAdapter:
                 add_relationship(rel)
                 add_entity_from_details(self._details_from_rel(rel, "source"))
                 add_entity_from_details(self._details_from_rel(rel, "target"))
+
+        vector_chunks = await asyncio.to_thread(self._search_chunks, question)
+        for chunk in vector_chunks:
+            add_vector_chunk(chunk)
 
         entities = sorted(entities_by_id.values(), key=lambda item: item.get("retrieval_score", 0.0), reverse=True)
         relationships = sorted(
@@ -228,6 +223,19 @@ Evidence:
 If the evidence is insufficient, say that the provided graph/document evidence is not enough."""
 
         return await openai_complete(prompt=prompt)
+
+    def _get_store(self):
+        if self._store is None:
+            from services.rag_system.retrieval.store import Store
+
+            self._store = Store(self.config)
+        return self._store
+
+    def _search_chunks(self, question: str) -> list[dict[str, Any]]:
+        store = self._get_store()
+        if not store.collection_exists():
+            return []
+        return store.search(question, top_k=self.top_k)
 
     def context_filter(self, context_data: str, filter_type: str) -> str:
         match = re.search(CONTEXT_PATTERN, context_data, re.DOTALL)
@@ -409,25 +417,3 @@ Knowledge Graph Data (Relationship):
             "properties": rel.get(f"{side}_props") or {},
             "score": rel.get("score") or rel.get("retrieval_score") or 0.0,
         }
-
-    def _build_markdown_index(self) -> dict[str, Path]:
-        if self._markdown_index is not None:
-            return self._markdown_index
-        index: dict[str, Path] = {}
-        if self.raw_markdown_dir.exists():
-            for path in self.raw_markdown_dir.rglob("*.md"):
-                index[path.stem] = path
-        self._markdown_index = index
-        return index
-
-    def _load_markdown_chunk(self, chunk_id: str) -> tuple[str | None, str | None]:
-        index = self._build_markdown_index()
-        doc_id = _doc_id_from_chunk_id(chunk_id)
-        path = index.get(doc_id) or index.get(chunk_id)
-        if path is None or not path.exists():
-            return None, None
-
-        text = path.read_text(encoding="utf-8", errors="ignore").strip()
-        if len(text) > 1800:
-            text = text[:1800].rsplit(" ", 1)[0].strip() + "..."
-        return str(path), text

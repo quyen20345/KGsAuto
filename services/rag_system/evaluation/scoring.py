@@ -10,6 +10,7 @@ from typing import Any, Iterable, Sequence
 from dotenv import find_dotenv, load_dotenv
 
 from services.rag_system.evaluation.runner import load_jsonl, write_csv, write_jsonl
+from services.config import RAGAS_SCORE_MAX_WORKERS
 
 
 DEFAULT_METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
@@ -155,14 +156,15 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
             {
                 "user_input": str(row.get("question") or ""),
                 "response": str(row.get("answer") or ""),
-                "retrieved_contexts": _normalize_contexts(row.get("contexts")),
+                "retrieved_contexts": _normalize_contexts(row.get("retrieved_contexts") or row.get("contexts")),
                 "reference": str(row.get("reference") or ""),
             }
             for row in rows
         ]
     )
     llm = _build_ragas_llm()
-    max_workers = int(os.getenv("RAGAS_SCORE_MAX_WORKERS", "2"))
+    embeddings = _build_ragas_embeddings() if "answer_relevancy" in metric_names else None
+    max_workers = RAGAS_SCORE_MAX_WORKERS
     run_config = RunConfig(
         max_workers=max_workers,
         max_retries=10,
@@ -170,12 +172,14 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
         timeout=300,
     )
     try:
-        result = evaluate(
-            dataset,
-            metrics=[metric_registry[metric] for metric in metric_names],
-            llm=llm,
-            run_config=run_config,
-        )
+        evaluate_kwargs = {
+            "metrics": [metric_registry[metric] for metric in metric_names],
+            "llm": llm,
+            "run_config": run_config,
+        }
+        if embeddings is not None:
+            evaluate_kwargs["embeddings"] = embeddings
+        result = evaluate(dataset, **evaluate_kwargs)
     except Exception as exc:
         raise RagasScoringError(
             "RAGAS scoring failed with the configured evaluator "
@@ -206,6 +210,29 @@ def _build_ragas_llm() -> Any:
         temperature=0,
     )
     return LangchainLLMWrapper(llm)
+
+
+def _build_ragas_embeddings() -> Any:
+    try:
+        from openai import OpenAI
+
+        from services.rag_system.evaluation.gen_testset import NvidiaEmbeddings
+    except ImportError as exc:
+        raise RagasUnavailableError(
+            "RAGAS NVIDIA embedding scoring requires openai and ragas embeddings support. "
+            "Install/update with: pip install '.[ragas]' openai"
+        ) from exc
+
+    api_key = _env_first("RAGAS_EMBEDDING_API_KEY", "NVIDIA_API_KEY")
+    if not api_key:
+        raise RagasScoringError("Missing RAGAS embedding configuration: RAGAS_EMBEDDING_API_KEY or NVIDIA_API_KEY")
+
+    model = _env_first("RAGAS_EMBEDDING_MODEL", "NVIDIA_EMBED_MODEL") or "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
+    base_url = _env_first("RAGAS_EMBEDDING_BASE_URL", "NVIDIA_BASE_URL") or "https://integrate.api.nvidia.com/v1"
+    delay_seconds = _optional_float(_env_first("RAGAS_EMBEDDING_DELAY_SECONDS")) or 0.1
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    return NvidiaEmbeddings(client=client, model=model, delay_seconds=delay_seconds)
 
 
 def _resolve_ragas_openai_config() -> dict[str, str]:
@@ -254,7 +281,7 @@ def _skip_reason(row: dict[str, Any], metrics: Sequence[str]) -> str | None:
         return row.get("error") or "generation row failed"
     if not row.get("answer"):
         return "missing answer"
-    if not row.get("contexts"):
+    if not (row.get("retrieved_contexts") or row.get("contexts")):
         return "missing contexts"
     reference_required = any(metric in {"context_precision", "context_recall"} for metric in metrics)
     if reference_required and not row.get("reference"):

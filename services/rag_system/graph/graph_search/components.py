@@ -1,4 +1,6 @@
+import json
 import logging
+import re
 
 from services.rag_system.graph.graph_search.parsing import KEYWORD_FIELDS, parse_keyword_extraction
 from services.rag_system.graph.graph_search.prompts import PROMPTS
@@ -121,10 +123,61 @@ async def answer_generation_deep(query, context_data):
             context_data=context_data
         )
         final_answer = await openai_complete(prompt=answer_prompt)
-        return final_answer.strip()
+        parsed = _parse_answer_generation_json(final_answer)
+        return str(parsed.get("answer") or "").strip(), str(parsed.get("reasoning") or "").strip()
     except Exception as error:
         _log_component_error("answer_generation_deep", error)
-        return ""
+        return "", ""
+
+
+def _parse_answer_generation_json(raw: str) -> dict[str, str]:
+    text = (raw or "").strip()
+    candidates = [text]
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL | re.IGNORECASE)
+    if fence:
+        candidates.append(fence.group(1).strip())
+    balanced = _extract_balanced_json_object(text)
+    if balanced:
+        candidates.append(balanced)
+
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return {
+                "answer": str(parsed.get("answer") or ""),
+                "reasoning": str(parsed.get("reasoning") or ""),
+            }
+    return {"answer": text, "reasoning": ""}
+
+
+def _extract_balanced_json_object(text: str) -> str | None:
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_string = False
+    escaped = False
+    for index, char in enumerate(text[start:], start=start):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    return None
 
 async def evidence_verification(query, context_data, model_response):
     try:
