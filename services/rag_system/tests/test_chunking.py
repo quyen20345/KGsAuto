@@ -8,7 +8,7 @@ from services.rag_system.retrieval.chunking import MarkdownChunker
 
 class TestMarkdownChunker:
     def test_fixed_size_chunking(self):
-        config = RAGConfig(chunk_strategy="fixed", max_chunk_size=100, chunk_overlap=10)
+        config = RAGConfig(chunk_strategy="fixed", chunk_max_tokens=20, chunk_overlap_tokens=5)
         chunker = MarkdownChunker(config)
         
         # Create a temp file
@@ -23,10 +23,10 @@ class TestMarkdownChunker:
         
         chunks = chunker.chunk_file(MockPath())
         assert len(chunks) > 0
-        assert all(len(c.text) <= 150 for c in chunks)  # Including prefix
+        assert all(chunker.token_counter.count(c.text) <= 30 for c in chunks)  # Including prefix
         
     def test_hierarchical_chunking_by_headers(self):
-        config = RAGConfig(chunk_strategy="section", max_chunk_size=500, chunk_overlap=50)
+        config = RAGConfig(chunk_strategy="section", chunk_max_tokens=80, chunk_overlap_tokens=10)
         chunker = MarkdownChunker(config)
         
         md_content = """## Metadata
@@ -56,7 +56,7 @@ Even more content.
         assert "Header 1" in sections or "Header 2" in sections
         
     def test_promote_headers(self):
-        config = RAGConfig(chunk_strategy="section", max_chunk_size=500, chunk_overlap=50)
+        config = RAGConfig(chunk_strategy="section", chunk_max_tokens=80, chunk_overlap_tokens=10)
         chunker = MarkdownChunker(config)
         
         # Text with numbered items that should become headers
@@ -73,8 +73,8 @@ Even more content.
     def test_context_enrichment(self):
         config = RAGConfig(
             chunk_strategy="fixed", 
-            max_chunk_size=100, 
-            chunk_overlap=10,
+            chunk_max_tokens=30,
+            chunk_overlap_tokens=5,
             context_enrichment=True
         )
         chunker = MarkdownChunker(config)
