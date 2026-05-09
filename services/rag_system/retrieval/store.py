@@ -1,16 +1,16 @@
-"""Qdrant document storage adapter"""
+"""Qdrant chunk storage adapter."""
 
 import uuid
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 
-class DocumentStore:
-    """Store and search document chunks in Qdrant"""
+class Store:
+    """Store and search embedded document chunks in Qdrant."""
 
     _embedder_cache: dict[str, SentenceTransformer] = {}
 
@@ -67,7 +67,7 @@ class DocumentStore:
 
         print(f"Upserting {len(points)} points in {total_batches} batches...")
         for i in tqdm(range(0, len(points), batch_size), disable=not show_progress):
-            batch = points[i:i + batch_size]
+            batch = points[i : i + batch_size]
             self.client.upsert(collection_name=self.collection_name, points=batch)
 
         print(f"✓ Upserted {len(points)} chunks to Qdrant")

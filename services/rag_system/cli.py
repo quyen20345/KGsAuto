@@ -30,13 +30,13 @@ def cli():
 @click.option("--collection", default=None, help="Qdrant collection name (default: from config)")
 def create_collection(collection):
     """Create Qdrant collection for markdown chunks"""
-    from services.rag_system.retrieval.document import DocumentStore
+    from services.rag_system.retrieval.store import Store
 
     config = RAGConfig()
     if collection:
         config.markdown_collection = collection
 
-    store = DocumentStore(config)
+    store = Store(config)
     store.create_collection()
 
 
@@ -44,14 +44,14 @@ def create_collection(collection):
 @click.option("--collection", default=None, help="Qdrant collection name (default: from config)")
 def delete_collection(collection):
     """Delete Qdrant collection"""
-    from services.rag_system.retrieval.document import DocumentStore
+    from services.rag_system.retrieval.store import Store
 
     config = RAGConfig()
     if collection:
         config.markdown_collection = collection
 
     if click.confirm(f"Are you sure you want to delete collection '{config.markdown_collection}'?"):
-        store = DocumentStore(config)
+        store = Store(config)
         store.delete_collection()
 
 
@@ -60,10 +60,10 @@ def delete_collection(collection):
 @click.option("--force", is_flag=True, help="Force re-indexing (delete existing collection)")
 def index(limit, force):
     """Index markdown documents to Qdrant"""
-    from services.rag_system.retrieval.indexing import MarkdownIndexer
+    from services.rag_system.retrieval.indexing import Indexer
 
     config = RAGConfig()
-    indexer = MarkdownIndexer(config)
+    indexer = Indexer(config)
 
     click.echo("Starting indexing...")
     click.echo()
@@ -294,7 +294,7 @@ def evaluate_score(results, output, metrics):
 @cli.command()
 def test_connections():
     """Test connections to Qdrant and Neo4j"""
-    from services.rag_system.retrieval.document import DocumentStore
+    from services.rag_system.retrieval.store import Store
     from apps.graph_api.neo4j import get_driver
 
     config = RAGConfig()
@@ -305,7 +305,7 @@ def test_connections():
     # Test Qdrant
     click.echo("1. Testing Qdrant connection...")
     try:
-        store = DocumentStore(config)
+        store = Store(config)
         if store.collection_exists():
             count = store.count()
             click.echo(f"   ✓ Qdrant connected: Collection '{config.markdown_collection}' exists with {count} chunks")

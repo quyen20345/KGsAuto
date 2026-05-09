@@ -1,20 +1,20 @@
-"""Markdown retrieval"""
+"""Semantic retrieval over indexed chunks."""
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from services.rag_system.retrieval.document import DocumentStore
+from services.rag_system.retrieval.store import Store
 
 
-class MarkdownRetriever:
-    """Retrieve relevant markdown chunks using semantic search"""
+class Retriever:
+    """Retrieve relevant chunks using semantic search."""
 
     def __init__(self, config):
         self.config = config
         self._store = None
 
-    def _get_store(self) -> DocumentStore:
+    def _get_store(self) -> Store:
         if self._store is None:
-            self._store = DocumentStore(self.config)
+            self._store = Store(self.config)
         return self._store
 
     def retrieve(self, query: str, top_k: int = None) -> List[Dict[str, Any]]:

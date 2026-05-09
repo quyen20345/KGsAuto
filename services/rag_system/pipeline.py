@@ -17,19 +17,8 @@ from services.rag_system.modes import (
     run_naive_grag,
     run_semantic_search,
 )
-from services.rag_system.retrieval.markdown import MarkdownRetriever
-
-
-UNIFIED_MODES = {"semantic_search", "graph_search", "naive_grag", "hybrid"}
-MODE_ALIASES: dict[str, str] = {}
-
-
-def canonical_unified_mode(mode: str) -> str:
-    canonical = MODE_ALIASES.get(mode.strip().lower(), mode.strip().lower())
-    if canonical not in UNIFIED_MODES:
-        supported = ", ".join(sorted(UNIFIED_MODES))
-        raise ValueError(f"Unsupported unified retrieval mode: {mode}. Supported modes: {supported}")
-    return canonical
+from services.rag_system.modes.registry import UNIFIED_MODES, canonical_unified_mode
+from services.rag_system.retrieval.retriever import Retriever
 
 
 class UnifiedRetrievalPipeline:
@@ -37,7 +26,7 @@ class UnifiedRetrievalPipeline:
 
     def __init__(self, config: Optional[RAGConfig] = None):
         self.config = config or RAGConfig()
-        self.markdown_retriever = MarkdownRetriever(self.config)
+        self.markdown_retriever = Retriever(self.config)
         self.synthesizer = AnswerSynthesizer(self.config)
 
     def query(
@@ -49,6 +38,8 @@ class UnifiedRetrievalPipeline:
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
         canonical = canonical_unified_mode(mode)
+        if top_k is None:
+            top_k = self.config.top_k_markdown
 
         if canonical == "semantic_search":
             result = run_semantic_search(self, question, top_k, include_evidence)
@@ -71,6 +62,8 @@ class UnifiedRetrievalPipeline:
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
         canonical = canonical_unified_mode(mode)
+        if top_k is None:
+            top_k = self.config.top_k_markdown
 
         if canonical == "semantic_search":
             result = await asyncio.to_thread(run_semantic_search, self, question, top_k, include_evidence)

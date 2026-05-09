@@ -1,22 +1,22 @@
-"""Markdown document indexing"""
+"""Document indexing pipeline."""
 
 from typing import Optional
 
 from tqdm import tqdm
 
 from services.rag_system.retrieval.chunking import MarkdownChunker
-from services.rag_system.retrieval.document import DocumentStore
+from services.rag_system.retrieval.store import Store
 
 
-class MarkdownIndexer:
-    """Index markdown documents to Qdrant"""
+class Indexer:
+    """Index markdown documents to Qdrant."""
 
     def __init__(self, config):
         self.config = config
         self.chunker = MarkdownChunker(config)
 
     def index_all(self, limit: Optional[int] = None, force: bool = False) -> dict:
-        store = DocumentStore(self.config)
+        store = Store(self.config)
 
         if force and store.collection_exists():
             print(f"Force re-indexing: deleting existing collection '{self.config.markdown_collection}'")
