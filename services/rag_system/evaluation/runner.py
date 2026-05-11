@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -11,6 +12,9 @@ from typing import Any, Iterable, Sequence
 
 from services.rag_system.config import RAGConfig
 from services.rag_system.pipeline import UnifiedRetrievalPipeline
+
+
+csv.field_size_limit(sys.maxsize)
 
 
 @dataclass
@@ -84,8 +88,29 @@ def load_csv(path: str | Path) -> list[dict[str, Any]]:
     with Path(path).open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            for key in (
+                "contexts",
+                "retrieved_contexts",
+                "retrieval_evidence",
+                "derived_contexts",
+                "reasoning_steps",
+                "citations",
+                "tags",
+                "metadata",
+            ):
+                if key in row:
+                    row[key] = _parse_json_cell(row[key])
             rows.append(row)
     return rows
+
+
+def _parse_json_cell(value: Any) -> Any:
+    if not isinstance(value, str) or not value.strip():
+        return value
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
 
 
 def load_dataset(path: str | Path) -> list[dict[str, Any]]:
@@ -296,8 +321,9 @@ def run_dataset(
     output_path: str | Path,
     mode: str = "semantic_search",
     top_k: int = 5,
+    verbose: bool = False,
 ) -> list[dict[str, Any]]:
-    results = run_dataset_for_modes(dataset_path, output_path, modes=[mode], top_k=top_k)
+    results = run_dataset_for_modes(dataset_path, output_path, modes=[mode], top_k=top_k, verbose=verbose)
     return results
 
 
@@ -306,15 +332,34 @@ def run_dataset_for_modes(
     output_path: str | Path,
     modes: Sequence[str] | None = None,
     top_k: int = 5,
+    verbose: bool = False,
 ) -> list[dict[str, Any]]:
     samples = [parse_sample(row) for row in load_dataset(dataset_path)]
     pipeline = UnifiedRetrievalPipeline(RAGConfig())
     selected_modes = list(modes or ALL_MODES)
     results = []
 
-    for sample in samples:
+    total = len(samples) * len(selected_modes)
+    current = 0
+    for sample_index, sample in enumerate(samples, start=1):
         for mode in selected_modes:
-            results.append(run_sample(pipeline, sample, mode=mode, top_k=top_k))
+            current += 1
+            if verbose:
+                print(
+                    f"[{current}/{total}] sample={sample_index}/{len(samples)} "
+                    f"mode={mode} id={sample.id} question={sample.question[:120]}",
+                    flush=True,
+                )
+            result = run_sample(pipeline, sample, mode=mode, top_k=top_k)
+            results.append(result)
+            if verbose:
+                latency = result.get("latency_ms")
+                latency_text = f" latency_ms={latency:.1f}" if isinstance(latency, (int, float)) else ""
+                print(
+                    f"    -> status={result.get('status')} contexts={result.get('context_count')}"
+                    f"{latency_text} error={result.get('error') or ''}",
+                    flush=True,
+                )
 
     write_jsonl(output_path, results)
     csv_path = Path(output_path).with_suffix(".csv")
