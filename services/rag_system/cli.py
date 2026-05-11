@@ -144,7 +144,7 @@ def query(question, mode, top_k, show_evidence):
             if markdown_chunks:
                 click.echo(f"  {len(markdown_chunks)} markdown chunks")
                 for i, chunk in enumerate(markdown_chunks[:3], 1):
-                    label = chunk.get("chunk_id") or chunk.get("doc_id") or chunk.get("title") or "chunk"
+                    label = chunk.get("chunk_id") or "chunk"
                     section = chunk.get("section")
                     suffix = f" - {section}" if section else ""
                     click.echo(f"\n  [{i}] {label}{suffix}")
@@ -204,14 +204,15 @@ RAG_MODES = ["semantic_search", "graph_search", "naive_grag", "hybrid"]
     default="semantic_search",
 )
 @click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
-def evaluate_run(dataset, output, mode, top_k):
+@click.option("--verbose", is_flag=True, help="Print per-sample progress while running")
+def evaluate_run(dataset, output, mode, top_k, verbose):
     """Run one RAG mode over a JSONL question set."""
     from services.rag_system.evaluation.runner import run_dataset
 
     click.echo(f"Dataset: {dataset}")
     click.echo(f"Mode: {mode}")
     click.echo(f"Output: {output}")
-    results = run_dataset(dataset, output, mode=mode, top_k=top_k)
+    results = run_dataset(dataset, output, mode=mode, top_k=top_k, verbose=verbose)
     click.echo(f"Wrote {len(results)} results to {output}")
     click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
 
@@ -237,7 +238,8 @@ def evaluate_run(dataset, output, mode, top_k):
     help="Mode to run; repeat for multiple modes. Defaults to all modes.",
 )
 @click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
-def evaluate_run_comparison(dataset, output, modes, top_k):
+@click.option("--verbose", is_flag=True, help="Print per-sample progress while running")
+def evaluate_run_comparison(dataset, output, modes, top_k, verbose):
     """Run multiple RAG modes over a JSONL question set."""
     from services.rag_system.evaluation.runner import ALL_MODES, run_dataset_for_modes
 
@@ -246,7 +248,7 @@ def evaluate_run_comparison(dataset, output, modes, top_k):
     click.echo(f"Modes: {', '.join(selected_modes)}")
     click.echo(f"Top-K: {top_k}")
     click.echo(f"Output: {output}")
-    results = run_dataset_for_modes(dataset, output, modes=selected_modes, top_k=top_k)
+    results = run_dataset_for_modes(dataset, output, modes=selected_modes, top_k=top_k, verbose=verbose)
     click.echo(f"Wrote {len(results)} results to {output}")
     click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
 
@@ -270,14 +272,25 @@ def evaluate_run_comparison(dataset, output, modes, top_k):
     multiple=True,
     help="RAGAS metric to run; repeat for multiple metrics. Defaults to the standard metric set.",
 )
-def evaluate_score(results, output, metrics):
+@click.option("--incremental", is_flag=True, help="Score one row at a time and append each result immediately.")
+@click.option("--no-resume", is_flag=True, help="Do not resume from an existing incremental output file.")
+def evaluate_score(results, output, metrics, incremental, no_resume):
     """Score saved RAG outputs with RAGAS."""
-    from services.rag_system.evaluation.scoring import RagasScoringError, RagasUnavailableError, score_results, summarize_scores
+    from services.rag_system.evaluation.scoring import (
+        RagasScoringError,
+        RagasUnavailableError,
+        score_results,
+        score_results_incremental,
+        summarize_scores,
+    )
 
     click.echo(f"Results: {results}")
     click.echo(f"Output: {output}")
     try:
-        scored = score_results(results, output, metrics=list(metrics) or None)
+        if incremental:
+            scored = score_results_incremental(results, output, metrics=list(metrics) or None, resume=not no_resume)
+        else:
+            scored = score_results(results, output, metrics=list(metrics) or None)
     except (RagasScoringError, RagasUnavailableError) as exc:
         raise click.ClickException(str(exc)) from exc
 
@@ -357,6 +370,8 @@ def info():
     click.echo(f"  Model: {config.llm_model}")
     click.echo()
     click.echo("Retrieval:")
+    click.echo(f"  Embedding model: {config.embedding_model}")
+    click.echo(f"  Embedding device: {config.embedding_device}")
     click.echo(f"  Top-K Markdown: {config.top_k_markdown}")
     click.echo(f"  Top-K Graph: {config.top_k_graph}")
     click.echo(f"  Max Graph Depth: {config.max_graph_depth}")
