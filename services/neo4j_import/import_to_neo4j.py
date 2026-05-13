@@ -1,13 +1,77 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import re
-import argparse
+import unicodedata
 from pathlib import Path
+from typing import Any
+
 from neo4j import GraphDatabase
 
 from services.config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
 
 LABEL_SAFE_RE = re.compile(r"[^A-Za-z0-9_]")
+IDENTIFIER_SPLIT_RE = re.compile(r"[_\-/\\.]+")
+WHITESPACE_RE = re.compile(r"\s+")
+
+
+def normalize_search_text(value: Any) -> str:
+    text = WHITESPACE_RE.sub(" ", str(value or "")).strip().lower()
+    text = text.replace("đ", "d")
+    decomposed = unicodedata.normalize("NFD", text)
+    without_marks = "".join(char for char in decomposed if unicodedata.category(char) != "Mn")
+    return WHITESPACE_RE.sub(" ", without_marks).strip()
+
+
+def as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def split_identifier_variants(value: Any) -> list[str]:
+    text = str(value or "").strip()
+    if not text:
+        return []
+    split_text = WHITESPACE_RE.sub(" ", IDENTIFIER_SPLIT_RE.sub(" ", text)).strip()
+    parts = [part for part in split_text.split() if len(part) >= 2]
+    variants = [text]
+    if split_text and split_text != text:
+        variants.append(split_text)
+    variants.extend(parts)
+    return list(dict.fromkeys(variants))
+
+
+def build_node_search_properties(props: dict[str, Any], labels: list[str]) -> dict[str, Any]:
+    name = props.get("name")
+    aliases = as_list(props.get("aliases"))
+    descriptions = as_list(props.get("description"))
+    alias_variants: list[str] = []
+    for alias in aliases:
+        alias_variants.extend(split_identifier_variants(alias))
+
+    search_parts = [name, *labels, *aliases, *alias_variants, *descriptions]
+    normalized_parts = [normalize_search_text(part) for part in search_parts]
+    return {
+        "search_name": normalize_search_text(name),
+        "search_aliases": [normalize_search_text(alias) for alias in alias_variants or aliases if normalize_search_text(alias)],
+        "search_description": [normalize_search_text(desc) for desc in descriptions if normalize_search_text(desc)],
+        "search_text": " ".join(dict.fromkeys(part for part in normalized_parts if part)),
+    }
+
+
+def build_relationship_search_properties(rel_type: str, props: dict[str, Any]) -> dict[str, Any]:
+    descriptions = as_list(props.get("description"))
+    type_variants = split_identifier_variants(rel_type)
+    search_parts = [rel_type, *type_variants, *descriptions]
+    normalized_parts = [normalize_search_text(part) for part in search_parts]
+    return {
+        "search_type": normalize_search_text(rel_type),
+        "search_description": [normalize_search_text(desc) for desc in descriptions if normalize_search_text(desc)],
+        "search_text": " ".join(dict.fromkeys(part for part in normalized_parts if part)),
+    }
 
 
 def sanitize_label(label: str) -> str:
@@ -26,6 +90,16 @@ class KGImporter:
     def close(self):
         self.driver.close()
 
+    def create_search_indexes(self):
+        with self.driver.session() as session:
+            session.run(
+                """
+                CREATE FULLTEXT INDEX kg_entity_search IF NOT EXISTS
+                FOR (n:KGEntity)
+                ON EACH [n.name, n.search_name, n.search_text]
+                """
+            )
+
     def import_nodes(self, nodes, source_file):
         with self.driver.session() as session:
             for node in nodes:
@@ -35,12 +109,15 @@ class KGImporter:
 
                 props = node.get("properties", {}) or {}
                 props_with_meta = dict(props)
+                props_with_meta.update(build_node_search_properties(props_with_meta, labels))
                 props_with_meta["id"] = node_id
                 # props_with_meta["source_file"] = source_file
 
                 # Use first label for MERGE, then add remaining labels
                 if not labels:
                     labels = ["Entity"]  # Fallback label if none provided
+                if "KGEntity" not in labels:
+                    labels.append("KGEntity")
 
                 primary_label = labels[0]
                 remaining_labels = labels[1:] if len(labels) > 1 else []
@@ -68,6 +145,7 @@ class KGImporter:
 
                 props = rel.get("properties", {}) or {}
                 props_with_meta = dict(props)
+                props_with_meta.update(build_relationship_search_properties(rel_type, props_with_meta))
                 props_with_meta["id"] = rel_id
                 # props_with_meta["source_file"] = source_file
 
@@ -115,6 +193,7 @@ def main():
     importer = KGImporter(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
     try:
+        importer.create_search_indexes()
         json_files = list(folder.glob("*.json"))
         if not json_files:
             raise SystemExit("No JSON files found in folder")

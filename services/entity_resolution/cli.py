@@ -5,9 +5,7 @@ import json
 from pathlib import Path
 
 from .config import RunConfig
-from .pipelines.stage1_pipeline import run_stage1
-from .pipelines.stage2_pipeline import run_stage2
-from .pipelines.stage3_pipeline import run_stage3
+from .pipeline import run_entity_resolution
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -72,18 +70,8 @@ def main() -> None:
         llm_api_key=args.llm_api_key,
     )
 
-    outputs: dict[str, dict] = {}
-    if args.stage in {"stage1", "all"}:
-        s1 = run_stage1(cfg)
-        outputs["stage1"] = s1.__dict__
-    if args.stage in {"stage2", "all"}:
-        s2 = run_stage2(cfg)
-        outputs["stage2"] = s2.__dict__
-    if args.stage in {"stage3", "all"}:
-        s3 = run_stage3(cfg)
-        outputs["stage3"] = s3.__dict__
-
-    print(json.dumps({"run_id": cfg.run_id, "outputs": outputs}, ensure_ascii=False, indent=2))
+    result = run_entity_resolution(cfg, stage=args.stage)
+    print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
