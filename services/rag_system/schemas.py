@@ -23,11 +23,8 @@ class Chunk:
 class MarkdownEvidence(BaseModel):
     """Evidence from markdown document"""
     chunk_id: str
-    doc_id: str
     text: str
     score: float
-    source_path: Optional[str] = None
-    title: Optional[str] = None
     section: Optional[str] = None
     metadata: Dict[str, Any] = {}
 

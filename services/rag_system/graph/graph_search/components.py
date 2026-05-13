@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from urllib.parse import urlparse
 
 from services.rag_system.graph.graph_search.parsing import KEYWORD_FIELDS, parse_keyword_extraction
 from services.rag_system.graph.graph_search.prompts import PROMPTS
@@ -25,14 +26,108 @@ def empty_keyword_extraction() -> dict[str, list[str]]:
     return {field: [] for field in KEYWORD_FIELDS}
 
 
+STOPWORDS = {
+    "ai",
+    "bao",
+    "bi",
+    "bị",
+    "boi",
+    "bởi",
+    "cai",
+    "cái",
+    "cac",
+    "các",
+    "cho",
+    "cua",
+    "của",
+    "de",
+    "duoc",
+    "được",
+    "em",
+    "hoi",
+    "hỏi",
+    "khi",
+    "la",
+    "là",
+    "nao",
+    "nào",
+    "o",
+    "ở",
+    "tai",
+    "tại",
+    "thi",
+    "thì",
+    "toi",
+    "tôi",
+    "trong",
+    "va",
+    "và",
+    "ve",
+    "về",
+}
+TOKEN_RE = re.compile(r"https?://\S+|[A-ZÀ-ỴĐ][\wÀ-ỹĐđ]*(?:\s+[A-ZÀ-ỴĐ0-9][\wÀ-ỹĐđ]*)+|[\wÀ-ỹĐđ]+", re.UNICODE)
+
+
+def _fallback_keywords_from_query(query: str) -> dict[str, list[str]]:
+    groups = empty_keyword_extraction()
+    seen: set[str] = set()
+
+    def add(field: str, value: str) -> None:
+        words = value.strip(' .,;:!?()[]{}"\'`').split()
+        while words and words[0].casefold() in STOPWORDS:
+            words.pop(0)
+        while words and words[-1].casefold() in STOPWORDS:
+            words.pop()
+        value = " ".join(words)
+        if not value or len(value) < 2:
+            return
+        key = value.casefold()
+        if key in seen:
+            return
+        seen.add(key)
+        groups[field].append(value)
+
+    for raw_match in TOKEN_RE.findall(query):
+        match = raw_match.strip()
+        if match.startswith("http"):
+            parsed_url = urlparse(match)
+            add("must_keep_phrases", match.rstrip('/.,;'))
+            if parsed_url.netloc:
+                add("expanded_keywords", parsed_url.netloc)
+            continue
+        if " " in match:
+            add("must_keep_phrases", match)
+            continue
+        if match.casefold() not in STOPWORDS and (len(match) > 2 or any(char.isdigit() for char in match)):
+            add("low_level_keywords", match)
+
+    if not groups["must_keep_phrases"] and not groups["low_level_keywords"]:
+        add("low_level_keywords", query)
+    return groups
+
+
 async def keywords_extraction(query):
     try:
         keyword_prompt = PROMPTS["keywords_extraction"].format(query=query)
         keywords_response = await openai_complete(prompt=keyword_prompt)
         parsed = parse_keyword_extraction(keywords_response)
-        if not _has_keywords(parsed):
-            raise GraphKeywordExtractionError("keyword LLM returned no parseable keywords")
-        return parsed
+        if _has_keywords(parsed):
+            return parsed
+
+        repair_prompt = PROMPTS["keywords_extraction_repair"].format(
+            query=query,
+            invalid_output=keywords_response,
+        )
+        repaired_response = await openai_complete(prompt=repair_prompt)
+        repaired = parse_keyword_extraction(repaired_response)
+        if _has_keywords(repaired):
+            return repaired
+
+        fallback = _fallback_keywords_from_query(query)
+        if _has_keywords(fallback):
+            logger.warning("GraphSearch keywords_extraction used query-derived fallback after empty LLM output")
+            return fallback
+        raise GraphKeywordExtractionError("keyword LLM returned no parseable keywords after repair")
     except Exception as error:
         _log_component_error("keywords_extraction", error)
         if isinstance(error, GraphKeywordExtractionError):

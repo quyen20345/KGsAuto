@@ -22,9 +22,6 @@ class FakeStore:
         return [
             {
                 "chunk_id": "doc_a_0",
-                "doc_id": "doc_a",
-                "source_path": "/docs/doc_a.md",
-                "title": "Doc A",
                 "section": "Intro",
                 "text": "Qdrant chunk content",
                 "score": 0.91,
@@ -32,14 +29,44 @@ class FakeStore:
         ]
 
 
-def test_keywords_extraction_rejects_empty_keyword_response(monkeypatch):
+def test_keywords_extraction_falls_back_when_repair_is_empty(monkeypatch):
+    calls = []
+
     async def fake_complete(prompt, **kwargs):
+        calls.append(prompt)
         return '{"must_keep_phrases": [], "low_level_keywords": [], "expanded_keywords": [], "high_level_keywords": []}'
 
     monkeypatch.setattr(components, "openai_complete", fake_complete)
 
-    with pytest.raises(components.GraphKeywordExtractionError, match="no parseable keywords"):
-        asyncio.run(components.keywords_extraction("Open Workshop Ericsson Vietnam"))
+    result = asyncio.run(components.keywords_extraction("Open Workshop Ericsson Vietnam"))
+
+    assert len(calls) == 2
+    assert result["must_keep_phrases"] == ["Open Workshop Ericsson Vietnam"]
+
+
+def test_keywords_extraction_repairs_empty_keyword_response(monkeypatch):
+    responses = iter(
+        [
+            "[]",
+            '{"must_keep_phrases": ["Open Workshop"], "low_level_keywords": ["Ericsson Vietnam"], '
+            '"expanded_keywords": [], "high_level_keywords": ["Internship 2022"]}',
+        ]
+    )
+    prompts = []
+
+    async def fake_complete(prompt, **kwargs):
+        prompts.append(prompt)
+        return next(responses)
+
+    monkeypatch.setattr(components, "openai_complete", fake_complete)
+
+    result = asyncio.run(components.keywords_extraction("Open Workshop Ericsson Vietnam"))
+
+    assert result["must_keep_phrases"] == ["Open Workshop"]
+    assert result["low_level_keywords"] == ["Ericsson Vietnam"]
+    assert result["high_level_keywords"] == ["Internship 2022"]
+    assert len(prompts) == 2
+    assert "Invalid previous output" in prompts[1]
 
 
 def test_adapter_keyword_extraction_times_out(monkeypatch):
@@ -61,7 +88,7 @@ def test_adapter_keyword_extraction_times_out(monkeypatch):
         asyncio.run(adapter._extract_llm_keywords("Ericsson Vietnam được chứng nhận năm nào?"))
 
 
-def test_adapter_rejects_empty_keywords(monkeypatch):
+def test_adapter_uses_deterministic_terms_when_llm_returns_empty(monkeypatch):
     adapter = object.__new__(Neo4jAdapter)
     adapter.keyword_max_terms = 12
 
@@ -75,8 +102,9 @@ def test_adapter_rejects_empty_keywords(monkeypatch):
 
     monkeypatch.setattr(adapter, "_extract_llm_keywords", empty_llm_keywords)
 
-    with pytest.raises(RuntimeError, match="returned no keywords"):
-        asyncio.run(adapter._extract_keywords_async("Open Workshop Ericsson Vietnam"))
+    result = asyncio.run(adapter._extract_keywords_async("Open Workshop Ericsson Vietnam"))
+
+    assert "Open Workshop Ericsson Vietnam" in result
 
 
 def test_adapter_loads_document_chunks_from_qdrant(monkeypatch):
@@ -84,32 +112,33 @@ def test_adapter_loads_document_chunks_from_qdrant(monkeypatch):
     adapter.top_k = 2
     adapter._store = FakeStore()
 
+    adapter.neighbor_limit_per_entity = 4
+    adapter.enable_relationship_fulltext = True
+
     async def fake_keywords(question):
         return ["keyword"]
 
-    async def fake_entities(keyword, limit):
-        return [{"id": "node_a"}]
+    def fake_entities(keywords, limit):
+        return [
+            {
+                "id": "node_a",
+                "name": "Node A",
+                "labels": ["ENTITY"],
+                "properties": {"description": ["Graph description"], "chunk_id": ["legacy_doc_id"]},
+                "score": 100,
+            }
+        ]
 
-    async def fake_entity_details(entity_id):
-        return {
-            "id": entity_id,
-            "name": "Node A",
-            "labels": ["ENTITY"],
-            "properties": {"description": ["Graph description"], "chunk_id": ["legacy_doc_id"]},
-            "score": 100,
-        }
-
-    async def fake_relationships(entity_id, limit):
+    def fake_relationships(entity_ids, limit_per_entity):
         return []
 
-    async def fake_search_relationships(keyword, limit):
+    def fake_search_relationships(keywords, limit):
         return []
 
     monkeypatch.setattr(adapter, "_extract_keywords_async", fake_keywords)
-    monkeypatch.setattr(adapter, "_asearch_entities", fake_entities)
-    monkeypatch.setattr(adapter, "_aget_entity_details", fake_entity_details)
-    monkeypatch.setattr(adapter, "_aget_relationships", fake_relationships)
-    monkeypatch.setattr(adapter, "_asearch_relationships", fake_search_relationships)
+    monkeypatch.setattr(adapter, "_search_entities_batch", fake_entities)
+    monkeypatch.setattr(adapter, "_get_relationships_batch", fake_relationships)
+    monkeypatch.setattr(adapter, "_search_relationships_batch", fake_search_relationships)
 
     context = asyncio.run(adapter.aquery_context("original question"))
 

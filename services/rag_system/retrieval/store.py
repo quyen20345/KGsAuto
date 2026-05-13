@@ -12,19 +12,20 @@ from tqdm import tqdm
 class Store:
     """Store and search embedded document chunks in Qdrant."""
 
-    _embedder_cache: dict[str, SentenceTransformer] = {}
+    _embedder_cache: dict[tuple[str, str], SentenceTransformer] = {}
 
     def __init__(self, config):
         self.config = config
         self.client = QdrantClient(url=config.qdrant_url)
         self.collection_name = config.markdown_collection
-        self.embedder = self._get_embedder(config.embedding_model)
+        self.embedder = self._get_embedder(config.embedding_model, getattr(config, "embedding_device", "cpu"))
 
     @classmethod
-    def _get_embedder(cls, model_name: str):
-        if model_name not in cls._embedder_cache:
-            cls._embedder_cache[model_name] = SentenceTransformer(model_name)
-        return cls._embedder_cache[model_name]
+    def _get_embedder(cls, model_name: str, device: str = "cpu"):
+        cache_key = (model_name, device)
+        if cache_key not in cls._embedder_cache:
+            cls._embedder_cache[cache_key] = SentenceTransformer(model_name, device=device)
+        return cls._embedder_cache[cache_key]
 
     def create_collection(self):
         collections = self.client.get_collections().collections

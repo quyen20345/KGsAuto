@@ -16,6 +16,12 @@ KEYWORD_FIELDS = (
     "expanded_keywords",
     "must_keep_phrases",
 )
+KEYWORD_ALIASES = {
+    "high_level_keywords": ("high_level_keywords", "high_level", "topics", "concepts", "intents"),
+    "low_level_keywords": ("low_level_keywords", "low_level", "keywords", "terms", "lookup_terms"),
+    "expanded_keywords": ("expanded_keywords", "expanded", "aliases", "synonyms", "variants"),
+    "must_keep_phrases": ("must_keep_phrases", "must_keep", "phrases", "entities", "entity_names", "exact_phrases"),
+}
 
 
 def _without_code_fence(text: str) -> str:
@@ -150,9 +156,15 @@ def _keyword_values(value: Any) -> list[Any]:
     if value is None:
         return []
     if isinstance(value, dict):
-        return list(value.values())
+        values: list[Any] = []
+        for nested in value.values():
+            values.extend(_keyword_values(nested))
+        return values
     if isinstance(value, (list, tuple, set)):
-        return list(value)
+        values: list[Any] = []
+        for nested in value:
+            values.extend(_keyword_values(nested))
+        return values
     return [value]
 
 
@@ -183,19 +195,31 @@ def parse_keyword_extraction(
     """Parse keyword extraction output into bounded structured keyword groups."""
     empty = {field: [] for field in KEYWORD_FIELDS}
     parsed = _loads_structured(text)
-    if not isinstance(parsed, dict):
-        return empty
-
     limits = {
         "high_level_keywords": max_high_level,
         "low_level_keywords": max_low_level,
         "expanded_keywords": max_expanded,
         "must_keep_phrases": max_phrases,
     }
-    return {
-        field: _clean_keyword_list(parsed.get(field), limits[field])
-        for field in KEYWORD_FIELDS
-    }
+
+    if isinstance(parsed, (list, tuple, set)):
+        result = empty.copy()
+        result["low_level_keywords"] = _clean_keyword_list(parsed, max_low_level)
+        return result
+    if not isinstance(parsed, dict):
+        return empty
+
+    result: dict[str, list[str]] = {}
+    for field in KEYWORD_FIELDS:
+        values: list[Any] = []
+        for alias in KEYWORD_ALIASES[field]:
+            if alias in parsed:
+                values.extend(_keyword_values(parsed[alias]))
+        result[field] = _clean_keyword_list(values, limits[field])
+
+    if not any(result.values()):
+        result["low_level_keywords"] = _clean_keyword_list(parsed, max_low_level)
+    return result
 
 
 def relational_query_to_retrieval_text(query: str) -> str:

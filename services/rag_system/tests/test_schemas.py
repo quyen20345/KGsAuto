@@ -27,11 +27,8 @@ class TestMarkdownEvidence:
     def test_markdown_evidence_model_dump(self):
         evidence = MarkdownEvidence(
             chunk_id="chunk_1",
-            doc_id="doc_1",
             text="Evidence text",
             score=0.95,
-            source_path="/path/to/doc.md",
-            title="Doc Title",
             section="Introduction",
             metadata={"author": "test"},
         )

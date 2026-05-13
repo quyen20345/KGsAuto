@@ -17,7 +17,40 @@ Rules:
 - Do not return all arrays empty. If uncertain, return the best meaningful terms from the query.
 - No markdown fences, no explanation, no comments.
 
+One-shot example:
+Query: Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam diễn ra khi nào và tổ chức ở đâu?
+JSON:
+{{"must_keep_phrases":["Open Workshop","Internship 2022","Ericsson Vietnam"],"low_level_keywords":["thời gian tổ chức","địa điểm tổ chức"],"expanded_keywords":["chương trình Internship","thực tập Ericsson"],"high_level_keywords":["sự kiện","hợp tác doanh nghiệp"]}}
+
 Query: {query}
+JSON:"""
+
+PROMPTS["keywords_extraction_repair"] = """Your previous keyword extraction output was invalid because it had no usable keywords or the wrong JSON shape.
+
+You MUST repair it by extracting meaningful Neo4j retrieval keywords from the original query.
+
+Return ONLY a valid JSON object with this exact schema and string arrays:
+{{"must_keep_phrases":[],"low_level_keywords":[],"expanded_keywords":[],"high_level_keywords":[]}}
+
+Hard requirements:
+- Do NOT return a JSON array.
+- Do NOT return all arrays empty.
+- At least one of "must_keep_phrases" or "low_level_keywords" MUST contain a non-empty string.
+- If uncertain, copy the best entity/event/program/organization/URL/year/noun phrase directly from the query.
+- Preserve Vietnamese diacritics when present; infer canonical terms for noisy/no-diacritic text.
+- No markdown fences, no explanation, no comments.
+
+One-shot repair example:
+Original query: Tại Trường Đại học Công nghệ, sinh viên muốn xin cấp giấy chứng nhận là sinh viên thì thực hiện ở đâu?
+Invalid previous output: []
+Correct JSON:
+{{"must_keep_phrases":["Trường Đại học Công nghệ","giấy chứng nhận là sinh viên"],"low_level_keywords":["xin cấp giấy chứng nhận","thủ tục hành chính sinh viên"],"expanded_keywords":["UET","mẫu biểu sinh viên"],"high_level_keywords":["công tác sinh viên","thủ tục sinh viên"]}}
+
+Original query: {query}
+
+Invalid previous output:
+{invalid_output}
+
 JSON:"""
 
 PROMPTS["query_decomposition_deep"] = """---Role---
@@ -39,13 +72,13 @@ Given a main query, your task is to break it down into several atomic sub-querie
 ---Examples---
 
 Main Query:
-How many times did plague occur in the place where the creator of The Worship of Venus died?
+Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam diễn ra khi nào và tổ chức ở đâu?
 
 Sub-queries:
 {{
-    "Sub-query 1": "Who is the creator of The Worship of Venus?",
-    "Sub-query 2": "Where did #1 die?",
-    "Sub-query 3": "How many times did plague occur in #2?"
+    "Sub-query 1": "Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam là sự kiện nào?",
+    "Sub-query 2": "Open Workshop đó diễn ra khi nào?",
+    "Sub-query 3": "Open Workshop đó được tổ chức ở đâu?"
 }}
 
 Main Query:
@@ -96,16 +129,13 @@ Given a main query, your task is to break it down into atomic sub-queries in the
 ---Examples---
 
 Main Query:
-How many times did plague occur in the place where the creator of The Worship of Venus died?
+Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam diễn ra khi nào và tổ chức ở đâu?
 
 Sub-queries:
 {{
-    "Sub-query 1": [("The Worship of Venus", "is created by", "Entity#1")],
-    "Sub-query 2": [("Entity#1", "died at", "Entity#2")],
-    "Sub-query 3": [
-        ("Plague", "occur in", "Entity#2"),
-        ("Plague", "times of occur", "Entity#3")
-    ]
+    "Sub-query 1": [("Open Workshop", "thuộc chương trình", "Internship 2022 tại Ericsson Vietnam")],
+    "Sub-query 2": [("Open Workshop", "diễn ra khi", "Entity#1")],
+    "Sub-query 3": [("Open Workshop", "tổ chức tại", "Entity#2")]
 }}
 
 Main Query:
@@ -151,6 +181,18 @@ Given a sub-query containing placeholders like #1, #2, etc., and the context of 
 
 Your output should be a fully resolved and standalone query without any redundant expression. If the placeholder cannot be resolved with the context, leave the sub-query unchanged.
 
+---One-shot Example---
+
+Sub-query:
+Open Workshop đó diễn ra khi nào?
+
+Context Data:
+Sub-query 1: Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam là sự kiện nào?
+Sub-query answer: Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam
+
+Output:
+Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam diễn ra khi nào?
+
 ---Input---
 
 Sub-query:
@@ -172,6 +214,17 @@ You are a helpful assistant specializing in completing partially defined knowled
 Given a sub-query containing placeholders like Entity#1, Entity#2, etc., and the context providing actual values for these placeholders, your task is to replace the placeholders with the corresponding entities if available.
 
 Your output should maintain the same format as the original sub-query without any redundant expression. If the placeholder cannot be resolved with the context, leave the sub-query unchanged.
+
+---One-shot Example---
+
+Sub-query:
+[("Open Workshop", "tổ chức tại", "Entity#1")]
+
+Context Data:
+Entity#1 = Ericsson Vietnam
+
+Output:
+[("Open Workshop", "tổ chức tại", "Ericsson Vietnam")]
 
 ---Input---
 
@@ -199,6 +252,17 @@ Given a user query and retrieved context, your task is to produce a comprehensiv
 - Organize the output in a well-structured paragraph.
 - Do not speculate or introduce information not found in the context.
 
+---One-shot Example---
+
+User-Query:
+Open Workshop diễn ra khi nào và ở đâu?
+
+Context Data:
+Document Chunks: Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
+
+Output:
+Ngữ cảnh cho biết Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam diễn ra vào ngày 15/04/2022 và được tổ chức tại phòng 212-E3.
+
 ---Input---
 
 User-Query:
@@ -225,6 +289,17 @@ Given a user query and retrieved knowledge graph data, your task is to extract a
 - Format the output strictly as a list of JSON triplets, each in the following form:
   [("entity1", "relationship", "entity2"), ...]
 
+---One-shot Example---
+
+User-Query:
+Open Workshop diễn ra khi nào và ở đâu?
+
+Knowledge Graph Data:
+Entity: Open Workshop; relation: diễn ra vào -> 15/04/2022; relation: tổ chức tại -> phòng 212-E3.
+
+Output:
+[("Open Workshop", "diễn ra vào", "15/04/2022"), ("Open Workshop", "tổ chức tại", "phòng 212-E3")]
+
 ---Input---
 
 User-Query:
@@ -243,6 +318,17 @@ You are a helpful assistant specializing in question answering.
 ---Goal---
 
 Given a query and retrieved context data, your task is to answer the query. 
+
+---One-shot Example---
+
+Query:
+Open Workshop diễn ra khi nào và ở đâu?
+
+Context Data:
+Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
+
+Output:
+Open Workshop diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
 
 ---Input---
 
@@ -272,6 +358,17 @@ Given a complex query and retrieved context data, your task is to construct a lo
   - "reasoning": complete step-by-step reasoning with evidence support.
 - Do not include Markdown fences or any text outside the JSON object.
 
+---One-shot Example---
+
+Query:
+Open Workshop diễn ra khi nào và ở đâu?
+
+Context Data:
+Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
+
+Output:
+{{"answer":"Open Workshop diễn ra vào ngày 15/04/2022 tại phòng 212-E3.","reasoning":"Ngữ cảnh nêu trực tiếp sự kiện Open Workshop thuộc chương trình Internship 2022 tại Ericsson Vietnam, đồng thời cung cấp thời gian là ngày 15/04/2022 và địa điểm là phòng 212-E3."}}
+
 ---Input---
 
 Query:
@@ -298,6 +395,18 @@ Given a user query, retrieved context data, and the model-generated response, yo
 - Identify if there are **evidence gaps, low-confidence claims, or speculative statements**.
 - If the response demonstrates a well-supported, confident, and logically closed argument, conclude your analysis with **"Yes"**.
 - If the response shows hesitation, incomplete reasoning, or lacks solid evidence support, conclude your analysis with **"No"**.
+
+---One-shot Example---
+
+User-Query:
+Open Workshop diễn ra khi nào và ở đâu?
+
+Retrieved Context Data:
+Open Workshop diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
+Model Response:
+Open Workshop diễn ra vào ngày 15/04/2022 tại phòng 212-E3.
+Output:
+Phản hồi được hỗ trợ trực tiếp bởi ngữ cảnh về cả thời gian và địa điểm. Yes
 
 ---Input---
 
@@ -330,6 +439,19 @@ These sub-queries should aim to cover missing retrieval scenarios, fill in the e
 - Avoid duplicating existing sub-queries; instead, expand into related but uncovered areas.  
 - Keep sub-queries clear, specific, and directly actionable for retrieval.
 - Output should be in the form of a **Python-style List of strings**, where each string is a new sub-query.  
+
+---One-shot Example---
+
+Main Query:
+Open Workshop diễn ra khi nào và ở đâu?
+Retrieved Context Data:
+Chỉ tìm thấy thông tin về thời gian diễn ra.
+Model Response:
+Open Workshop diễn ra vào ngày 15/04/2022, chưa rõ địa điểm.
+Evidence Verification Analysis:
+Thiếu bằng chứng về địa điểm. No
+Output:
+["Open Workshop chương trình Internship 2022 tại Ericsson Vietnam tổ chức ở đâu?", "địa điểm tổ chức Open Workshop Ericsson Vietnam"]
 
 ---Input---
 

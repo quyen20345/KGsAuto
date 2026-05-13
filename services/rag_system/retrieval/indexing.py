@@ -54,13 +54,7 @@ class Indexer:
         for chunk in all_chunks:
             payload = {
                 "chunk_id": chunk.chunk_id,
-                "doc_id": chunk.doc_id,
-                "source_path": chunk.source_path,
-                "title": chunk.title,
-                "section": chunk.section,
                 "text": chunk.text,
-                "char_start": chunk.char_start,
-                "char_end": chunk.char_end,
                 "chunk_index": chunk.chunk_index,
                 **chunk.metadata,
             }

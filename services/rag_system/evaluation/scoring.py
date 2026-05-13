@@ -4,18 +4,20 @@ from __future__ import annotations
 
 import math
 import os
+import json
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from dotenv import find_dotenv, load_dotenv
 
-from services.rag_system.evaluation.runner import load_jsonl, write_csv, write_jsonl
+from services.rag_system.evaluation.runner import load_dataset, load_jsonl, write_csv, write_jsonl
 from services.config import RAGAS_SCORE_MAX_WORKERS
 
 
-DEFAULT_METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
+DEFAULT_METRICS = ["faithfulness", "answer_correctness", "answer_relevancy", "context_precision", "context_recall"]
 SCORE_FIELDS = [
     "faithfulness",
+    "answer_correctness",
     "answer_relevancy",
     "context_precision",
     "context_recall",
@@ -40,7 +42,7 @@ def score_results(
     metrics: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
     _load_environment()
-    rows = load_jsonl(results_path)
+    rows = load_dataset(results_path)
     selected_metrics = list(metrics or DEFAULT_METRICS)
     scored_rows = [_empty_scored_row(row) for row in rows]
     scoreable = []
@@ -79,6 +81,76 @@ def score_results(
     return scored_rows
 
 
+def score_results_incremental(
+    results_path: str | Path,
+    output_path: str | Path,
+    metrics: Sequence[str] | None = None,
+    resume: bool = True,
+) -> list[dict[str, Any]]:
+    """Score rows one-by-one and append each completed row to JSONL immediately."""
+
+    _load_environment()
+    rows = load_dataset(results_path)
+    selected_metrics = list(metrics or DEFAULT_METRICS)
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    existing_rows: list[dict[str, Any]] = []
+    completed_keys: set[str] = set()
+    if resume and output.exists():
+        existing_rows = load_jsonl(output)
+        completed_keys = {_row_key(row, index) for index, row in enumerate(existing_rows)}
+        mode = "a"
+    else:
+        mode = "w"
+
+    with output.open(mode, encoding="utf-8") as file:
+        for index, row in enumerate(rows):
+            key = _row_key(row, index)
+            if key in completed_keys:
+                continue
+
+            scored_row = _score_single_row(row, selected_metrics)
+            file.write(_json_dumps(scored_row) + "\n")
+            file.flush()
+            existing_rows.append(scored_row)
+            completed_keys.add(key)
+            print(
+                f"[{len(existing_rows)}/{len(rows)}] {scored_row.get('id') or index}: "
+                f"{scored_row.get('ragas_score_status')}"
+            )
+
+    write_csv(output.with_suffix(".csv"), existing_rows, fieldnames=_fieldnames(existing_rows))
+    summary_rows = _summary_rows(summarize_scores(existing_rows))
+    if summary_rows:
+        write_csv(output.with_suffix(".summary.csv"), summary_rows, fieldnames=list(summary_rows[0].keys()))
+    return existing_rows
+
+
+def _score_single_row(row: dict[str, Any], selected_metrics: Sequence[str]) -> dict[str, Any]:
+    scored_row = _empty_scored_row(row)
+    reason = _skip_reason(row, selected_metrics)
+    if reason:
+        scored_row["ragas_score_status"] = "skipped"
+        scored_row["ragas_score_error"] = reason
+        return scored_row
+
+    try:
+        scores = _score_with_ragas([row], selected_metrics)[0]
+    except Exception as exc:
+        scored_row["ragas_score_status"] = "error"
+        scored_row["ragas_score_error"] = str(exc)
+        return scored_row
+
+    scored_row.update(scores)
+    status, error, valid_metrics, invalid_metrics = _classify_metric_scores(scores, selected_metrics)
+    scored_row["ragas_score_status"] = status
+    scored_row["ragas_score_error"] = error
+    scored_row["ragas_valid_metrics"] = valid_metrics
+    scored_row["ragas_invalid_metrics"] = invalid_metrics
+    return scored_row
+
+
 def summarize_scores(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     groups: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -95,11 +167,13 @@ def summarize_scores(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]
                 "skipped_samples": 0,
                 "avg_latency_ms": None,
                 "avg_faithfulness": None,
+                "avg_answer_correctness": None,
                 "avg_answer_relevancy": None,
                 "avg_context_precision": None,
                 "avg_context_recall": None,
                 "_latencies": [],
                 "_faithfulness": [],
+                "_answer_correctness": [],
                 "_answer_relevancy": [],
                 "_context_precision": [],
                 "_context_recall": [],
@@ -119,6 +193,7 @@ def summarize_scores(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]
             group["skipped_samples"] += 1
         _append_number(group["_latencies"], row.get("latency_ms"))
         _append_number(group["_faithfulness"], row.get("faithfulness"))
+        _append_number(group["_answer_correctness"], row.get("answer_correctness"))
         _append_number(group["_answer_relevancy"], row.get("answer_relevancy"))
         _append_number(group["_context_precision"], row.get("context_precision"))
         _append_number(group["_context_recall"], row.get("context_recall"))
@@ -126,6 +201,7 @@ def summarize_scores(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]
     for group in groups.values():
         group["avg_latency_ms"] = _average(group.pop("_latencies"))
         group["avg_faithfulness"] = _average(group.pop("_faithfulness"))
+        group["avg_answer_correctness"] = _average(group.pop("_answer_correctness"))
         group["avg_answer_relevancy"] = _average(group.pop("_answer_relevancy"))
         group["avg_context_precision"] = _average(group.pop("_context_precision"))
         group["avg_context_recall"] = _average(group.pop("_context_recall"))
@@ -136,13 +212,14 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
     try:
         from datasets import Dataset
         from ragas import evaluate
-        from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+        from ragas.metrics import answer_correctness, answer_relevancy, context_precision, context_recall, faithfulness
         from ragas.run_config import RunConfig
     except ImportError as exc:
         raise RagasUnavailableError("RAGAS is not installed. Install it with: pip install '.[ragas]'") from exc
 
     metric_registry = {
         "faithfulness": faithfulness,
+        "answer_correctness": answer_correctness,
         "answer_relevancy": answer_relevancy,
         "context_precision": context_precision,
         "context_recall": context_recall,
@@ -163,7 +240,8 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
         ]
     )
     llm = _build_ragas_llm()
-    embeddings = _build_ragas_embeddings() if "answer_relevancy" in metric_names else None
+    embedding_metrics = {"answer_correctness", "answer_relevancy"}
+    embeddings = _build_ragas_embeddings() if any(metric in embedding_metrics for metric in metric_names) else None
     max_workers = RAGAS_SCORE_MAX_WORKERS
     run_config = RunConfig(
         max_workers=max_workers,
@@ -189,7 +267,7 @@ def _score_with_ragas(rows: list[dict[str, Any]], metric_names: Sequence[str]) -
     dataframe = result.to_pandas()
     scored = []
     for _, scored_row in dataframe.iterrows():
-        scored.append({metric: _optional_float(scored_row.get(metric)) for metric in DEFAULT_METRICS})
+        scored.append({metric: _optional_float(scored_row.get(metric)) for metric in metric_names})
     return scored
 
 
@@ -269,6 +347,14 @@ def _safe_error_message(exc: Exception) -> str:
     return message or "no details"
 
 
+def _json_dumps(row: dict[str, Any]) -> str:
+    return json.dumps(row, ensure_ascii=False)
+
+
+def _row_key(row: dict[str, Any], index: int) -> str:
+    return str(row.get("id") or f"index:{index}")
+
+
 def _empty_scored_row(row: dict[str, Any]) -> dict[str, Any]:
     scored = dict(row)
     for field in SCORE_FIELDS:
@@ -283,7 +369,7 @@ def _skip_reason(row: dict[str, Any], metrics: Sequence[str]) -> str | None:
         return "missing answer"
     if not (row.get("retrieved_contexts") or row.get("contexts")):
         return "missing contexts"
-    reference_required = any(metric in {"context_precision", "context_recall"} for metric in metrics)
+    reference_required = any(metric in {"answer_correctness", "context_precision", "context_recall"} for metric in metrics)
     if reference_required and not row.get("reference"):
         return "missing reference"
     return None

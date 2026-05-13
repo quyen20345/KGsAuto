@@ -38,13 +38,15 @@ from ragas.testset.transforms import (
     apply_transforms,
 )
 
+from services.config import OPENAI_COMPATIBLE_BASE_URL, OPENAI_COMPATIBLE_MODEL
 
-DEFAULT_INPUT_DIR = Path("data/rawtest")
-DEFAULT_GRAPH_PATH = Path("data/evaluation/ragas/knowledge_graph.json")
-DEFAULT_OUTPUT_PATH = Path("data/evaluation/ragas/testset.csv")
+
+DEFAULT_INPUT_DIR = Path("data/evaluation/clean_docs")
+DEFAULT_GRAPH_PATH = Path("data/evaluation/gpt52_ragas/knowledge_graph_clean.json")
+DEFAULT_OUTPUT_PATH = Path("data/evaluation/testset_clean_150.csv")
 DEFAULT_TESTSET_SIZE = 150
-DEFAULT_GENERATOR_MODEL = "cx/gpt-5.2"
-DEFAULT_GENERATOR_BASE_URL = "http://localhost:20128/v1"
+DEFAULT_GENERATOR_MODEL = OPENAI_COMPATIBLE_MODEL or "cx/gpt-5.2"
+DEFAULT_GENERATOR_BASE_URL = OPENAI_COMPATIBLE_BASE_URL or "http://localhost:20128/v1"
 DEFAULT_EMBED_MODEL = "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
 DEFAULT_EMBED_BASE_URL = "https://integrate.api.nvidia.com/v1"
 HEADLINE_SPLITTER_MIN_TOKENS = 200

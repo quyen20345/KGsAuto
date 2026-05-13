@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
+import time
+import unicodedata
 from typing import Any, Dict, Iterable, List
 
 CONTEXT_PATTERN = (
@@ -13,6 +16,65 @@ CONTEXT_PATTERN = (
     r"Document Chunks.*?```json\s*(.*?)\s*```.*?"
     r"Reference Document List.*?```(?:json|text)?\s*(.*?)\s*```"
 )
+IDENTIFIER_SPLIT_RE = re.compile(r"[_\-/\\.]+")
+PUNCTUATION_RE = re.compile(r"[^\w\s]", re.UNICODE)
+WHITESPACE_RE = re.compile(r"\s+")
+ACRONYM_RE = re.compile(r"\b[A-ZĐ]{2,}[A-Z0-9Đ]*\b")
+STOPWORDS = {
+    "toi", "tôi", "em", "hoi", "hỏi", "cho", "ve", "về", "thi", "thì", "la", "là", "duoc", "được",
+    "ai", "gi", "gì", "nao", "nào", "nhung", "những", "cac", "các", "cua", "của", "co", "có",
+}
+LOGGER = logging.getLogger(__name__)
+
+
+def normalize_vietnamese_text(value: Any) -> str:
+    text = WHITESPACE_RE.sub(" ", str(value or "")).strip().lower()
+    text = text.replace("đ", "d")
+    decomposed = unicodedata.normalize("NFD", text)
+    without_marks = "".join(char for char in decomposed if unicodedata.category(char) != "Mn")
+    without_identifiers = IDENTIFIER_SPLIT_RE.sub(" ", without_marks)
+    without_punctuation = PUNCTUATION_RE.sub(" ", without_identifiers)
+    return WHITESPACE_RE.sub(" ", without_punctuation).strip()
+
+
+def split_identifier_variants(value: Any) -> list[str]:
+    text = str(value or "").strip()
+    if not text:
+        return []
+    split_text = WHITESPACE_RE.sub(" ", IDENTIFIER_SPLIT_RE.sub(" ", text)).strip()
+    variants = [text]
+    if split_text and split_text != text:
+        variants.append(split_text)
+    variants.extend(part for part in split_text.split() if len(part) >= 2)
+    return _dedupe_text(variants)
+
+
+def expand_keyword_variants(term: str) -> list[str]:
+    variants = [term, normalize_vietnamese_text(term)]
+    variants.extend(split_identifier_variants(term))
+    normalized_variants = [normalize_vietnamese_text(variant) for variant in variants]
+    return _dedupe_text([*variants, *normalized_variants])
+
+
+def deterministic_query_terms(query: str, max_terms: int = 12) -> list[str]:
+    candidates: list[str] = []
+    candidates.extend(match.group(0) for match in ACRONYM_RE.finditer(query))
+    candidates.extend(re.findall(r"['\"]([^'\"]+)['\"]", query))
+    cleaned = PUNCTUATION_RE.sub(" ", query)
+    words = [word for word in WHITESPACE_RE.split(cleaned.strip()) if word]
+    for size in (4, 3, 2, 1):
+        for index in range(0, max(0, len(words) - size + 1)):
+            phrase = " ".join(words[index:index + size])
+            normalized = normalize_vietnamese_text(phrase)
+            if not normalized or normalized in STOPWORDS:
+                continue
+            if size == 1 and (len(normalized) < 3 or normalized in STOPWORDS):
+                continue
+            candidates.append(phrase)
+    expanded: list[str] = []
+    for candidate in candidates:
+        expanded.extend(expand_keyword_variants(candidate))
+    return _dedupe_text(expanded)[:max_terms]
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -100,11 +162,22 @@ class Neo4jAdapter:
         self.driver = get_driver()
         self.config = config or RAGConfig()
         self.top_k = top_k
-        self.keyword_max_terms = getattr(self.config, "graph_keyword_max_terms", 12)
+        self.keyword_max_terms = getattr(self.config, "graph_keyword_max_terms", 16)
         self.keyword_timeout_seconds = getattr(self.config, "graph_keyword_timeout_seconds", 15.0)
+        self.fulltext_candidate_limit = getattr(self.config, "graph_fulltext_candidate_limit", 50)
+        self.neighbor_limit_per_entity = getattr(self.config, "graph_neighbor_limit_per_entity", 10)
+        self.fulltext_entity_index = getattr(self.config, "graph_fulltext_entity_index", "kg_entity_search")
+        self.fulltext_relationship_index = getattr(self.config, "graph_fulltext_relationship_index", "kg_relationship_search")
+        self.enable_relationship_fulltext = getattr(self.config, "graph_enable_relationship_fulltext", True)
+        self.enable_substring_fallback = getattr(self.config, "graph_enable_substring_fallback", True)
+        self.substring_fallback_limit = getattr(self.config, "graph_substring_fallback_limit", 20)
+        self.description_fallback_min_term_length = getattr(self.config, "graph_description_fallback_min_term_length", 5)
+        self.allow_legacy_scan_fallback = getattr(self.config, "graph_allow_legacy_scan_fallback", True)
+        self._available_indexes: set[str] | None = None
         self._store = None
 
     async def aquery_context(self, question: str) -> str:
+        started_at = time.perf_counter()
         keywords = await self._extract_keywords_async(question)
         entities_by_id: dict[str, dict[str, Any]] = {}
         relationships_by_key: dict[str, dict[str, Any]] = {}
@@ -116,12 +189,10 @@ class Neo4jAdapter:
             content = str(chunk.get("text") or "").strip()
             if not chunk_id or not content or chunk_id in chunks_by_id:
                 return
-            source = chunk.get("source_path") or chunk.get("doc_id") or chunk_id
+            source = chunk_id
             reference_id = len(sources_by_id)
             chunks_by_id[chunk_id] = {
                 "chunk_id": chunk_id,
-                "doc_id": chunk.get("doc_id"),
-                "title": chunk.get("title"),
                 "section": chunk.get("section"),
                 "content": content,
                 "reference_id": reference_id,
@@ -174,26 +245,42 @@ class Neo4jAdapter:
                 "target_id": rel.get("target_id"),
                 "retrieval_score": float(rel.get("score") or rel.get("retrieval_score") or 0.0),
             }
-        for keyword in keywords[:8]:
-            entities = await self._asearch_entities(keyword, limit=max(3, self.top_k))
-            for entity in entities:
-                details = await self._aget_entity_details(entity["id"])
-                add_entity_from_details(details)
-                rels = await self._aget_relationships(entity["id"], limit=self.top_k * 2)
-                for rel in rels:
-                    add_relationship(rel)
-                    add_entity_from_details(self._details_from_rel(rel, "source"))
-                    add_entity_from_details(self._details_from_rel(rel, "target"))
+        graph_started_at = time.perf_counter()
+        entity_task = asyncio.to_thread(self._search_entities_batch, keywords, self.top_k * 4)
+        vector_task = asyncio.to_thread(self._search_chunks, question)
+        entity_hits, vector_chunks = await asyncio.gather(entity_task, vector_task)
 
-            rels = await self._asearch_relationships(keyword, limit=self.top_k * 2)
+        for entity in entity_hits:
+            add_entity_from_details(entity)
+
+        relationship_tasks = [
+            asyncio.to_thread(
+                self._get_relationships_batch,
+                list(entities_by_id),
+                self.neighbor_limit_per_entity,
+            )
+        ]
+        if self.enable_relationship_fulltext:
+            relationship_tasks.append(asyncio.to_thread(self._search_relationships_batch, keywords, self.top_k * 3))
+
+        relationship_results = await asyncio.gather(*relationship_tasks)
+        for rels in relationship_results:
             for rel in rels:
                 add_relationship(rel)
                 add_entity_from_details(self._details_from_rel(rel, "source"))
                 add_entity_from_details(self._details_from_rel(rel, "target"))
 
-        vector_chunks = await asyncio.to_thread(self._search_chunks, question)
         for chunk in vector_chunks:
             add_vector_chunk(chunk)
+
+        LOGGER.info(
+            "graph_search_context timings total_ms=%.1f graph_ms=%.1f keywords=%d entities=%d relationships=%d",
+            (time.perf_counter() - started_at) * 1000,
+            (time.perf_counter() - graph_started_at) * 1000,
+            len(keywords),
+            len(entities_by_id),
+            len(relationships_by_key),
+        )
 
         entities = sorted(entities_by_id.values(), key=lambda item: item.get("retrieval_score", 0.0), reverse=True)
         relationships = sorted(
@@ -273,14 +360,23 @@ Knowledge Graph Data (Relationship):
         return context_data
 
     async def _extract_keywords_async(self, query: str) -> List[str]:
-        llm_keywords = await self._extract_llm_keywords(query)
+        deterministic = deterministic_query_terms(query, max_terms=self.keyword_max_terms)
+        try:
+            llm_keywords = await self._extract_llm_keywords(query)
+        except RuntimeError as exc:
+            LOGGER.warning("Graph keyword extraction failed; using deterministic terms: %s", exc)
+            llm_keywords = {}
         candidates = [
             *llm_keywords.get("must_keep_phrases", []),
+            *deterministic,
             *llm_keywords.get("low_level_keywords", []),
             *llm_keywords.get("expanded_keywords", []),
             *llm_keywords.get("high_level_keywords", []),
         ]
-        keywords = _dedupe_text(candidates)[: self.keyword_max_terms]
+        expanded: list[str] = []
+        for candidate in candidates:
+            expanded.extend(expand_keyword_variants(candidate))
+        keywords = _dedupe_text(expanded)[: self.keyword_max_terms]
         if not keywords:
             query_preview = " ".join(query.split())[:160]
             raise RuntimeError(f"Graph keyword extraction returned no keywords for query: {query_preview}")
@@ -299,6 +395,144 @@ Knowledge Graph Data (Relationship):
         except GraphKeywordExtractionError as exc:
             query_preview = " ".join(query.split())[:160]
             raise RuntimeError(f"Graph keyword extraction failed for query: {query_preview}: {exc}") from exc
+
+    def _has_index(self, index_name: str) -> bool:
+        if self._available_indexes is None:
+            try:
+                with self.driver.session() as session:
+                    self._available_indexes = {
+                        record["name"] for record in session.run("SHOW INDEXES YIELD name RETURN name")
+                    }
+            except Exception as exc:
+                LOGGER.warning("Unable to inspect Neo4j indexes: %s", exc)
+                self._available_indexes = set()
+        return index_name in self._available_indexes
+
+    def _escape_lucene(self, term: str) -> str:
+        return re.sub(r'([+\-&|!(){}\[\]^"~*?:\\/])', r"\\\1", term)
+
+    def _build_lucene_query(self, terms: list[str]) -> str:
+        clauses: list[str] = []
+        for term in terms:
+            normalized = normalize_vietnamese_text(term)
+            if not normalized:
+                continue
+            escaped = self._escape_lucene(normalized)
+            if " " in normalized:
+                clauses.append(f'"{escaped}"')
+            else:
+                clauses.append(escaped)
+                if 3 <= len(normalized) <= 12:
+                    clauses.append(f"{escaped}*")
+        return " OR ".join(_dedupe_text(clauses)) or "__no_match__"
+
+    def _score_entity(self, entity: dict[str, Any], terms: list[str], fulltext_score: float = 0.0) -> float:
+        properties = entity.get("properties", {}) or {}
+        names = [entity.get("name"), properties.get("name")]
+        aliases = _as_list(properties.get("aliases")) + _as_list(properties.get("search_aliases"))
+        descriptions = _as_list(properties.get("description")) + _as_list(properties.get("search_description"))
+        search_text = str(properties.get("search_text") or "")
+        normalized_terms = [normalize_vietnamese_text(term) for term in terms if normalize_vietnamese_text(term)]
+        normalized_names = [normalize_vietnamese_text(name) for name in names if normalize_vietnamese_text(name)]
+        normalized_aliases = [normalize_vietnamese_text(alias) for alias in aliases if normalize_vietnamese_text(alias)]
+        normalized_descriptions = [normalize_vietnamese_text(desc) for desc in descriptions if normalize_vietnamese_text(desc)]
+
+        score = float(fulltext_score or entity.get("score") or entity.get("fulltext_score") or 0.0)
+        for term in normalized_terms:
+            if term in normalized_names:
+                score = max(score, 100.0)
+            if term in normalized_aliases:
+                score = max(score, 95.0)
+            if any(term in alias for alias in normalized_aliases):
+                score = max(score, 90.0)
+            if any(term in name for name in normalized_names):
+                score = max(score, 80.0)
+            if term in search_text:
+                score = max(score, 70.0)
+            if len(term) >= self.description_fallback_min_term_length and any(term in desc for desc in normalized_descriptions):
+                score = max(score, 60.0)
+        return score
+
+    def _search_entities_batch(self, terms: list[str], limit: int = 20) -> List[Dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        if self._has_index(self.fulltext_entity_index):
+            query = """
+            CALL db.index.fulltext.queryNodes($index_name, $query, {limit: $candidate_limit})
+            YIELD node, score
+            WHERE node.id IS NOT NULL
+            RETURN node.id as id, coalesce(node.name, node.id) as name, labels(node) as labels,
+                   properties(node) as properties, score as fulltext_score
+            ORDER BY fulltext_score DESC
+            LIMIT $limit
+            """
+            with self.driver.session() as session:
+                results = [
+                    record.data()
+                    for record in session.run(
+                        query,
+                        {
+                            "index_name": self.fulltext_entity_index,
+                            "query": self._build_lucene_query(terms),
+                            "candidate_limit": self.fulltext_candidate_limit,
+                            "limit": limit,
+                        },
+                    )
+                ]
+        elif not self.allow_legacy_scan_fallback:
+            LOGGER.warning("Neo4j full-text index %s is unavailable", self.fulltext_entity_index)
+        else:
+            LOGGER.warning("Neo4j full-text index %s is unavailable; using batched substring fallback", self.fulltext_entity_index)
+
+        if self.enable_substring_fallback and (len(results) < min(limit, self.top_k)):
+            exclude_ids = [str(result.get("id")) for result in results if result.get("id")]
+            results.extend(self._search_entities_substring_fallback(terms, exclude_ids, self.substring_fallback_limit))
+
+        by_id: dict[str, dict[str, Any]] = {}
+        for result in results:
+            entity_id = str(result.get("id") or "")
+            if not entity_id:
+                continue
+            score = self._score_entity(result, terms, float(result.get("fulltext_score") or 0.0))
+            result["score"] = score
+            if entity_id not in by_id or score > float(by_id[entity_id].get("score") or 0.0):
+                by_id[entity_id] = result
+        return sorted(by_id.values(), key=lambda item: item.get("score", 0.0), reverse=True)[:limit]
+
+    def _search_entities_substring_fallback(
+        self, terms: list[str], exclude_ids: list[str] | None = None, limit: int = 20
+    ) -> List[Dict[str, Any]]:
+        query = """
+        UNWIND $terms AS term
+        MATCH (n)
+        WHERE n.id IS NOT NULL
+          AND NOT n.id IN $exclude_ids
+          AND (
+            toLower(coalesce(n.name, '')) CONTAINS toLower(term)
+            OR any(alias IN coalesce(n.aliases, []) WHERE toLower(toString(alias)) CONTAINS toLower(term))
+            OR coalesce(n.search_text, '') CONTAINS term
+            OR (
+              size(term) >= $description_min_term_length
+              AND any(desc IN coalesce(n.description, []) WHERE toLower(toString(desc)) CONTAINS toLower(term))
+            )
+          )
+        RETURN DISTINCT n.id as id, coalesce(n.name, n.id) as name, labels(n) as labels,
+               properties(n) as properties, 0.0 as fulltext_score
+        LIMIT $limit
+        """
+        normalized_terms = _dedupe_text([normalize_vietnamese_text(term) for term in terms if normalize_vietnamese_text(term)])
+        with self.driver.session() as session:
+            return [
+                record.data()
+                for record in session.run(
+                    query,
+                    {
+                        "terms": normalized_terms,
+                        "exclude_ids": exclude_ids or [],
+                        "description_min_term_length": self.description_fallback_min_term_length,
+                        "limit": limit,
+                    },
+                )
+            ]
 
     async def _asearch_entities(self, fragment: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Async wrapper for _search_entities using thread pool."""
@@ -405,6 +639,61 @@ Knowledge Graph Data (Relationship):
 
         with self.driver.session() as session:
             return [record.data() for record in session.run(query, {"entity_id": entity_id, "limit": limit})]
+
+    def _get_relationships_batch(self, entity_ids: list[str], limit_per_entity: int = 10) -> List[Dict[str, Any]]:
+        if not entity_ids:
+            return []
+        query = """
+        UNWIND $entity_ids AS entity_id
+        MATCH (n {id: entity_id})-[r]-(m)
+        WHERE m.id IS NOT NULL
+        WITH entity_id, n, r, m
+        ORDER BY coalesce(r.weight, 1.0) DESC
+        WITH entity_id, collect({n:n, r:r, m:m})[..$limit_per_entity] AS rels
+        UNWIND rels AS item
+        RETURN item.n.id as source_id, coalesce(item.n.name, item.n.id) as source,
+               labels(item.n) as source_labels, properties(item.n) as source_props,
+               type(item.r) as relation, properties(item.r) as rel_props,
+               item.m.id as target_id, coalesce(item.m.name, item.m.id) as target,
+               labels(item.m) as target_labels, properties(item.m) as target_props,
+               0.0 as score
+        """
+        with self.driver.session() as session:
+            return [
+                record.data()
+                for record in session.run(
+                    query,
+                    {"entity_ids": entity_ids, "limit_per_entity": limit_per_entity},
+                )
+            ]
+
+    def _search_relationships_batch(self, terms: list[str], limit: int = 20) -> List[Dict[str, Any]]:
+        if not self._has_index(self.fulltext_relationship_index):
+            return []
+        query = """
+        CALL db.index.fulltext.queryRelationships($index_name, $query, {limit: $limit})
+        YIELD relationship, score
+        MATCH (s)-[relationship]->(t)
+        WHERE s.id IS NOT NULL AND t.id IS NOT NULL
+        RETURN s.id as source_id, coalesce(s.name, s.id) as source, labels(s) as source_labels,
+               properties(s) as source_props, type(relationship) as relation, properties(relationship) as rel_props,
+               t.id as target_id, coalesce(t.name, t.id) as target, labels(t) as target_labels,
+               properties(t) as target_props, score as score
+        ORDER BY score DESC
+        LIMIT $limit
+        """
+        with self.driver.session() as session:
+            return [
+                record.data()
+                for record in session.run(
+                    query,
+                    {
+                        "index_name": self.fulltext_relationship_index,
+                        "query": self._build_lucene_query(terms),
+                        "limit": limit,
+                    },
+                )
+            ]
 
     def _details_from_rel(self, rel: dict[str, Any], side: str) -> dict[str, Any] | None:
         entity_id = rel.get(f"{side}_id")

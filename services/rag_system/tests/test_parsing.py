@@ -82,6 +82,24 @@ class TestParseKeywordExtraction:
         assert result["high_level_keywords"] == []
         assert result["low_level_keywords"] == []
 
+    def test_parse_fenced_keyword_list_as_low_level_keywords(self):
+        text = '```json ["Open Workshop", "Ericsson Vietnam"] ```'
+        result = parse_keyword_extraction(text)
+        assert result["low_level_keywords"] == ["Open Workshop", "Ericsson Vietnam"]
+
+    def test_parse_keyword_alias_keys(self):
+        text = '''{
+            "entities": ["Học bổng Đinh Thiện Lý"],
+            "keywords": ["quản lý bởi"],
+            "aliases": ["hoc bong Dinh Thien Ly"],
+            "topics": ["học bổng"]
+        }'''
+        result = parse_keyword_extraction(text)
+        assert result["must_keep_phrases"] == ["Học bổng Đinh Thiện Lý"]
+        assert result["low_level_keywords"] == ["quản lý bởi"]
+        assert result["expanded_keywords"] == ["hoc bong Dinh Thien Ly"]
+        assert result["high_level_keywords"] == ["học bổng"]
+
 
 class TestFormatRelationalQuery:
     def test_format_triple(self):

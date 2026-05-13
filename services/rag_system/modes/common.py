@@ -12,11 +12,8 @@ def markdown_evidence(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         evidence.append(
             MarkdownEvidence(
                 chunk_id=chunk.get("chunk_id", ""),
-                doc_id=chunk.get("doc_id", ""),
                 text=chunk.get("text", ""),
                 score=chunk.get("score", 0.0) or 0.0,
-                source_path=chunk.get("source_path"),
-                title=chunk.get("title"),
                 section=chunk.get("section"),
                 metadata=chunk.get("metadata", {}) or {},
             ).model_dump()

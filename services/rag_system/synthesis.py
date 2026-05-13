@@ -43,16 +43,14 @@ def build_markdown_prompt(question: str, chunks: List[Dict[str, Any]]) -> str:
     context_parts = []
     for i, chunk in enumerate(chunks, 1):
         chunk_id = chunk.get('chunk_id', 'unknown')
-        title = chunk.get('title', '')
         section = chunk.get('section', '')
         text = chunk.get('text', '')
         score = _score(chunk.get('score'))
+        section_line = f"Phần: {section}\n" if section else ""
 
         context_parts.append(
             f"""[{i}] Tài liệu: {chunk_id}
-Tiêu đề: {title}
-Phần: {section}
-Độ liên quan: {score:.3f}
+{section_line}Độ liên quan: {score:.3f}
 
 Nội dung:
 {text}
@@ -139,11 +137,11 @@ class AnswerSynthesizer:
     def _format_markdown_evidence(self, markdown_chunks: List[Dict[str, Any]]) -> str:
         markdown_parts = []
         for i, chunk in enumerate(markdown_chunks, 1):
+            section = chunk.get('section', '')
+            section_line = f"Phần: {section}\n" if section else ""
             markdown_parts.append(
                 f"""[M{i}] Tài liệu: {chunk.get('chunk_id', 'unknown')}
-Tiêu đề: {chunk.get('title', '')}
-Phần: {chunk.get('section', '')}
-Độ liên quan: {_score(chunk.get('score')):.3f}
+{section_line}Độ liên quan: {_score(chunk.get('score')):.3f}
 
 Nội dung:
 {chunk.get('text', '')}

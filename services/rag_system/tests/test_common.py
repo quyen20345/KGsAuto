@@ -14,11 +14,8 @@ class TestMarkdownEvidence:
         chunks = [
             {
                 "chunk_id": "c1",
-                "doc_id": "d1",
                 "text": "content",
                 "score": 0.9,
-                "source_path": "/a.md",
-                "title": "T",
                 "section": "S",
                 "metadata": {"k": "v"},
             }
@@ -32,7 +29,6 @@ class TestMarkdownEvidence:
         chunks = [
             {
                 "chunk_id": "c1",
-                "doc_id": "d1",
                 "text": "content",
                 "score": None,
             }
