@@ -1,0 +1,12 @@
+flowchart LR
+    U["University"]:::graphEvidence -->|has unit| O["Organizational unit"]:::graphEvidence
+    O -->|offers| P["Program"]:::graphEvidence
+    O -->|employs / involves| R["Person"]:::graphEvidence
+    O -->|organizes| E["Event"]:::graphEvidence
+    O -->|located in| L["Location"]:::graphEvidence
+    D["Document<br/>provenance"]:::artifact -->|mentions / supports| U
+    D -->|mentions / supports| O
+    D -->|mentions / supports| R
+
+    classDef graphEvidence fill:#FFF3E0,stroke:#FB8C00,color:#5D4037;
+    classDef artifact fill:#FAFAFA,stroke:#757575,color:#212121,stroke-dasharray:5 3;

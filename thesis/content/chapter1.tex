@@ -1,3 +1,23 @@
-\chapter{Tóm tắt}
+\chapter{Mở đầu}
 
-% Nội dung tóm tắt sẽ được viết ở đây
+\section{Bối cảnh và vấn đề}
+
+Trong những năm gần đây, các hệ thống hỏi đáp dựa trên mô hình ngôn ngữ lớn (Large Language Model -- LLM) được ứng dụng rộng rãi trong nhiều miền tri thức khác nhau. Tuy nhiên, khi triển khai vào các bài toán thực tế, đặc biệt là các bài toán yêu cầu trả lời dựa trên nguồn dữ liệu nội bộ, LLM thường gặp hạn chế về tính chính xác, khả năng kiểm chứng nguồn thông tin và hiện tượng sinh câu trả lời không có căn cứ. Retrieval-Augmented Generation (RAG) là một hướng tiếp cận phổ biến nhằm hạn chế nguy cơ hallucination bằng cách bổ sung ngữ cảnh truy xuất từ tài liệu vào quá trình sinh câu trả lời.
+
+Đối với miền thông tin về Trường Đại học Công nghệ, dữ liệu thường được công bố dưới dạng các trang giới thiệu, thông báo, tin tức, văn bản tuyển sinh, thông tin đơn vị, cán bộ, sự kiện và chương trình đào tạo. Các thông tin này có đặc điểm phân tán, thay đổi theo thời gian và chứa nhiều quan hệ giữa các thực thể như người, đơn vị, chương trình, sự kiện, văn bản và địa điểm. Nếu chỉ sử dụng tìm kiếm văn bản hoặc semantic search, hệ thống có thể tìm được các đoạn nội dung liên quan về mặt ngữ nghĩa nhưng vẫn khó trả lời tốt các câu hỏi yêu cầu hiểu quan hệ, tổng hợp nhiều nguồn hoặc truy vết thông tin theo cấu trúc.
+
+Knowledge Graph là một cách biểu diễn tri thức có cấu trúc thông qua các thực thể và quan hệ giữa chúng. Khi được xây dựng từ dữ liệu của trường, Knowledge Graph có thể đóng vai trò là tầng tri thức trung gian giúp hệ thống hỏi đáp truy xuất thông tin theo quan hệ, kiểm tra nguồn gốc bằng chứng và hỗ trợ các câu hỏi có tính multi-hop reasoning. Về mặt khoa học, khóa luận quan tâm đến cách kết hợp LLM, prompt engineering, Entity Resolution và Graph-based RAG trong một pipeline thống nhất, thay vì chỉ sử dụng LLM để trả lời trực tiếp từ văn bản. Về mặt thực tiễn, hệ thống hướng tới việc hỗ trợ người dùng truy vấn thông tin về Đại học Công nghệ thông qua một ứng dụng hỏi đáp có khả năng khai thác cả văn bản gốc và cấu trúc graph để tăng tính truy vết của câu trả lời.
+
+\section{Mục tiêu và phạm vi nghiên cứu}
+
+Đối tượng nghiên cứu của khóa luận là quy trình xây dựng Knowledge Graph từ dữ liệu văn bản tiếng Việt về Trường Đại học Công nghệ và cách sử dụng Knowledge Graph này trong hệ thống hỏi đáp. Dữ liệu đầu vào là các tài liệu Markdown được thu thập và chuẩn hóa từ nguồn thông tin công khai của trường.
+
+Mục tiêu tổng quát của khóa luận là xây dựng một hệ thống hỗ trợ tự động hóa quá trình tạo Knowledge Graph về Đại học Công nghệ từ dữ liệu văn bản và khai thác Knowledge Graph này trong ứng dụng hỏi đáp. Để đạt mục tiêu đó, khóa luận lần lượt phân tích đặc điểm dữ liệu và yêu cầu của bài toán, thiết kế mô hình biểu diễn tri thức dưới dạng Property Graph, xây dựng quy trình trích xuất Knowledge Graph từ Markdown bằng LLM và prompt có ràng buộc schema, sau đó áp dụng Entity Resolution để giảm trùng lặp và cải thiện tính nhất quán của graph. Graph sau xử lý được lưu trong Neo4j, kết hợp với Qdrant trong hệ thống RAG gồm Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG. Bên cạnh đó, khóa luận xây dựng khung đánh giá hỏi đáp bằng RAGAS, đồng thời báo cáo thống kê vận hành cho các giai đoạn trích xuất và Entity Resolution.
+
+Về phạm vi, khóa luận tập trung vào: trích xuất thực thể, quan hệ và thuộc tính từ văn bản bằng LLM; xử lý trùng lặp thực thể thông qua pipeline Entity Resolution nhiều giai đoạn; lưu trữ graph trong Neo4j và lưu trữ đoạn văn bản trong Qdrant để phục vụ truy xuất; xây dựng các chế độ hỏi đáp và khung đánh giá kèm theo; đồng thời thiết kế các API và giao diện cơ bản để khai thác kết quả. Khóa luận không đặt mục tiêu xây dựng một ontology hoàn chỉnh ở mức chuẩn hóa như RDF/OWL cho toàn bộ miền giáo dục đại học, cũng không đề xuất một mô hình LLM mới.
+
+Về phương pháp, khóa luận sử dụng phương pháp nghiên cứu thực nghiệm kết hợp với phân tích thiết kế hệ thống. Trước hết, khóa luận khảo sát các khái niệm nền tảng như Knowledge Graph, Property Graph, Entity Resolution, RAG và LLM-based Information Extraction, sau đó phân tích đặc điểm dữ liệu đầu vào và thiết kế kiến trúc hệ thống. Phần thực nghiệm tách rõ hai mức đánh giá: giai đoạn trích xuất và Entity Resolution được báo cáo bằng thống kê vận hành từ các artifact sinh ra trong pipeline do chưa có ground truth phù hợp; giai đoạn hỏi đáp được chuẩn bị để đánh giá bằng khung RAGAS, với các metric faithfulness, context precision và context recall.
+
+\section{Cấu trúc khóa luận}
+
+Khóa luận được tổ chức thành tám chương. Chương 1 trình bày bối cảnh, mục tiêu, phạm vi nghiên cứu và cấu trúc khóa luận. Chương 2 giới thiệu cơ sở lý thuyết và các công nghệ liên quan. Chương 3 phân tích bài toán và kiến trúc tổng thể của hệ thống. Chương 4 mô tả quy trình trích xuất Knowledge Graph từ dữ liệu văn bản, còn Chương 5 trình bày quy trình xử lý trùng lặp và hợp nhất thực thể trong Knowledge Graph. Chương 6 trình bày cách ứng dụng Knowledge Graph trong hệ thống hỏi đáp. Chương 7 dành cho phần thực nghiệm và đánh giá. Cuối cùng, Chương 8 tổng kết kết quả đạt được, hạn chế và hướng phát triển.

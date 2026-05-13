@@ -1,0 +1,12 @@
+flowchart LR
+    Q["User question"]:::input --> E["Query embedding"]:::process
+    E --> QD[("Qdrant<br/>Markdown vectors")]:::store
+    QD --> C["Top-k markdown chunks"]:::artifact
+    C --> S["LLM answer synthesis"]:::process
+    S --> A["Answer + citations"]:::answer
+
+    classDef input fill:#E3F2FD,stroke:#1565C0,color:#0D47A1;
+    classDef process fill:#EDE7F6,stroke:#5E35B1,color:#311B92;
+    classDef store fill:#EEEEEE,stroke:#616161,color:#212121;
+    classDef artifact fill:#FAFAFA,stroke:#757575,color:#212121,stroke-dasharray:5 3;
+    classDef answer fill:#C8E6C9,stroke:#2E7D32,color:#1B5E20;

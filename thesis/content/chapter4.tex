@@ -1,9 +1,133 @@
-\chapter{Xây dựng câu lệnh (Prompt)}
+\chapter{Trích xuất Knowledge Graph từ dữ liệu văn bản}
 
-\section{Thiết kế prompt cho trích xuất}
+\section{Tổng quan quy trình trích xuất}
 
-\section{Prompt engineering cho Property Graph}
+Giai đoạn trích xuất Knowledge Graph là bước đầu tiên trong pipeline xây dựng tri thức của hệ thống. Đầu vào của giai đoạn này là các tài liệu Markdown đã được thu thập từ nguồn dữ liệu về Đại học Công nghệ. Đầu ra là các graph fragment ở dạng JSON, bao gồm danh sách thực thể, quan hệ và các thuộc tính liên quan.
 
-\section{Xử lý đầu ra từ LLM}
+Mục tiêu của giai đoạn này không phải là tạo ngay một Knowledge Graph hoàn chỉnh ở mức toàn cục. Thay vào đó, hệ thống tạo ra các mảnh graph cục bộ có đủ thông tin để phục vụ các bước xử lý tiếp theo. Các graph fragment này cần có cấu trúc rõ ràng, có provenance và tuân thủ schema cơ bản để có thể được đưa vào pipeline Entity Resolution.
 
-\section{Validation và error handling}
+Ở mức tổng quát, quy trình bắt đầu bằng việc đọc và tổ chức các tài liệu Markdown theo ngữ cảnh cục bộ. Từ nội dung tài liệu, schema và các ràng buộc trích xuất, hệ thống xây dựng prompt cho LLM để sinh graph fragment ở dạng JSON. Kết quả sau đó được làm sạch, parse, kiểm tra cấu trúc và lưu cùng metadata để phục vụ các bước downstream. Quy trình này được minh họa trong Hình~\ref{fig:extraction-pipeline}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{image/generated/chapter4/extraction-pipeline.png}
+    \caption{Quy trình trích xuất Knowledge Graph từ dữ liệu Markdown}
+    \label{fig:extraction-pipeline}
+\end{figure}
+
+\section{Tiền xử lý và tổ chức dữ liệu Markdown}
+
+Dữ liệu đầu vào của hệ thống được chuẩn hóa về dạng Markdown. Dạng dữ liệu này có ưu điểm là giữ được cấu trúc văn bản cơ bản như tiêu đề, đoạn, danh sách và liên kết, đồng thời vẫn đủ đơn giản để đưa vào prompt cho LLM.
+
+Trong quá trình xử lý, mỗi file Markdown được xem là một đơn vị tài liệu. Hệ thống đọc nội dung văn bản, lấy tên file làm một tín hiệu phụ trợ và gắn định danh nguồn cho các kết quả trích xuất. Định danh nguồn này được lưu trong thuộc tính của node và relationship để phục vụ provenance.
+
+Việc giữ provenance là yêu cầu quan trọng. Khi hệ thống trả lời câu hỏi hoặc khi người dùng kiểm tra một thực thể, cần có khả năng truy ngược thông tin về tài liệu đã sinh ra thực thể hoặc quan hệ đó. Điều này giúp tăng tính minh bạch của hệ thống và hỗ trợ việc sửa lỗi thủ công khi phát hiện kết quả trích xuất chưa chính xác.
+
+
+\section{Phân cụm tài liệu và xây dựng ngữ cảnh}
+
+Một khó khăn khi trích xuất tri thức từ nhiều tài liệu là cùng một thực thể có thể xuất hiện ở nhiều nơi với các biến thể tên gọi khác nhau. Trong cài đặt hiện tại, mỗi file Markdown được xem là một đơn vị trích xuất, tức một chunk được đưa vào LLM. Do LLM chỉ xử lý được một lượng ngữ cảnh hữu hạn, mô hình không thể quan sát toàn bộ corpus trong một lần suy luận. Nếu từng file được xử lý hoàn toàn độc lập, kết quả dễ bị phân mảnh thành nhiều graph fragment rời rạc, trong đó cùng một thực thể có thể bị sinh thành nhiều node khác nhau.
+
+Để giảm vấn đề này, KGsAuto tổ chức các tài liệu Markdown thành các cụm trước khi trích xuất. Tài liệu được phân cụm dựa trên độ tương đồng của tên file: tên file được chuẩn hóa, token hóa, sau đó hệ thống tính độ tương đồng Jaccard giữa các tập token. Những file có tên gần nhau thường có khả năng thuộc cùng chủ đề hoặc nhắc đến cùng nhóm thực thể. Cách làm này là một heuristic chi phí thấp, phù hợp với dữ liệu được thu thập từ website, nơi tên đường dẫn và tên file thường phản ánh chủ đề của trang.
+
+Bên trong mỗi cụm, các file được xử lý theo thứ tự và chia sẻ một trạng thái cục bộ gọi là \texttt{ClusterState}. Trạng thái này ban đầu rỗng; sau mỗi lần trích xuất thành công, hệ thống cập nhật các entity records, aliases và các fact gần nhất từ graph fragment vừa sinh ra. Khi xử lý file tiếp theo trong cùng cụm, các thông tin này được đưa lại vào prompt dưới dạng ngữ cảnh cục bộ. Nhờ đó, LLM có thêm tín hiệu để tái sử dụng canonical name, nhận diện alias và giữ quan hệ giữa các thực thể nhất quán hơn.
+
+Ngữ cảnh đưa vào prompt gồm ba lớp. \textit{Core context} chứa các hướng dẫn chung về miền dữ liệu, cách đặt tên chuẩn và yêu cầu nhất quán. \textit{Local context} lưu danh sách thực thể đã trích xuất trong cùng cụm, bao gồm tên chuẩn và alias quan trọng. \textit{Rolling summary} tóm tắt các fact gần nhất, gồm node và relationship đã được ghi nhận từ những file trước đó. Các lớp ngữ cảnh này vẫn bị giới hạn bởi ngân sách context của prompt, do đó cơ chế phân cụm không loại bỏ hoàn toàn lỗi trùng lặp hoặc sự phân mảnh thành các island graph. Tuy nhiên, nó giúp giảm một phần phân mảnh ngay từ giai đoạn extraction và cung cấp tín hiệu tốt hơn cho Entity Resolution ở bước sau. Hình~\ref{fig:filename-clustering} minh họa ý tưởng phân cụm file Markdown và duy trì ngữ cảnh cục bộ trong quá trình trích xuất.
+
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=1.0\textwidth,height=0.68\textheight,keepaspectratio]{image/generated/chapter4/filename-clustering.png}
+    \caption{Tổ chức tài liệu Markdown theo cụm và truyền ngữ cảnh cục bộ trong quá trình trích xuất}
+    \label{fig:filename-clustering}
+\end{figure}
+
+\section{Thiết kế prompt trích xuất tri thức}
+
+Prompt là thành phần trung tâm của quy trình trích xuất bằng LLM. Trong hệ thống này, prompt không chỉ yêu cầu mô hình đọc văn bản và tìm thực thể, mà còn đóng vai trò như một hợp đồng đầu ra giữa LLM và pipeline xử lý.
+
+Prompt được thiết kế theo hướng schema-first. Điều này có nghĩa là định dạng JSON, cấu trúc node, cấu trúc relationship, các trường bắt buộc và các ràng buộc ngữ nghĩa được mô tả rõ ngay trong prompt. Nhờ đó, đầu ra của LLM có thể được parse và kiểm tra tự động. Các nghiên cứu gần đây về LLM-based Knowledge Graph Construction cũng nhấn mạnh rằng trích xuất bằng LLM cần được kết hợp với schema và các bước hậu xử lý để tạo graph có chất lượng ổn định hơn \cite{zhang2024extract}.
+
+Một node trong kết quả trích xuất cần có định danh, nhãn thực thể và các thuộc tính như tên chuẩn, alias, mô tả, nguồn dữ liệu và mô hình đã sinh ra kết quả. Một relationship cần có định danh, loại quan hệ, node nguồn, node đích và các thuộc tính mô tả quan hệ.
+
+Prompt cũng đưa ra các quy tắc để giảm nhiễu. Ví dụ, mô hình không nên tạo node cho các danh từ chung như "nhà trường", "đơn vị", "sinh viên" nếu không xác định được một thực thể cụ thể. Nếu một cách gọi là biến thể của thực thể đã biết, nó nên được đưa vào alias thay vì sinh ra node mới.
+
+Hình~\ref{fig:kg-prompt} minh họa cấu trúc tổng quát của prompt trích xuất tri thức.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.68\textwidth]{image/static/kg_prompt.png}
+    \caption{Cấu trúc prompt trích xuất tri thức}
+    \label{fig:kg-prompt}
+\end{figure}
+
+\section{Ràng buộc schema cho Property Graph}
+
+Schema trong KGsAuto được thiết kế như một schema định hướng cho mô hình Property Graph. Khóa luận không xây dựng một ontology hình thức đầy đủ bằng RDF/OWL, mà kế thừa các nguyên tắc thiết kế ontology ở mức thực dụng để tạo một tập nhãn và ràng buộc đủ nhất quán cho trích xuất, lưu trữ và truy vấn tri thức.
+
+Theo Noy và McGuinness, quy trình phát triển ontology có thể được tóm tắt thành bảy bước: (1) xác định miền và phạm vi, bao gồm mục đích sử dụng, người dùng và các câu hỏi năng lực (competency questions) mà ontology cần hỗ trợ; (2) xem xét khả năng tái sử dụng ontology sẵn có; (3) liệt kê các thuật ngữ quan trọng trong miền; (4) xác định các lớp và hệ thống phân cấp lớp; (5) xác định các thuộc tính hoặc slots của lớp; (6) xác định các ràng buộc của thuộc tính như kiểu dữ liệu, giá trị cho phép hoặc ý nghĩa biểu diễn; và (7) tạo các thể hiện dữ liệu cụ thể cho các lớp \cite{noy2001ontology}.
+
+Trong hệ thống này, các nguyên tắc trên được áp dụng theo hướng thực dụng. Miền tri thức được giới hạn ở thông tin công khai về Đại học Công nghệ, với các competency questions như một đơn vị trực thuộc đơn vị nào, một chương trình đào tạo do đơn vị nào cung cấp, hoặc một sự kiện liên quan đến đơn vị hay địa điểm nào. Hệ thống không thiết kế ontology từ đầu, mà tham khảo các nghiên cứu về ontology và Knowledge Graph trong môi trường giáo dục đại học để nhận diện các nhóm khái niệm phổ biến như đơn vị đào tạo, con người, chương trình học, sự kiện, tài liệu và dịch vụ trực tuyến \cite{woldai2023ontology}. Các thuật ngữ thường gặp được ánh xạ thành tập entity labels dùng trong prompt, ví dụ \texttt{UNIVERSITY}, \texttt{FACULTY}, \texttt{DEPARTMENT}, \texttt{PERSON}, \texttt{COURSE}, \texttt{PROGRAM}, \texttt{DOCUMENT}, \texttt{EVENT}, \texttt{LOCATION}, \texttt{BUILDING} và \texttt{SYSTEM}. Trong mô hình Property Graph, các nhãn này được biểu diễn bằng label của node thay vì lớp RDF/OWL. Các thuộc tính cốt lõi của node được giới hạn ở các trường như \texttt{name}, \texttt{aliases}, \texttt{description}, \texttt{chunk\_id} và \texttt{model\_extracted}; relationship cũng có thuộc tính mô tả và provenance để hỗ trợ kiểm chứng. Các ràng buộc được đưa trực tiếp vào prompt, bao gồm mỗi node chỉ có một label chính, định danh node dựa trên canonical name, chỉ tạo relationship khi có bằng chứng trong văn bản và relationship type phải ngắn gọn theo dạng \texttt{UPPER\_SNAKE\_CASE}. Các instance của schema chính là node và relationship được LLM trích xuất từ tài liệu Markdown, sau đó tiếp tục được xử lý qua Entity Resolution trước khi nhập vào graph toàn cục.
+
+Điểm quan trọng trong thiết kế là schema không đóng hoàn toàn. Entity labels được hard-code như một tập đóng để giảm sự không nhất quán khi LLM nhận diện thực thể. Ngược lại, relationship types được thiết kế theo hướng bán mở: prompt đưa ra một số quan hệ gợi ý để khuyến khích tái sử dụng, nhưng vẫn cho phép mô hình sinh quan hệ mới nếu văn bản chứa quan hệ ngữ nghĩa rõ ràng chưa nằm trong danh sách gợi ý. Bảng~\ref{tab:prompt-schema-control} tóm tắt sự khác nhau giữa phần entity được kiểm soát cứng và phần relationship được thiết kế theo hướng gợi ý, bán mở trong prompt.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Ràng buộc entity labels và relationship types trong prompt trích xuất}
+\label{tab:prompt-schema-control}
+\begin{tabular}{p{0.18\textwidth} p{0.18\textwidth} p{0.38\textwidth} p{0.18\textwidth}}
+\hline
+\textbf{Thành phần} & \textbf{Mức kiểm soát} & \textbf{Giá trị trong prompt} & \textbf{Ý nghĩa thiết kế} \\
+\hline
+Entity labels & Tập đóng, hard-coded & \texttt{UNIVERSITY}, \texttt{FACULTY}, \texttt{DEPARTMENT}, \texttt{INSTITUTE}, \texttt{PERSON}, \texttt{COURSE}, \texttt{PROGRAM}, \texttt{PUBLICATION}, \texttt{DOCUMENT}, \texttt{EVENT}, \texttt{LOCATION}, \texttt{BUILDING}, \texttt{SYSTEM} & Chuẩn hóa loại thực thể, giảm nhãn tùy tiện giữa các lần suy luận của LLM. \\
+\hline
+Node constraint & Ràng buộc cứng & Mỗi node có đúng một label chính; node id theo mẫu \texttt{node\_[canonical\_name]}; biến thể tên lưu trong \texttt{aliases}. & Hỗ trợ truy vấn, Entity Resolution và giảm trùng lặp cục bộ. \\
+\hline
+Preferred relationship names & Tập gợi ý, bán mở & \texttt{PART\_OF}, \texttt{LOCATED\_IN}, \texttt{OFFERS}, \texttt{PROVIDES}, \texttt{ORGANIZES}, \texttt{MANAGES}, \texttt{APPLIES\_TO}, \texttt{ASSOCIATED\_WITH}, \texttt{HAS\_CONTACT\_POINT}. & Khuyến khích tái sử dụng quan hệ phổ biến nhưng không giới hạn hoàn toàn biểu diễn ngữ nghĩa. \\
+\hline
+Open relationship extension & Cho phép mở rộng có kiểm soát & LLM có thể sinh relationship type mới khi văn bản có quan hệ rõ ràng chưa nằm trong danh sách gợi ý; tên quan hệ phải ngắn, tái sử dụng được và ở dạng \texttt{UPPER\_SNAKE\_CASE}. & Giữ tính linh hoạt của prompt trước dữ liệu văn bản đa dạng, đồng thời hạn chế relationship dài hoặc không nhất quán. \\
+\hline
+Relationship evidence & Ràng buộc bằng chứng & Chỉ tạo relationship khi có căn cứ trong văn bản; relationship id theo mẫu \texttt{rel\_[source\_id]\_[target\_id]\_[type]}; \texttt{description} giải thích liên kết. & Hạn chế nguy cơ hallucination và hỗ trợ kiểm chứng, provenance, GraphRAG. \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Xử lý và kiểm tra đầu ra từ LLM}
+
+Đầu ra từ LLM có thể không luôn đúng định dạng mong muốn. Mô hình có thể bọc JSON trong markdown fence, sinh thêm giải thích ngoài JSON, thiếu trường bắt buộc hoặc tạo relationship tham chiếu đến node không tồn tại. Vì vậy, pipeline cần có bước xử lý sau khi nhận phản hồi từ mô hình.
+
+Trước hết, hệ thống làm sạch chuỗi phản hồi bằng cách loại bỏ các phần không thuộc JSON. Sau đó, kết quả được parse thành đối tượng dữ liệu. Nếu parse thất bại, hệ thống có thể retry việc gọi LLM theo số lần cấu hình trước. Các phản hồi lỗi có thể được lưu lại để phục vụ debug.
+
+Sau khi parse thành công, hệ thống thực hiện validation ở mức cấu trúc. Các kiểm tra cơ bản bao gồm việc bảo đảm phản hồi có hai trường \texttt{nodes} và \texttt{relationships}, mỗi node có \texttt{id}, \texttt{labels} và \texttt{properties}, mỗi relationship có \texttt{type}, \texttt{source} và \texttt{target}, đồng thời các endpoint của relationship phải tham chiếu đến node tồn tại.
+
+Validation ở giai đoạn này chủ yếu là structural validation, tập trung vào tính đúng đắn của cấu trúc JSON và tính nhất quán của các tham chiếu. Semantic validation, tức việc kiểm tra tính đúng đắn về mặt ngữ nghĩa của các thực thể và quan hệ, được cải thiện thông qua provenance, Entity Resolution và kiểm tra thủ công ở các bước sau. Đây là lựa chọn thực dụng vì extraction bằng LLM có thể gặp lỗi ở một số file, trong khi hệ thống vẫn cần tiếp tục xử lý các file còn lại.
+
+Hình~\ref{fig:json-output} minh họa cấu trúc JSON đầu ra từ LLM.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{image/static/kg_output_diagram.png}
+    \caption{Ví dụ cấu trúc JSON đầu ra từ LLM}
+    \label{fig:json-output}
+\end{figure}
+
+\section{Kết quả đầu ra của giai đoạn trích xuất}
+
+Kết quả chính của giai đoạn trích xuất là tập các graph fragment ở dạng JSON. Mỗi fragment tương ứng với một file Markdown hoặc một đơn vị xử lý cục bộ và chứa hai thành phần chính: danh sách node và danh sách relationship. Ngoài ra, fragment còn lưu metadata như file nguồn, mô hình sinh kết quả, thời gian xử lý và các thuộc tính provenance phục vụ kiểm chứng về sau.
+
+Về mặt ngữ nghĩa, các graph fragment này có thể được xem như các \textit{island graph}, tức những subgraph cục bộ được hình thành từ một phần nhỏ của corpus. Chúng chưa phải là Knowledge Graph toàn cục, vì LLM chỉ nhìn thấy nội dung của file hiện tại cùng một lượng ngữ cảnh cục bộ giới hạn từ cụm tài liệu. Do đó, hai island graph khác nhau vẫn có thể chứa các node biểu diễn cùng một thực thể nhưng dùng tên, alias hoặc quan hệ chưa hoàn toàn thống nhất.
+
+Quá trình phân cụm file Markdown, local context và rolling summary ở mục 4.3 giúp giảm mức độ phân mảnh này bằng cách truyền lại một phần thực thể và fact đã trích xuất trong cùng cụm. Tuy nhiên, cơ chế đó chỉ cung cấp ngữ cảnh cục bộ, không bảo đảm hợp nhất được toàn bộ các thực thể trùng lặp trên toàn corpus. Vì vậy, đầu ra của extraction được thiết kế như một biểu diễn trung gian, không phải graph cuối cùng.
+
+Bên cạnh các graph fragment, hệ thống cũng ghi nhận các chỉ số vận hành như số file xử lý thành công, số file lỗi, số node, số relationship, thời gian xử lý và thông tin token nếu provider hỗ trợ. Những chỉ số này giúp đánh giá chi phí và chất lượng tương đối của các lần chạy khác nhau, đồng thời hỗ trợ debug khi một file không parse được JSON hoặc không tuân thủ schema đầu ra.
+
+Ở bước tiếp theo, các island graph được đưa vào pipeline Entity Resolution. Đây là bước cần thiết để phát hiện các node đồng tham chiếu, chọn thực thể chuẩn, hợp nhất alias và rewiring các relationship sang canonical entity. Sau bước này, các subgraph cục bộ mới dần được nối lại thành graph toàn cục nhất quán hơn để phục vụ truy vấn và hỏi đáp.
+
+\section{Hạn chế của trích xuất trực tiếp bằng LLM}
+
+Mặc dù LLM có khả năng hiểu ngôn ngữ tự nhiên tốt, việc sử dụng LLM để trích xuất Knowledge Graph vẫn còn nhiều hạn chế. Thứ nhất, mô hình có thể không tuân thủ hoàn toàn schema đầu ra. Thứ hai, mô hình có thể bỏ sót thực thể hoặc quan hệ quan trọng nếu văn bản dài hoặc thông tin được diễn đạt gián tiếp. Thứ ba, mô hình có thể sinh ra các quan hệ không đủ căn cứ nếu prompt không ràng buộc chặt. Các nghiên cứu về tạo Knowledge Graph bằng LLM cũng chỉ ra rằng hallucination vẫn là rủi ro đáng kể khi quy trình sinh tri thức được mở rộng \cite{parovic2025generating}.
+
+Ngoài ra, đối với tiếng Việt, các biến thể tên riêng, cách viết tắt và cách gọi không chính thức làm tăng độ khó của bài toán. Ví dụ, một đơn vị có thể được nhắc đến bằng tên đầy đủ, tên rút gọn hoặc chỉ bằng chức năng. Điều này khiến việc chuẩn hóa thực thể ngay trong giai đoạn extraction trở nên khó khăn.
+
+Vì vậy, khóa luận không coi extraction bằng LLM là bước duy nhất để tạo graph hoàn chỉnh. Thay vào đó, extraction được xem là bước tạo graph thô, còn chất lượng graph được cải thiện tiếp thông qua Entity Resolution, rewiring và các bước kiểm tra sau đó.

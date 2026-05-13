@@ -1,0 +1,43 @@
+\chapter{Kết luận và hướng phát triển}
+
+\section{Kết quả đạt được}
+
+Khóa luận này đã trình bày hệ thống KGsAuto theo hướng xây dựng và khai thác Knowledge Graph cho bài toán hỏi đáp trên dữ liệu tiếng Việt về Trường Đại học Công nghệ. Hệ thống được thiết kế như một pipeline thống nhất, bắt đầu từ dữ liệu Markdown, trích xuất graph fragment bằng LLM, xử lý trùng lặp thực thể, lưu trữ graph trong Neo4j, lập chỉ mục văn bản trong Qdrant và tích hợp vào các chế độ hỏi đáp.
+
+Về mặt xây dựng Knowledge Graph, khóa luận đã thiết kế quy trình trích xuất dựa trên prompt có ràng buộc schema. Đầu ra của giai đoạn này là các graph fragment gồm thực thể, quan hệ và provenance. Việc lưu lại nguồn gốc thông tin giúp hệ thống có cơ sở kiểm chứng và hỗ trợ phân tích lỗi ở các bước sau.
+
+Về mặt chất lượng graph, khóa luận đã trình bày pipeline Entity Resolution nhằm giảm phân mảnh thực thể trong graph sinh tự động. Pipeline gồm các bước chuẩn hóa, tạo embedding, sinh cụm ứng viên, quyết định hợp nhất và rewiring relationship. Đây là bước trung gian quan trọng trước khi graph được đưa vào Neo4j và khai thác trong hệ thống hỏi đáp.
+
+Về mặt ứng dụng hỏi đáp, khóa luận đã tích hợp Knowledge Graph với hệ thống RAG đa chế độ. Các chế độ Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG cho phép khai thác các nguồn bằng chứng khác nhau, từ văn bản gốc đến quan hệ có cấu trúc trong graph. Kết quả đánh giá bằng RAGAS ở Chương~7 cho thấy Hybrid RAG đạt chất lượng tốt nhất trên các metric faithfulness, context precision và context recall, trong khi Semantic Search là baseline có độ trễ thấp nhất.
+
+\section{Hạn chế}
+
+Mặc dù đã hoàn thiện thiết kế và các thành phần chính của hệ thống, khóa luận vẫn còn một số hạn chế.
+
+Thứ nhất, khóa luận chưa xây dựng được tập ground truth đủ tin cậy để đánh giá định lượng độ chính xác của extraction và Entity Resolution. Vì vậy, hai giai đoạn này mới được báo cáo chủ yếu dưới dạng thống kê vận hành và artifact đầu ra.
+
+Thứ hai, phần đánh giá hỏi đáp mới được thực hiện trên tập pilot 30 câu hỏi. Kết quả này đủ để so sánh ban đầu giữa các chế độ RAG, nhưng chưa đủ lớn để đại diện cho toàn bộ miền dữ liệu UET. Tập mở rộng 146 câu hỏi đã được sinh ra, song việc chấm điểm toàn bộ tập này còn tốn chi phí do Graph Search và Hybrid RAG cần nhiều lượt gọi LLM.
+
+Thứ ba, chất lượng của các chế độ dựa trên graph phụ thuộc mạnh vào chất lượng graph đầu vào. Nếu extraction bỏ sót thực thể hoặc quan hệ, hoặc Entity Resolution hợp nhất chưa đúng, Graph Search và Hybrid RAG có thể truy xuất thiếu hoặc sai bằng chứng.
+
+Thứ tư, hệ thống hiện được xây dựng trên dữ liệu của một trường đại học. Khả năng tổng quát hóa sang các miền dữ liệu khác hoặc các trường đại học khác cần được kiểm chứng thêm.
+
+\section{Hướng phát triển}
+
+Trong tương lai, hệ thống có thể được phát triển theo một số hướng.
+
+Thứ nhất, cần xây dựng bộ dữ liệu đánh giá có nhãn cho cả extraction, Entity Resolution và hỏi đáp. Bộ dữ liệu này nên bao gồm ground truth về thực thể, quan hệ, cặp thực thể đồng tham chiếu và tập câu hỏi có reference answer.
+
+Thứ hai, cần mở rộng đánh giá RAGAS từ tập pilot sang tập câu hỏi lớn hơn và bổ sung phân tích lỗi theo từng nhóm câu hỏi. Việc này sẽ giúp xác định rõ hơn trường hợp nào phù hợp với Semantic Search, Naive Graph RAG, Graph Search hoặc Hybrid RAG, cũng như lỗi phát sinh từ extraction, Entity Resolution hay truy xuất graph.
+
+Thứ ba, có thể cải thiện graph retrieval bằng các kỹ thuật như entity linking tốt hơn từ câu hỏi sang node trong graph, query expansion, ranking graph evidence và path-based retrieval cho các câu hỏi multi-hop.
+
+Thứ tư, cần tối ưu độ trễ của các chế độ Graph Search và Hybrid RAG. Các hướng có thể bao gồm giảm số lượt gọi LLM, cache kết quả truy vấn graph và lựa chọn chế độ truy xuất phù hợp với từng loại câu hỏi.
+
+Thứ năm, có thể bổ sung cơ chế human-in-the-loop để người dùng hoặc người quản trị kiểm tra đề xuất merge, chỉnh sửa relationship, xác nhận provenance và đánh giá câu trả lời. Phản hồi này có thể được sử dụng để cải thiện chất lượng graph theo thời gian.
+
+\section{Kết luận chung}
+
+Khóa luận đã xây dựng nền tảng cho hệ thống KGsAuto, trong đó Knowledge Graph được tạo từ dữ liệu văn bản tiếng Việt và được khai thác trong hệ thống hỏi đáp đa chế độ. Kết quả chính của khóa luận nằm ở thiết kế pipeline end-to-end, cách tổ chức các thành phần trích xuất, Entity Resolution, lưu trữ và truy xuất, cùng khung đánh giá để kiểm chứng vai trò của Knowledge Graph trong RAG.
+
+Kết quả định lượng ban đầu cho thấy Knowledge Graph phát huy giá trị rõ nhất khi được kết hợp với bằng chứng văn bản trong Hybrid RAG, nhưng các chế độ graph-only vẫn bị giới hạn bởi khả năng truy xuất đủ bằng chứng từ graph. Đây là cơ sở để các hướng cải tiến tiếp theo tập trung vào chất lượng graph, entity linking, graph retrieval và tối ưu độ trễ cho các chế độ truy xuất phức tạp.

@@ -1,0 +1,32 @@
+flowchart TB
+    subgraph Input[Input: ~10K entities]
+        A[All entity items<br/>with labels]
+    end
+
+    subgraph Extract[Extract unique labels]
+        B[Deduplicate: ~10K entities<br/>→ ~20 unique label sets]
+        C[Cache key:<br/>frozenset of sorted label tuples]
+    end
+
+    subgraph LLM["LLM call (once, cached)"]
+        D{Cache hit?}
+        D -->|Yes| E[Return cached strategy]
+        D -->|No| F[Send Vietnamese prompt<br/>with unique label combinations]
+        F --> G[Parse JSON response]
+        G --> H{Valid?}
+        H -->|Yes| I[Cache and return strategy]
+        H -->|No| J[Fallback: per-label-combo blocks]
+    end
+
+    subgraph Apply[Apply strategy]
+        K[Build type → block_id mapping]
+        L[Assign each entity to its block<br/>by matching labels]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    I --> K
+    E --> K
+    J --> K
+    K --> L

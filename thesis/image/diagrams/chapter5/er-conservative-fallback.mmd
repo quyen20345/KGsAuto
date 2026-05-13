@@ -1,0 +1,16 @@
+flowchart TB
+    A[Cluster entities] --> B[Extract names, aliases, vectors]
+
+    B --> C[Pairwise comparison]
+
+    C --> D{"Cosine similarity<br/>≥ threshold (0.88)?"}
+    D -->|No| E[Don't merge]
+    D -->|Yes| F{Name or alias overlap?}
+
+    F -->|No| G[Don't merge<br/>even if high similarity]
+    F -->|Yes| H[Add to merge group]
+
+    H --> I[Build merged canonical entity]
+    I --> J[select_canonical_name<br/>scored selection algorithm]
+    J --> K[build_canonical_id<br/>from canonical name]
+    K --> L[Output: merged entity<br/>with merged_from list]

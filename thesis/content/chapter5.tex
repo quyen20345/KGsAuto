@@ -1,195 +1,82 @@
-\chapter{Đồng tham chiếu thực thể trong Knowledge Graph}
+\chapter{Xử lý trùng lặp và hợp nhất thực thể trong Knowledge Graph}
 
-\section{Phát biểu bài toán Entity Resolution}
+\section{Vấn đề trùng lặp thực thể sau trích xuất}
 
-Sau bước trích xuất tri thức (Chương 4), đồ thị đầu vào thường chứa nhiều node cùng chỉ về một thực thể ngoài đời thật nhưng khác nhau ở bề mặt biểu diễn. Ví dụ, một tổ chức có thể xuất hiện dưới dạng tên đầy đủ, tên viết tắt, hoặc tên có/không kèm đơn vị chủ quản; một cá nhân có thể được nhắc với nhiều biến thể có học hàm/học vị khác nhau. Nếu không xử lý đồng tham chiếu, đồ thị sẽ bị phân mảnh, truy vấn trả về thiếu ổn định và các bước suy luận nhiều-hop dễ sai lệch.
+Sau giai đoạn trích xuất, Knowledge Graph ban đầu chứa nhiều node khác nhau cùng biểu diễn một thực thể trong thế giới thực. Đây là hệ quả tất yếu khi graph được sinh từ nhiều tài liệu Markdown độc lập bằng LLM. Như đã phân tích ở Chương~4, đầu ra của extraction là các \textit{island graph} -- những subgraph cục bộ mà LLM chỉ nhìn thấy nội dung của một hoặc một vài file gần nhau. Do đó, cùng một thực thể có thể xuất hiện ở nhiều subgraph dưới các dạng khác nhau: tên đầy đủ, tên viết tắt, tên tiếng Anh, tên kèm đơn vị chủ quản, hoặc tên kèm học hàm học vị đối với cá nhân.
 
-Trong luận văn này, bài toán Entity Resolution (ER) được mô tả như sau: với tập node đã trích xuất từ nhiều tài liệu, cần xác định các nhóm node cùng tham chiếu một thực thể thật, tạo thực thể chuẩn (\textit{canonical entity}), sau đó ánh xạ lại các cạnh theo canonical id để thu được đồ thị nhất quán hơn.
+Trùng lặp thực thể ảnh hưởng trực tiếp đến chất lượng hệ thống hỏi đáp. Khi thông tin về một thực thể bị chia thành nhiều node, truy vấn graph chỉ có thể trả về một phần quan hệ liên quan, làm giảm khả năng tổng hợp thông tin. Ngược lại, nếu hợp nhất sai hai thực thể khác nhau, hệ thống có thể tạo ra các quan hệ không đúng trong graph. Vì vậy, Entity Resolution là bước trung gian quan trọng để biến tập island graph thô thành một Knowledge Graph toàn cục nhất quán hơn.
 
-Với dữ liệu tiếng Việt, hệ thống cần xử lý đồng thời ba nguồn nhiễu chính:
-\begin{itemize}
-    \item biến thể tên do khác chuẩn viết hoa, dấu câu, từ viết tắt;
-    \item quan hệ ngữ nghĩa giữa tên đầy đủ và alias trong ngữ cảnh tổ chức;
-    \item nhiễu từ LLM extraction: thiếu thuộc tính, alias không đồng nhất, mô tả ngắn và không chuẩn hóa.
-\end{itemize}
+Trong khóa luận này, Entity Resolution được hiểu là quá trình phát hiện các node cùng tham chiếu đến một thực thể thật, tạo \texttt{canonical entity} đại diện cho nhóm đó, và cập nhật lại các relationship để trỏ về canonical entity. Hình~\ref{fig:entity-resolution-example} minh họa trực quan mục tiêu của quá trình này: các node biểu diễn cùng một thực thể trong graph thô được đối soát và hợp nhất thành một thực thể chuẩn, từ đó làm giảm phân mảnh trong Knowledge Graph.
 
-Từ các ràng buộc trên, kiến trúc ER được thiết kế theo hướng nhiều giai đoạn để tách rõ mục tiêu \textit{candidate recall} và \textit{merge precision}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\textwidth]{image/static/entity_resolution.png}
+    \caption{Minh họa quá trình đối soát và hợp nhất thực thể trong Knowledge Graph}
+    \label{fig:entity-resolution-example}
+\end{figure}
 
-\section{Kiến trúc pipeline 3 giai đoạn}
+\section{Tổng quan pipeline Entity Resolution}
 
-Pipeline ER của hệ thống gồm ba stage độc lập, giao tiếp qua artifact trung gian thay vì chia sẻ trạng thái bộ nhớ. Cách tổ chức này giúp dễ chạy lại từng stage, thuận tiện đánh giá định lượng theo từng lớp, đồng thời giảm hiệu ứng lỗi dây chuyền.
+Pipeline Entity Resolution được thiết kế theo nguyên tắc tách biệt giữa việc tạo ứng viên trùng lặp và việc ra quyết định hợp nhất. Đây là lựa chọn quan trọng vì hai mục tiêu này có tính chất khác nhau. Giai đoạn tạo ứng viên cần ưu tiên \textit{recall} để hạn chế bỏ sót các thực thể có khả năng đồng tham chiếu, trong khi giai đoạn quyết định merge cần ưu tiên \textit{precision} để tránh hợp nhất sai các thực thể khác nhau.
 
-\begin{itemize}
-    \item \textbf{Stage 1} (Embedding \& Indexing): biểu diễn thực thể thành vector và payload metadata thống nhất.
-    \item \textbf{Stage 2} (Blocking \& Clustering): sinh tập ứng viên trùng lặp theo hướng ưu tiên recall.
-    \item \textbf{Stage 3} (LLM Resolution \& Rewire): quyết định hợp nhất theo hướng precision và tái cấu trúc đồ thị.
-\end{itemize}
+Hình~\ref{fig:er-pipeline-overview} minh họa pipeline ba giai đoạn của hệ thống ở mức tổng quan. Stage~1 chuẩn hóa các node thô và tạo biểu diễn vector. Stage~2 sinh các cụm ứng viên có khả năng trùng lặp. Stage~3 quyết định nhóm nào thật sự nên được hợp nhất, tạo canonical entity và cập nhật lại graph.
 
-Về mặt triển khai, lớp điều phối nằm ở các pipeline `stage1_pipeline.py`, `stage2_pipeline.py`, `stage3_pipeline.py`; cấu hình tập trung ở `RunConfig`; các nhóm module nghiệp vụ được tách thành `preprocessing`, `blocking`, `clustering`, `matching`, `merging`, `storage`, `evaluation`.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{image/generated/chapter5/er-pipeline-overview.png}
+    \caption{Tổng quan pipeline Entity Resolution ba giai đoạn}
+    \label{fig:er-pipeline-overview}
+\end{figure}
 
-\section{Stage 1 -- Embedding và vector hóa thực thể}
+Cách chia thành ba giai đoạn giúp hệ thống tránh phụ thuộc hoàn toàn vào một lần gọi LLM end-to-end. Các bước tính toán dựa trên chuẩn hóa, embedding và blocking giúp thu hẹp không gian tìm kiếm trước khi LLM được sử dụng cho quyết định ngữ nghĩa khó hơn. Đồng thời, cấu trúc này cho phép quan sát kết quả trung gian của pipeline, hỗ trợ phân tích lỗi và tái lập thực nghiệm mà không biến phần trình bày thành mô tả chi tiết mã nguồn.
 
-\subsection{Mục tiêu và đầu vào}
+\section{Chuẩn hóa và biểu diễn thực thể}
 
-Mục tiêu của Stage 1 là chuyển node thô từ JSON input thành biểu diễn vector có thể truy hồi hiệu quả trong không gian semantic, đồng thời giữ đủ metadata phục vụ các stage sau.
+Mục tiêu của giai đoạn đầu tiên là đưa các node thô về một dạng biểu diễn ổn định để có thể so sánh. Các trường quan trọng của node gồm tên, alias, nhãn thực thể, mô tả và nguồn sinh dữ liệu. Trước khi tạo embedding, hệ thống chuẩn hóa Unicode, loại bỏ khoảng trắng thừa và hợp nhất các alias trùng lặp không phân biệt hoa thường.
 
-\subsection{Chuẩn hóa thuộc tính và tạo văn bản biểu diễn}
+Sau chuẩn hóa, mỗi thực thể được chuyển thành vector embedding bằng mô hình \texttt{paraphrase-multilingual-mpnet-base-v2}. Đây là mô hình đa ngôn ngữ, phù hợp với dữ liệu tiếng Việt và sinh vector 768 chiều. Trong ngữ cảnh Entity Resolution, embedding không được dùng như bằng chứng duy nhất để merge, mà đóng vai trò là tín hiệu ngữ nghĩa giúp đo độ gần nhau giữa các node và hỗ trợ các bước blocking, clustering và validation phía sau.
 
-Tại bước tiền xử lý, hệ thống thực hiện chuẩn hóa thuộc tính, chuẩn hóa danh sách alias, và xác định `primary\_type` từ labels. Sau đó, một chuỗi biểu diễn được tạo để nhúng embedding, theo nguyên tắc kết hợp tên chính và alias:
-\[
-\texttt{embedding\_text = name \;||\; aliases}
-\]
-trong đó alias trùng hoàn toàn với `name` được loại bỏ để tránh dư thừa tín hiệu.
+Một điểm cần nhấn mạnh là chuẩn hóa không nhằm xóa bỏ toàn bộ khác biệt giữa các thực thể. Nếu chuẩn hóa quá mạnh, hệ thống có thể làm mất các tín hiệu phân biệt quan trọng; nếu chuẩn hóa quá yếu, nhiều biến thể bề mặt vẫn bị xem là khác nhau. Vì vậy, giai đoạn này chỉ xử lý những khác biệt có tính hình thức rõ ràng, còn quyết định hợp nhất cuối cùng được để lại cho các bước có thêm ngữ cảnh và cơ chế kiểm soát chất lượng.
 
-\subsection{Sinh embedding và lưu vào vector store}
+\section{Sinh nhóm ứng viên bằng blocking và clustering}
 
-Mặc định hệ thống dùng semantic embedding đa ngôn ngữ (`paraphrase-multilingual-mpnet-base-v2`). Khi mô hình không khả dụng, pipeline fallback sang hash embedding để đảm bảo tiến trình không bị dừng.
+Nếu so sánh tất cả các cặp thực thể, chi phí tính toán sẽ tăng theo $O(n^2)$ và nhanh chóng trở nên không phù hợp khi số lượng node lớn. Vì vậy, Stage~2 sử dụng blocking để chia các thực thể thành các nhóm có khả năng liên quan, sau đó chỉ phân cụm trong từng block. Mục tiêu của bước này không phải là đưa ra quyết định merge cuối cùng, mà là tạo ra tập ứng viên đủ rộng cho bước xác thực phía sau.
 
-Dữ liệu được upsert vào backend lưu trữ (Qdrant hoặc memory) với payload chuẩn hóa gồm: `node\_id`, `labels`, `primary\_type`, `source\_file`, `chunk\_id`, `embedding\_text`, và `properties`.
+Trong dữ liệu của hệ thống, nhãn thực thể là tín hiệu quan trọng để xác định phạm vi so sánh. Thay vì yêu cầu LLM phân tích từng thực thể riêng lẻ, hệ thống chỉ đưa vào LLM các tổ hợp nhãn duy nhất. Cách làm này giúp giảm đáng kể kích thước đầu vào: từ nhiều nghìn thực thể xuống còn một số lượng nhỏ các tổ hợp nhãn. LLM sau đó đề xuất cách nhóm các loại thực thể có khả năng đồng tham chiếu, chẳng hạn nhóm các nhãn liên quan đến cá nhân vào cùng một block, đồng thời tách các đơn vị tổ chức dễ gây nhầm lẫn với tổ chức cấp trên.
 
-Artifact chính của Stage 1 là `index.json`, ghi lại thống kê indexing, phương pháp embedding và metadata tóm tắt.
+Bên trong mỗi block, hệ thống phân cụm dựa trên độ tương đồng cosine giữa các embedding. Cài đặt hiện tại sử dụng HDBSCAN với \texttt{min\_cluster\_size=2} và \texttt{min\_samples=1}. Trong trường hợp cần dùng chiến lược đơn giản hơn, ngưỡng similarity 0.72 được dùng để tạo các nhóm ứng viên dựa trên thành phần liên thông. Các con số này không được xem là chân lý tuyệt đối, mà là tham số thực nghiệm để cân bằng giữa việc phát hiện đủ ứng viên và tránh tạo cụm quá rộng.
 
-\section{Stage 2 -- Blocking và clustering ứng viên}
+Kết quả của Stage~2 là các cụm ứng viên. Một cụm ứng viên có thể chứa nhiều node thật sự cùng tham chiếu đến một thực thể, nhưng cũng có thể chứa các node chỉ gần nhau về tên hoặc ngữ nghĩa. Vì vậy, mọi cụm từ Stage~2 vẫn cần được kiểm tra lại ở Stage~3 trước khi hợp nhất.
 
-\subsection{Mục tiêu và nguyên tắc}
+\section{Quyết định hợp nhất bằng LLM}
 
-Mục tiêu Stage 2 là tạo tập ứng viên đủ rộng để hạn chế bỏ sót các cặp trùng tiềm năng. Theo đúng triết lý thiết kế, stage này chỉ dừng ở mức \textit{blocking + clustering}, chưa ra quyết định merge cuối.
+Stage~3 là bước đưa ra quyết định merge. Khác với Stage~2, bước này được thiết kế theo hướng ưu tiên precision: khi không đủ bằng chứng, hệ thống có xu hướng giữ các node tách biệt thay vì hợp nhất sai. Lý do là lỗi \textit{over-merge} thường nguy hiểm hơn \textit{under-merge}; một node bị trùng nhưng chưa gộp vẫn có thể được sửa ở vòng sau, trong khi một merge sai có thể làm lan truyền tri thức không đúng qua nhiều relationship.
 
-\subsection{Blocking strategy}
+Hệ thống sử dụng cách tiếp cận Two-Pass LLM Resolution. Ở pass thứ nhất, LLM nhận một cụm ứng viên và phân chia thành các nhóm con có khả năng đồng tham chiếu. Ở pass thứ hai, với mỗi nhóm đã được chấp nhận, LLM tổng hợp một canonical entity gồm tên chuẩn, nhãn, alias, mô tả và provenance từ các node thành phần. Việc tách thành hai pass giúp LLM tập trung vào hai nhiệm vụ khác nhau: trước hết là xác định ``ai giống ai'', sau đó mới tổng hợp ``đại diện chuẩn là gì''.
 
-Hệ thống hỗ trợ hai chiến lược blocking:
-\begin{itemize}
-    \item \textbf{LLM-based blocking}: LLM đề xuất kế hoạch chia block từ tổ hợp nhãn quan sát được, sau đó áp dụng cho toàn bộ dữ liệu.
-    \item \textbf{Primary-type fallback}: nhóm trực tiếp theo `primary\_type` khi tắt LLM blocking hoặc khi cần vận hành bảo thủ.
-\end{itemize}
+Để hạn chế phụ thuộc tuyệt đối vào LLM, kết quả pass thứ nhất được kiểm tra bằng embedding similarity. Với mỗi nhóm con có từ hai thực thể trở lên, hệ thống tính độ tương đồng trung bình trong nhóm; nếu giá trị này thấp hơn ngưỡng 0.83, nhóm bị xem là chưa đủ tin cậy để merge. Khi LLM không đưa ra được nhóm hợp lệ hoặc kết quả không vượt qua validation, hệ thống chuyển sang quyết định bảo thủ: chỉ merge khi similarity đủ cao, với ngưỡng 0.88, đồng thời có bằng chứng trùng lặp về tên hoặc alias. Cơ chế này giữ lại thông tin về fallback nhưng ở mức nguyên lý: merge chỉ xảy ra khi có nhiều tín hiệu độc lập cùng ủng hộ.
 
-\subsection{Clustering trong từng block}
+Hình~\ref{fig:er-resolution-concept} minh họa luồng quyết định merge ở Stage~3. Từ một cụm ứng viên, LLM trước hết tách ra các nhóm có khả năng đồng tham chiếu. Mỗi nhóm được kiểm tra bằng nhiều tín hiệu như tên, alias, embedding và provenance. Chỉ các nhóm có bằng chứng đủ mạnh mới được tổng hợp thành canonical entity; các trường hợp yếu được giữ tách biệt để tránh over-merge.
 
-Trong mỗi block, pipeline ưu tiên cơ chế clustering theo embedding similarity. Ngưỡng mặc định cho chế độ fallback clustering là:
-\[
-\tau_{cluster} = 0.72
-\]
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.56\textwidth]{image/generated/chapter5/er-resolution-concept.png}
+    \caption{Luồng quyết định merge ở Stage 3: tách nhóm ứng viên, kiểm tra độ tin cậy và tạo thực thể chuẩn}
+    \label{fig:er-resolution-concept}
+\end{figure}
 
-Kết quả Stage 2 gồm:
-\begin{itemize}
-    \item `cluster\_assignments.json`;
-    \item `cluster\_assignments\_enriched.json` (bổ sung tên, labels, nguồn);
-    \item `cluster\_metrics.json` và dashboard HTML để hỗ trợ phân tích chất lượng cụm.
-\end{itemize}
+\section{Tái tạo thực thể chuẩn và cập nhật đồ thị}
 
-\section{Stage 3 -- Two-Pass LLM Resolution và hợp nhất}
+Sau khi có quyết định merge, hệ thống tạo canonical entity cho mỗi nhóm thực thể. Tên chuẩn được chọn theo hướng dễ đọc, ổn định và có khả năng đại diện tốt nhất cho nhóm. Các alias, nhãn, mô tả và provenance được hợp nhất từ những node thành phần, với nguyên tắc không tự thêm thông tin ngoài dữ liệu đầu vào. Canonical ID được sinh lại từ canonical name để đảm bảo tính ổn định và dễ truy vết hơn so với việc dùng trực tiếp ID sinh bởi LLM.
 
-\subsection{Ý tưởng tổng quát}
+Bước tiếp theo là cập nhật graph. Mọi relationship trỏ đến node cũ được ánh xạ về canonical entity tương ứng. Nếu sau ánh xạ xuất hiện self-loop hoặc relationship trùng lặp, hệ thống loại bỏ hoặc gộp chúng để graph đầu ra gọn hơn. Mục tiêu của bước này không chỉ là giảm số lượng node trùng, mà còn đảm bảo rằng các quan hệ trước đây bị phân tán trên nhiều biến thể tên gọi được tập trung về cùng một thực thể chuẩn.
 
-Stage 3 nhận cụm ứng viên từ Stage 2, tái sử dụng embedding từ Stage 1, và áp dụng bộ giải quyết Two-Pass LLM để đi từ cụm ứng viên đến canonical entities có thể rewrite lại đồ thị.
+Kết quả cuối cùng là một Knowledge Graph đã được hợp nhất ở mức thực thể, sẵn sàng cho bước import vào Neo4j và khai thác trong hệ thống hỏi đáp. So với graph thô sau extraction, graph sau Entity Resolution có cấu trúc nhất quán hơn, giảm phân mảnh và hỗ trợ tốt hơn cho các truy vấn cần tổng hợp thông tin từ nhiều nguồn.
 
-\subsection{Pass 1: phân rã cụm thành nhóm con}
+\section{Kiểm soát chất lượng và tóm tắt chương}
 
-Ở Pass 1, LLM phân hoạch mỗi cluster thành `sub\_groups` và `singletons`. Một ràng buộc quan trọng là đầu ra phải tạo thành phân hoạch đầy đủ: mọi entity đầu vào đều phải xuất hiện đúng một lần.
+Entity Resolution luôn phải cân bằng giữa hai loại lỗi. \textit{Under-merge} xảy ra khi hai node cùng thực thể nhưng không được gộp, khiến graph vẫn bị phân mảnh. \textit{Over-merge} xảy ra khi hai thực thể khác nhau bị gộp nhầm, làm sai lệch tri thức. Pipeline trong chương này được thiết kế để tạo ứng viên theo hướng rộng ở Stage~2, nhưng ra quyết định merge theo hướng thận trọng ở Stage~3. Sự kết hợp giữa nhãn thực thể, embedding similarity, LLM reasoning và kiểm tra bằng ngưỡng giúp giảm nguy cơ over-merge mà vẫn xử lý được nhiều biến thể tên gọi phổ biến trong dữ liệu tiếng Việt.
 
-\subsection{Validation gate sau Pass 1}
+Các trường hợp khó trong Entity Resolution tiếng Việt bao gồm: tên tổ chức có biến thể dài/ngắn như ``Khoa Công nghệ Thông tin'' và ``Khoa CNTT''; tên người đi kèm chức danh hoặc học vị; các đơn vị có tên gần giống nhưng thuộc cấp hoặc ngữ cảnh khác nhau; và alias không chính xác do LLM extraction sinh ra. Những trường hợp này cho thấy Entity Resolution không thể chỉ dựa vào so khớp chuỗi, mà cần kết hợp nhiều tín hiệu và vẫn phải chấp nhận rằng một số quyết định cần được kiểm tra trong thực nghiệm.
 
-Để tránh phụ thuộc tuyệt đối vào kết quả LLM, pipeline áp dụng lớp kiểm tra dựa trên embedding. Với nhóm gồm $n$ vector chuẩn hóa $\{\mathbf{v}_1,\ldots,\mathbf{v}_n\}$, độ tương tự nội nhóm được tính:
-\[
-\mathrm{IntraSim} = \frac{2}{n(n-1)}\sum_{i<j}\cos(\mathbf{v}_i, \mathbf{v}_j)
-\]
-
-Nếu nhóm vi phạm ngưỡng nội nhóm hoặc cấu hình merge bị xem là kém tin cậy, hệ thống chuyển sang conservative fallback thay vì chấp nhận merge trực tiếp.
-
-\subsection{Pass 2: canonical synthesis}
-
-Với các nhóm đủ điều kiện (thường có từ 2 phần tử trở lên), LLM sinh canonical entity gồm các trường cốt lõi: `canonical\_id`, `labels`, `properties`, `merged\_from`. Các nhóm không đạt điều kiện merge vẫn được giữ singleton để giảm rủi ro \textit{over-merge}.
-
-\subsection{Prompt engineering cho tiếng Việt}
-
-Prompt trong resolver được thiết kế theo quy tắc miền dữ liệu tiếng Việt, đặc biệt cho các trường hợp alias dạng viết tắt và biến thể tên tổ chức. Mục tiêu là tăng độ nhất quán ngữ nghĩa thay vì chỉ so khớp bề mặt chuỗi.
-
-\section{Conservative fallback và ngưỡng quyết định}
-
-Trong chế độ fallback, hai entity chỉ được gộp khi đồng thời thỏa:
-\begin{itemize}
-    \item cosine similarity vượt ngưỡng cao;
-    \item có tín hiệu tương đồng chuỗi tên/alias (giao nhau hoặc bao hàm chuỗi con).
-\end{itemize}
-
-Bảng~\ref{tab:thresholds_er} tổng hợp các ngưỡng đang dùng trong pipeline ER hiện tại.
-
-\begin{table}[h]
-\centering
-\caption{Các ngưỡng similarity trong pipeline Entity Resolution}
-\label{tab:thresholds_er}
-\begin{tabular}{|l|c|l|}
-\hline
-\textbf{Thành phần} & \textbf{Ngưỡng} & \textbf{Vai trò} \\
-\hline
-Stage 2 fallback clustering & 0.72 & Gom cụm ứng viên theo hướng recall \\
-\hline
-Pass 1 subgroup validation & 0.83 & Kiểm tra độ chặt nội nhóm trước Pass 2 \\
-\hline
-Conservative fallback merge & 0.88 & Chỉ merge khi độ tin cậy rất cao \\
-\hline
-\end{tabular}
-\end{table}
-
-\section{Merge engine và graph rewiring}
-
-\subsection{Tạo ánh xạ canonical}
-
-Sau khi thu được danh sách canonical entities, Stage 3 xây dựng:
-\begin{itemize}
-    \item `canonical\_map`: ánh xạ từ node cũ sang canonical id;
-    \item `canonical\_overrides`: thuộc tính/nhãn canonical cần ưu tiên khi rewrite.
-\end{itemize}
-
-Cơ chế flatten ánh xạ đảm bảo mọi id cũ hội tụ về một canonical root duy nhất.
-
-\subsection{Rewire node và quan hệ}
-
-Khi rewrite đồ thị, hệ thống tạo lại tập node canonical và cập nhật endpoint của toàn bộ quan hệ theo canonical map. Các cạnh không hợp lệ được loại bỏ, gồm:
-\begin{itemize}
-    \item self-loop phát sinh sau merge;
-    \item cạnh thiếu endpoint;
-    \item cạnh trỏ tới node không tồn tại sau rewrite.
-\end{itemize}
-
-Kết quả được ghi ra `output\_graph/`, đồng thời xuất `id\_remap.json` và `rewire\_audit.json` để truy vết.
-
-\section{Đánh giá và kiểm thử}
-
-\subsection{Đánh giá định lượng ở Stage 2}
-
-Hệ thống cung cấp các chỉ số tự động cho chất lượng cụm:
-\begin{itemize}
-    \item `silhouette\_score` (khi đủ điều kiện tính);
-    \item `num\_clusters`, `num\_noise`;
-    \item thống kê phân bố kích thước cụm.
-\end{itemize}
-
-Các chỉ số này được lưu trong `cluster\_metrics.json` và hiển thị qua dashboard HTML để hỗ trợ rà soát nhanh.
-
-\subsection{Kiểm thử chức năng theo nhiều mức}
-
-Pipeline ER hiện có các lớp kiểm thử chính:
-\begin{itemize}
-    \item \textbf{E2E pipeline test} trên mock data cho toàn luồng Stage 1--3;
-    \item \textbf{Stage 3 regression test} với cấu hình conservative fallback;
-    \item \textbf{Two-Pass LLM tests} cho pass 1/pass 2, hard-negative và tính đầy đủ phân hoạch;
-    \item \textbf{Merge engine unit tests} cho quy tắc remap canonical.
-\end{itemize}
-
-Sự kết hợp giữa đánh giá định lượng và test chức năng giúp tăng độ tin cậy vận hành trước khi đưa kết quả sang các thành phần downstream (truy vấn, RAG, phân tích đồ thị).
-
-\section{Hạn chế và hướng cải tiến}
-
-Mặc dù pipeline đã đạt mục tiêu vận hành ổn định, hệ thống vẫn còn một số hạn chế:
-\begin{itemize}
-    \item phụ thuộc vào chất lượng extraction đầu vào từ LLM ở chương trước;
-    \item ngưỡng similarity hiện chủ yếu mang tính heuristic, chưa được học thích nghi theo miền;
-    \item chi phí và độ trễ của LLM tăng theo số lượng cluster lớn.
-\end{itemize}
-
-Các hướng phát triển tiềm năng gồm: học ngưỡng động theo tập dữ liệu, bổ sung cơ chế human-in-the-loop cho các case biên, và khai thác phản hồi đánh giá để hiệu chỉnh prompt/validator theo vòng lặp liên tục.
-
-\section{Tóm tắt chương}
-
-Chương này trình bày pipeline Entity Resolution 3 giai đoạn cho Knowledge Graph tiếng Việt, với nguyên tắc cốt lõi: \textit{Stage 2 ưu tiên recall, Stage 3 ưu tiên precision}. Điểm nhấn của cách tiếp cận là kết hợp năng lực ngữ nghĩa của LLM với các validation gate dựa trên embedding và fallback bảo thủ, từ đó giảm rủi ro hợp nhất sai và tạo đồ thị sau cùng nhất quán hơn cho các bước khai thác tri thức ở chương tiếp theo.
+Tóm lại, chương này trình bày Entity Resolution như bước làm sạch và hợp nhất graph sau trích xuất. Pipeline gồm ba giai đoạn: chuẩn hóa và biểu diễn thực thể, sinh cụm ứng viên bằng blocking và clustering, sau đó quyết định hợp nhất bằng Two-Pass LLM Resolution kết hợp kiểm soát bảo thủ. Kết quả của chương này là một graph ít phân mảnh hơn, đóng vai trò đầu vào quan trọng cho lưu trữ Neo4j, truy vấn graph và các phương thức hỏi đáp ở Chương~6.

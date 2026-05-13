@@ -1,0 +1,24 @@
+flowchart TB
+    subgraph normalize[normalize.py]
+        A[Raw entity properties] --> B[strip_accents]
+        B --> C[normalize_text]
+        C --> D{primary_type}
+        D -->|PERSON| E[normalize_person_name<br/>strip academic titles]
+        D -->|other| F[normalize_name_by_type]
+        E --> G[build_embedding_text]
+        F --> G
+    end
+
+    subgraph titles[Academic Titles Stripped]
+        H[GS.TS, PGS.TS, TS, ThS, CN, KS]
+    end
+
+    subgraph representation[representation.py]
+        G --> I{semantic model<br/>available?}
+        I -->|yes| J[sentence-transformers<br/>multilingual embedding]
+        I -->|no| K[stable_hash_embedding<br/>SHA256-based fallback]
+        J --> L[768-dim vector]
+        K --> L
+    end
+
+    titles -.-> E

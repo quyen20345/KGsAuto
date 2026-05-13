@@ -1,352 +1,68 @@
-\chapter{Quy trình trích xuất tri thức}
+\chapter{Phân tích bài toán và kiến trúc tổng thể hệ thống}
 
-\section{Tổng quan quy trình trích xuất}
+\section{Đặc điểm dữ liệu về Đại học Công nghệ}
 
-Trong kiến trúc tổng thể của hệ thống, giai đoạn trích xuất đóng vai trò là cầu nối giữa dữ liệu phi cấu trúc và biểu diễn tri thức có cấu trúc. Đầu vào của giai đoạn này là các tài liệu Markdown thu thập từ website của Trường Đại học Công nghệ -- ĐHQGHN, còn đầu ra là các mảnh đồ thị tri thức ở dạng JSON, gồm tập node và relationship có thể tiếp tục được đưa sang các bước downstream như entity resolution, nhập vào Neo4j, hoặc phục vụ các cơ chế truy vấn và suy luận ở các thành phần sau.
+Dữ liệu về Trường Đại học Công nghệ bao gồm nhiều nhóm thông tin khác nhau như cơ cấu tổ chức, khoa viện, phòng ban, cán bộ, chương trình đào tạo, tuyển sinh, thông báo, tin tức, sự kiện, học bổng và các hoạt động sinh viên. Các thông tin này thường được công bố trên website dưới dạng bài viết hoặc trang giới thiệu. Sau khi thu thập, dữ liệu được chuẩn hóa về dạng Markdown để thuận tiện cho việc xử lý tự động.
 
-Khác với một bộ trích xuất đơn thuần chỉ gọi mô hình ngôn ngữ lớn (LLM) cho từng tài liệu độc lập, pipeline trong luận văn được thiết kế theo hướng có ngữ cảnh cục bộ và có khả năng vận hành batch. Ý tưởng chính là: các tài liệu gần nhau về chủ đề thường chia sẻ tập thực thể và cách gọi tên tương tự nhau; do đó, nếu xử lý chúng trong cùng một cụm và tái sử dụng thông tin đã trích xuất trước đó, hệ thống có thể tăng tính nhất quán của tên thực thể, alias và mô tả ngữ nghĩa.
+Dữ liệu đầu vào có một số đặc điểm quan trọng. Thứ nhất, thông tin có tính phân tán. Một thực thể có thể được nhắc đến trong nhiều bài viết khác nhau, ví dụ một khoa có thể xuất hiện trong trang giới thiệu, tin tuyển sinh, sự kiện nghiên cứu và thông báo học vụ. Thứ hai, tên gọi thực thể không hoàn toàn nhất quán. Cùng một đơn vị có thể được viết bằng tên đầy đủ, tên viết tắt hoặc biến thể khác nhau. Thứ ba, nhiều câu hỏi của người dùng không chỉ cần tìm một đoạn văn bản mà cần hiểu quan hệ giữa các thực thể.
 
-Về mặt triển khai, pipeline extraction hiện tại được tổ chức trong module `services/extraction/` với các lớp chính sau:
-\begin{itemize}
-    \item lớp giao tiếp dòng lệnh `cli.py` để nhận tham số chạy thực nghiệm;
-    \item lớp cấu hình `config.py` để gom toàn bộ tham số runtime và quản lý đường dẫn đầu ra;
-    \item lớp điều phối trung tâm `extract.py` với đối tượng `KGExtractor` chịu trách nhiệm đọc file, phân cụm, gọi LLM, kiểm tra kết quả và ghi output;
-    \item lớp xây dựng prompt `prompt.py` để định nghĩa schema JSON và các quy tắc trích xuất;
-    \item lớp kiểm tra cấu trúc `validation.py`;
-    \item lớp ghi nhận chỉ số và tổng hợp thống kê `metrics.py`.
-\end{itemize}
+Những đặc điểm này khiến bài toán hỏi đáp trên dữ liệu Đại học Công nghệ không thể chỉ dựa vào tìm kiếm từ khóa hoặc semantic search đơn giản. Hệ thống cần một tầng biểu diễn tri thức có cấu trúc để lưu lại các thực thể, quan hệ và nguồn gốc thông tin. Knowledge Graph là lựa chọn phù hợp cho yêu cầu này vì graph cho phép biểu diễn đồng thời nội dung, quan hệ và provenance của thông tin.
 
-Luồng xử lý tổng quát của pipeline có thể tóm tắt như sau:
-\begin{enumerate}
-    \item nhận cấu hình chạy từ CLI;
-    \item quét toàn bộ file Markdown trong thư mục đầu vào;
-    \item phân cụm tài liệu theo độ tương đồng tên file;
-    \item xây dựng ngữ cảnh phân lớp cho từng cụm;
-    \item sinh prompt và gọi LLM để trích xuất tri thức;
-    \item làm sạch và parse kết quả JSON;
-    \item kiểm tra tính hợp lệ của cấu trúc đầu ra;
-    \item ghi file JSON đầu ra, đồng thời cập nhật log và metrics cho toàn bộ batch.
-\end{enumerate}
+\section{Yêu cầu đối với hệ thống hỏi đáp dựa trên Knowledge Graph}
 
-Hình~\ref{fig:extraction_pipeline_overview} minh họa quan hệ giữa các thành phần chính trong pipeline extraction.
+Từ đặc điểm dữ liệu nêu trên, hệ thống cần đáp ứng bốn nhóm yêu cầu chính.
 
-\begin{figure}[h]
+Thứ nhất, hệ thống phải chuyển đổi được dữ liệu văn bản phi cấu trúc thành biểu diễn tri thức có cấu trúc. Các thực thể và quan hệ được trích xuất cần có nhãn, thuộc tính và provenance để truy vết về nguồn gốc. Yêu cầu này giúp graph không chỉ là tập node và relationship rời rạc, mà còn có đủ bằng chứng để kiểm tra lại khi cần.
+
+Thứ hai, hệ thống phải xử lý được chất lượng graph sau trích xuất. Do dữ liệu đến từ nhiều tài liệu và LLM có thể sinh các biến thể tên gọi khác nhau, graph thô dễ bị phân mảnh thành nhiều node cùng tham chiếu đến một thực thể thật. Vì vậy, Entity Resolution là bước cần thiết để tạo canonical entity và cập nhật lại relationship về các thực thể chuẩn.
+
+Thứ ba, hệ thống phải hỗ trợ truy xuất bằng chứng cho ứng dụng hỏi đáp. Người dùng đặt câu hỏi tự nhiên, trong khi hệ thống cần tìm bằng chứng phù hợp từ cả văn bản gốc và graph. Với câu hỏi mô tả trực tiếp, Semantic Search trên văn bản có thể đủ. Với câu hỏi về quan hệ, Naive Graph RAG, Graph Search hoặc Hybrid RAG có thể phù hợp hơn. Do đó, hệ thống cần hỗ trợ nhiều chế độ truy xuất để so sánh và lựa chọn chiến lược phù hợp.
+
+Thứ tư, hệ thống cần có khả năng quan sát, kiểm chứng và đánh giá. Câu trả lời nên đi kèm bằng chứng truy xuất để người dùng hoặc người phát triển có thể kiểm tra nguồn gốc. Các API và giao diện cũng cần hỗ trợ tìm kiếm thực thể, xem quan hệ, quan sát provenance và hiệu chỉnh graph khi phát hiện lỗi. Những yêu cầu này tạo nền tảng cho phần đánh giá hỏi đáp ở Chương~7.
+
+\section{Kiến trúc tổng thể hệ thống KGsAuto}
+
+Hệ thống KGsAuto được thiết kế theo hướng pipeline gồm nhiều thành phần độc lập nhưng liên kết với nhau qua dữ liệu trung gian. Kiến trúc tổng thể được minh họa trong Hình~\ref{fig:architecture-overview}.
+
+\begin{figure}[H]
     \centering
-    % Có thể thay bằng hình kiến trúc thật của hệ thống ở bước hoàn thiện cuối.
-    \fbox{\parbox{0.9\textwidth}{
-    \centering
-    Markdown documents $\rightarrow$ Clustering theo filename $\rightarrow$ Layered context \\
-    $\rightarrow$ Prompt-based extraction bằng LLM $\rightarrow$ Validation $\rightarrow$ JSON Property Graph
-    }}
-    \caption{Tổng quan pipeline trích xuất tri thức từ tài liệu Markdown.}
-    \label{fig:extraction_pipeline_overview}
+    \includegraphics[width=0.95\textwidth]{image/generated/chapter3/architecture-overview.png}
+    \caption{Kiến trúc tổng thể của hệ thống KGsAuto}
+    \label{fig:architecture-overview}
 \end{figure}
 
-Mục tiêu của giai đoạn này không phải là tạo ngay một knowledge graph hoàn chỉnh ở mức toàn cục, mà là tạo ra các \textit{graph fragment} có chất lượng đủ tốt, có metadata nguồn gốc rõ ràng, và giữ được nhiều tín hiệu ngữ nghĩa để các bước downstream có thể tiếp tục chuẩn hóa và hợp nhất thực thể.
+Kiến trúc này có thể hiểu như một chuỗi tầng xử lý liên kết với nhau. Tầng dữ liệu đầu vào chứa các tài liệu Markdown về Đại học Công nghệ. Tầng trích xuất sử dụng LLM và prompt có ràng buộc schema để tạo graph fragment gồm node, relationship và provenance. Tầng xử lý chất lượng thực hiện Entity Resolution nhằm phát hiện, hợp nhất và chuẩn hóa các thực thể trùng lặp. Sau đó, tầng lưu trữ nhập graph đã xử lý vào Neo4j và lập chỉ mục văn bản vào Qdrant. Tầng truy xuất và hỏi đáp cung cấp bốn chế độ Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG. Cuối cùng, tầng ứng dụng gồm Chat API, Graph API và frontend để người dùng khai thác hệ thống.
 
-\section{Phân cụm tài liệu và xử lý theo ngữ cảnh cục bộ}
+Trong codebase, tầng trích xuất được triển khai trong \path{services/extraction}, tầng Entity Resolution trong \path{services/entity_resolution}, tầng hỏi đáp trong \path{services/rag_system} và \path{apps/chat_api}, Graph API trong \path{apps/graph_api}, còn frontend trong \path{apps/frontend}.
 
-\subsection{Động cơ phân cụm tài liệu}
+\section{Luồng dữ liệu end-to-end}
 
-Một thách thức quan trọng khi trích xuất tri thức từ tập tài liệu web là cùng một thực thể có thể xuất hiện ở nhiều tài liệu khác nhau với các cách gọi tên hơi khác nhau. Ví dụ, một đơn vị có thể được nhắc dưới dạng tên đầy đủ, tên viết tắt, hoặc một biến thể có kèm tên đơn vị chủ quản. Nếu mỗi file được xử lý hoàn toàn độc lập, mô hình rất dễ tạo ra các node không nhất quán ngay từ bước extraction.
+Luồng dữ liệu của hệ thống bắt đầu từ các tài liệu Markdown. Các tài liệu này được đọc, phân nhóm và đưa vào prompt trích xuất. LLM sinh ra các graph fragment dưới dạng JSON. Mỗi fragment chứa danh sách node, relationship và metadata phục vụ truy vết, bao gồm thông tin về nguồn tài liệu hoặc đoạn văn bản liên quan.
 
-Để giảm vấn đề này, hệ thống không xử lý toàn bộ tập file như một dãy độc lập, mà trước hết gom các tài liệu có tên file gần nhau thành các cụm. Giả định thực nghiệm ở đây là các file có tên gần nhau thường thuộc cùng một chủ đề hoặc cùng một nhóm sự kiện, từ đó có khả năng chia sẻ tập thực thể và quan hệ tương tự nhau.
+Sau giai đoạn trích xuất, các graph fragment được đưa vào pipeline Entity Resolution. Giai đoạn này chuẩn hóa tên thực thể, tạo embedding, tìm các cụm ứng viên có khả năng trùng lặp, sau đó dùng LLM và các kiểm tra bổ sung để quyết định merge hoặc split. Kết quả là tập canonical entity và bản đồ ánh xạ từ entity cũ sang entity chuẩn.
 
-\subsection{Token hóa tên file và độ đo tương đồng}
+Tiếp theo, hệ thống rewiring các relationship để chúng trỏ đến canonical entity thay vì các node trùng lặp ban đầu. Graph sau xử lý được nhập vào Neo4j. Song song với đó, dữ liệu văn bản được chunking, tạo embedding và lưu vào Qdrant để phục vụ semantic retrieval.
 
-Trong cài đặt hiện tại, mỗi file Markdown được biểu diễn bằng tập token lấy từ phần `stem` của tên file. Hàm token hóa chuyển toàn bộ chuỗi về chữ thường, tách theo ký tự không phải chữ số/chữ cái, đồng thời loại bỏ các token chỉ gồm chữ số. Ví dụ, tên file `uet_admission_01.md` sẽ tạo ra tập token gần dạng \{`uet`, `admission`\}.
+Khi người dùng đặt câu hỏi, hệ thống hỏi đáp chọn chế độ truy xuất phù hợp. Semantic Search truy xuất markdown chunk từ Qdrant. Naive Graph RAG và Graph Search khai thác node, relationship hoặc graph fact từ Neo4j ở các mức độ khác nhau. Hybrid RAG kết hợp bằng chứng văn bản và bằng chứng graph để sinh câu trả lời cuối cùng. Các bằng chứng truy xuất được giữ lại để hỗ trợ kiểm chứng, phân tích lỗi và đánh giá bằng RAGAS.
 
-Độ tương đồng giữa hai file được tính bằng hệ số Jaccard trên hai tập token:
-\[
-J(A, B) = \frac{|A \cap B|}{|A \cup B|}
-\]
-trong đó $A$ và $B$ là hai tập token của hai tên file. Đây là một lựa chọn đơn giản nhưng phù hợp với mục tiêu thực dụng của hệ thống: phân nhóm nhanh, ít chi phí, và đủ tốt để gom những file có cùng tiền tố hoặc cùng cụm từ chủ đề.
+\section{Mô hình dữ liệu tri thức}
 
-Trong cài đặt hiện tại, ngưỡng phân cụm mặc định là:
-\[
-\tau_{cluster} = 0.3
-\]
-Nếu độ tương đồng của một file với một cụm đang có vượt ngưỡng này, file sẽ được gán vào cụm phù hợp nhất; ngược lại, hệ thống tạo một cụm mới. Thuật toán sử dụng chiến lược greedy: duyệt các file theo thứ tự tên, so sánh với token hợp nhất của từng cụm đã tạo, rồi gán vào cụm có điểm cao nhất thỏa ngưỡng.
+Mô hình dữ liệu của hệ thống được xây dựng theo hướng Property Graph. Mỗi node biểu diễn một thực thể trong miền tri thức, ví dụ tổ chức, đơn vị, cá nhân, chương trình đào tạo, sự kiện, văn bản hoặc nền tảng số. Việc lựa chọn các nhóm thực thể này phù hợp với đặc trưng của Knowledge Graph trong môi trường giáo dục đại học, nơi các khái niệm như đơn vị đào tạo, con người, chương trình học, sự kiện, tài liệu và dịch vụ trực tuyến thường là các thành phần trung tâm của lược đồ miền \cite{woldai2023ontology}. Mỗi node có các thuộc tính như tên, tên thay thế, mô tả, loại thực thể và nguồn gốc trích xuất.
 
-\subsection{Tổ chức xử lý theo cụm}
+Trong khóa luận này, schema không được xây dựng như một ontology RDF/OWL hình thức đầy đủ. Thay vào đó, schema đóng vai trò định hướng cho prompt trích xuất và lưu trữ Property Graph. Cách tiếp cận này cân bằng giữa tính linh hoạt của LLM và nhu cầu duy trì tính nhất quán về nhãn thực thể, kiểu quan hệ và thuộc tính trong graph.
 
-Sau khi phân cụm xong, pipeline không chỉ dùng kết quả này như một bước tiền xử lý, mà còn dùng nó để tổ chức toàn bộ luồng chạy batch. Mỗi cụm được xem như một đơn vị xử lý độc lập. Nếu số worker cho phép lớn hơn 1, các cụm có thể được xử lý song song; trong từng cụm, các file vẫn được duyệt tuần tự để có thể tái sử dụng ngữ cảnh của các file đã xử lý trước.
+Relationship biểu diễn quan hệ giữa hai node. Ví dụ, một đơn vị có thể trực thuộc một tổ chức, một cá nhân có thể giữ chức vụ trong một đơn vị, một sự kiện có thể được tổ chức bởi một đơn vị, hoặc một văn bản có thể liên quan đến một chương trình đào tạo. Relationship cũng có thể mang thuộc tính như loại quan hệ, mô tả ngắn, mức độ tin cậy hoặc thông tin nguồn.
 
-Cách tổ chức này tạo ra hai lợi ích chính. Thứ nhất, nó giữ được tính cục bộ của ngữ cảnh: thông tin từ một nhóm tài liệu về tuyển sinh không làm nhiễu việc trích xuất một nhóm tài liệu về hợp tác quốc tế. Thứ hai, nó tạo nền tảng thuận lợi cho logging và quan sát hệ thống, vì mỗi cluster trở thành một đơn vị có thể theo dõi riêng về mặt tiến trình, số file thành công, số file lỗi và thời gian xử lý.
+Một yêu cầu quan trọng của mô hình dữ liệu là khả năng provenance. Vì graph được trích xuất tự động bằng LLM, mỗi thông tin cần có liên kết đến tài liệu hoặc đoạn văn bản gốc để hỗ trợ kiểm chứng. Provenance giúp người dùng và người phát triển hệ thống phân tích lỗi, đánh giá chất lượng trích xuất và chỉnh sửa graph khi cần thiết.
 
-\subsection{Cơ chế ngữ cảnh phân lớp}
+\section{Vai trò của các thành phần trong hệ thống}
 
-Một điểm đặc trưng của pipeline extraction trong luận văn là cơ chế \textit{layered context}, gồm ba lớp ngữ cảnh bổ sung cho prompt trích xuất:
-\begin{itemize}
-    \item \textbf{Core pack}: tập hướng dẫn miền có tính toàn cục, ví dụ yêu cầu dùng tên chuẩn ổn định và giữ alias nhất quán giữa các tài liệu liên quan.
-    \item \textbf{Local context}: tập bản ghi thực thể đã trích xuất ở các file trước đó trong cùng cụm.
-    \item \textbf{Rolling summary}: tập các fact gần nhất đã được ghi nhận trong cụm, gồm mô tả node và quan hệ.
-\end{itemize}
+Mỗi thành phần trong hệ thống đảm nhiệm một vai trò riêng trong pipeline. \path{services/extraction} chịu trách nhiệm biến văn bản thành graph thô. Đây là bước tạo dữ liệu nền tảng cho toàn bộ hệ thống, vì các lỗi bỏ sót thực thể hoặc quan hệ ở giai đoạn này có thể ảnh hưởng đến Entity Resolution và truy xuất graph về sau.
 
-Trong cài đặt hiện tại, trạng thái cụm được lưu bởi lớp `ClusterState`. Mỗi khi một file được trích xuất thành công, pipeline đưa các node và relationship vừa thu được vào trạng thái này. Từ mỗi node, hệ thống tạo ra hai loại thông tin:
-\begin{itemize}
-    \item một \textit{entity record} dạng `name | node_id | aliases: ...` để phục vụ local context;
-    \item một \textit{summary fact} dạng `LABEL: name --- description` để phục vụ rolling summary.
-\end{itemize}
-Đối với relationship, hệ thống ghi fact theo dạng `REL: source -[TYPE]-> target`.
+\path{services/entity_resolution} chịu trách nhiệm nâng cao chất lượng graph bằng cách xử lý trùng lặp thực thể. Thành phần này đặc biệt quan trọng vì dữ liệu được trích xuất từ nhiều tài liệu khác nhau và LLM có thể sinh nhiều biến thể tên gọi. Kết quả của thành phần này là canonical entity và graph đã được rewiring để giảm phân mảnh.
 
-Khi chuẩn bị prompt cho một file mới, extractor lấy tối đa `local\_context\_top\_k = 5` entity records đầu tiên trong cụm làm local context, đồng thời lấy tối đa `rolling\_summary\_max\_items = 20` fact gần nhất làm rolling summary. Cơ chế này cho phép mô hình nhìn thấy lịch sử cục bộ của cụm mà không cần nạp lại toàn bộ các file trước đó.
+Neo4j và Qdrant đóng vai trò hai kho lưu trữ bổ trợ. Neo4j lưu Knowledge Graph và hỗ trợ truy vấn quan hệ có cấu trúc. Qdrant lưu vector của các đoạn văn bản, giúp hệ thống tìm kiếm ngữ nghĩa trên tài liệu gốc. Việc dùng cả hai cho phép hệ thống khai thác đồng thời quan hệ trong graph và nội dung chi tiết trong văn bản.
 
-\subsection{Phân bổ ngân sách ngữ cảnh}
+\path{services/rag_system} cung cấp tầng truy xuất và hỏi đáp đa chế độ. Thành phần này trừu tượng hóa các chiến lược truy xuất khác nhau để cùng một câu hỏi có thể được chạy qua Semantic Search, Naive Graph RAG, Graph Search hoặc Hybrid RAG. \path{apps/chat_api} đóng vai trò API hỏi đáp, còn \path{apps/graph_api} cung cấp các API thao tác graph, tìm kiếm thực thể và truy xuất dữ liệu phục vụ frontend.
 
-Vì prompt có độ dài hữu hạn, hệ thống sử dụng một ngân sách ký tự tổng thể cho ba lớp ngữ cảnh. Trong cấu hình hiện tại, ngân sách mặc định là `context\_char\_budget = 4000`. Bộ xây dựng prompt chia đều ngân sách này cho ba lớp, tức là xấp xỉ:
-\[
-B_{section} \approx \frac{4000}{3}
-\]
-cho mỗi section. Nếu độ dài vượt quá ngân sách tương ứng, nội dung sẽ bị cắt và gắn hậu tố `...(truncated)`.
-
-Cách làm này không tối ưu tuyệt đối, nhưng có hai ưu điểm quan trọng: dễ kiểm soát chi phí token, và đủ đơn giản để vận hành ổn định. Trong thực nghiệm, việc giới hạn context theo cluster và theo ngân sách ký tự giúp prompt vẫn giữ được thông tin hữu ích mà không phình quá lớn khi số lượng tài liệu tăng lên.
-
-Hình~\ref{fig:layered_context_extraction} mô tả vai trò của ba lớp ngữ cảnh trong pipeline extraction.
-
-\begin{figure}[h]
-    \centering
-    % Có thể thay bằng sơ đồ minh họa thực sự nếu cần khi hoàn thiện bản in.
-    \fbox{\parbox{0.9\textwidth}{
-    \centering
-    Core Pack (global rules) \\
-    $+$ Local Context (prior entities in same cluster) \\
-    $+$ Rolling Summary (recent facts in same cluster)
-    }}
-    \caption{Cơ chế ngữ cảnh phân lớp được đưa vào prompt trích xuất.}
-    \label{fig:layered_context_extraction}
-\end{figure}
-
-\section{Thiết kế prompt và cơ chế trích xuất bằng LLM}
-
-\subsection{Định hướng thiết kế prompt}
-
-Prompt trong hệ thống không chỉ đơn thuần yêu cầu LLM ``trích xuất thực thể và quan hệ'', mà được thiết kế như một hợp đồng đầu ra giữa mô hình và pipeline. Hợp đồng này bao gồm ba thành phần: schema JSON bắt buộc, tập nhãn thực thể cho phép, và các quy tắc ngữ nghĩa để giảm nhiễu trong quá trình sinh graph.
-
-Quan điểm thiết kế ở đây là: chất lượng extraction không thể chỉ dựa vào năng lực ngôn ngữ tổng quát của mô hình, mà phải được ràng buộc bởi một prompt đủ cụ thể để đầu ra có thể tiêu thụ được ở downstream. Vì vậy, prompt hiện tại được viết theo hướng \textit{schema-first} và \textit{downstream-aware}.
-
-\subsection{Schema đầu ra cho node và relationship}
-
-Hệ thống yêu cầu mô hình trả về đúng một đối tượng JSON có hai mảng `nodes` và `relationships`. Mỗi node có cấu trúc gồm `id`, `labels` và `properties`; mỗi relationship có `id`, `type`, `source`, `target` và `properties`.
-
-Đối với node, các thuộc tính quan trọng nhất là:
-\begin{itemize}
-    \item `name`: tên chuẩn của thực thể;
-    \item `aliases`: các biến thể tên, viết tắt, bản dịch hoặc cách gọi đồng tham chiếu trong cùng ngữ cảnh;
-    \item `chunk\_id`: định danh của file/chunk nguồn;
-    \item `model\_extracted`: mô hình đã sinh ra kết quả;
-    \item `description`: mô tả ngắn, factual, giúp phân biệt thực thể với các thực thể gần đồng danh khác.
-\end{itemize}
-
-Đối với relationship, hệ thống lưu `type` theo dạng chữ hoa gạch dưới (`UPPER\_SNAKE\_CASE`) và giữ thêm `chunk\_id`, `model\_extracted`, `description` trong `properties` để bảo toàn ngữ cảnh và nguồn gốc của cạnh.
-
-\subsection{Tập nhãn thực thể và nguyên tắc gán nhãn}
-
-Một khác biệt quan trọng giữa pipeline này với cách extract tự do là hệ thống chỉ cho phép một tập nhãn hữu hạn, được định nghĩa sẵn trong `prompt.py`. Tập nhãn hiện tại tập trung vào miền đại học, gồm các nhóm như:
-\begin{itemize}
-    \item tổ chức học thuật: `UNIVERSITY`, `FACULTY`, `DEPARTMENT`, `INSTITUTE`, `LAB`;
-    \item đơn vị và hạ tầng: `ADMINISTRATIVE\_UNIT`, `LOCATION`, `BUILDING`, `ROOM`, `SYSTEM`, `WEBSITE`;
-    \item đối tượng học thuật: `PROGRAM`, `COURSE`, `RESEARCH\_PROJECT`, `RESEARCH\_AREA`, `PUBLICATION`, `DOCUMENT`;
-    \item tác nhân và sự kiện: `PERSON`, `EVENT`, `PARTNERSHIP`, `SCHOLARSHIP`.
-\end{itemize}
-
-Prompt yêu cầu `labels` phải chứa đúng một nhãn và phải là nhãn cụ thể nhất có thể. Mục tiêu của ràng buộc này là tránh tình trạng mô hình sinh ra các nhãn quá chung hoặc không ổn định giữa các file, từ đó giúp downstream dễ chuẩn hóa hơn.
-
-\subsection{Quy tắc đặt tên, alias và mô tả}
-
-Phần rules trong prompt được thiết kế để giải quyết các lỗi extraction thường gặp khi áp dụng LLM cho tiếng Việt. Cụ thể, hệ thống cấm dùng các tham chiếu quá chung như ``nhà trường'', ``đơn vị'', ``khoa'', ``phòng'', ``ban'', ``người học'', ``sinh viên'' làm `name` chính nếu văn bản không resolve được về một thực thể cụ thể.
-
-Thay vào đó, `name` phải là tên chuẩn, ổn định và càng chính thức càng tốt. Nếu một cách gọi chung thực ra chỉ cùng một thực thể đã biết trong cùng file, prompt yêu cầu đưa nó vào `aliases` thay vì sinh một node mới. Điều này đặc biệt quan trọng cho downstream entity resolution, vì alias là tín hiệu mạnh giúp phát hiện các biến thể tên.
-
-Tương tự, `description` không được chỉ là một raw span vô nghĩa, mà phải là mô tả ngắn có giá trị phân biệt ngữ nghĩa, chẳng hạn nêu vai trò, đơn vị trực thuộc, chủ đề hoặc bối cảnh liên quan. Quy tắc này làm tăng khả năng tận dụng `description` ở các bước hợp nhất thực thể và giải thích kết quả truy vấn về sau.
-
-\subsection{Quan hệ và mô tả quan hệ}
-
-Prompt không đóng cứng một ontology quan hệ hoàn toàn, nhưng yêu cầu kiểu quan hệ phải ngắn, có tính tái sử dụng và mang nghĩa ngữ nghĩa rõ ràng. Các ví dụ như `PART\_OF`, `LOCATED\_IN`, `OFFERS`, `PROVIDES`, `ORGANIZES`, `MANAGES`, `HAS\_WEBSITE`, `WORKS\_AT` được khuyến khích để mô hình tránh tạo ra các relation type quá dài hoặc mang tính câu văn.
-
-Ngoài `type`, mỗi relationship còn có `description` là một câu hoàn chỉnh giải thích mối liên hệ giữa source và target dựa trên văn bản. Việc giữ mô tả này giúp cạnh không chỉ là một nhãn ký hiệu ngắn, mà còn mang một phần bằng chứng ngữ cảnh có thể dùng để reasoning hoặc giải thích ở downstream.
-
-\subsection{Cơ chế gọi mô hình và xử lý lỗi}
-
-Trong `extract.py`, mỗi file được xử lý qua hàm `extract\_from\_text()`. Hàm này xây dựng prompt, gọi LLM thông qua abstraction chung `get\_llm(...)`, nhận phản hồi, sau đó làm sạch kết quả bằng cách loại bỏ markdown fence như ```json và các đoạn suy nghĩ nội bộ dạng `<think>...</think>` nếu có.
-
-Sau bước làm sạch, hệ thống parse chuỗi thành JSON. Nếu parse thất bại, extractor thực hiện retry theo cơ chế exponential backoff với jitter, tối đa `max\_retries` lần. Nếu vẫn thất bại và cờ `save\_failed` được bật, raw response sẽ được ghi ra thư mục lỗi để phục vụ debug.
-
-Cách thiết kế này cho thấy pipeline extraction được tối ưu cho mục tiêu vận hành ổn định: một file lỗi không làm dừng toàn batch, nhưng các thông tin lỗi cần thiết vẫn được giữ lại để người vận hành có thể phân tích sau.
-
-\section{Kiểm tra đầu ra và ghi nhận chỉ số}
-
-\subsection{Kiểm tra cấu trúc JSON đầu ra}
-
-Sau khi parse thành công, pipeline không mặc định coi kết quả là hợp lệ hoàn toàn, mà đưa qua bước validation cấu trúc. Trong `validation.py`, hệ thống kiểm tra các điều kiện cơ bản sau:
-\begin{itemize}
-    \item đối tượng đầu ra phải chứa hai khóa `nodes` và `relationships`;
-    \item mỗi node phải có `id`, `labels`, `properties`;
-    \item `properties` của node phải có `chunk\_id` và `model\_extracted`;
-    \item mỗi relationship phải có `type`, `source`, `target`;
-    \item endpoint của relationship phải tham chiếu tới node tồn tại trong cùng output;
-    \item các `node id` trong một lần trích xuất phải là duy nhất.
-\end{itemize}
-
-Điểm cần lưu ý là đây là \textit{soft validation}. Khi phát hiện lỗi cấu trúc, hệ thống ghi warning vào log, nhưng không bắt buộc dừng pipeline ngay trong mọi trường hợp. Thiết kế này phản ánh một đánh đổi thực tế: ở giai đoạn extraction bằng LLM, cần ưu tiên khả năng chạy batch ổn định, sau đó kết hợp các cơ chế rà soát và làm sạch tiếp theo ở downstream, thay vì làm pipeline quá cứng và dễ gãy khi gặp dữ liệu biên.
-
-\subsection{Logging theo batch và theo cluster}
-
-Bên cạnh validation, pipeline còn ghi log để quan sát tiến trình chạy thực tế. Trong phiên bản hiện tại, logging không chỉ ở mức batch tổng thể mà còn ở mức cluster. Sau khi phân cụm, hệ thống log số lượng cluster và danh sách file trong từng cluster. Trong quá trình chạy, extractor tiếp tục log khi bắt đầu một cluster, đang xử lý file nào trong cluster đó, file nào được lưu, file nào bị skip và cluster nào kết thúc với bao nhiêu success/failed/skipped.
-
-Mức logging này đặc biệt hữu ích khi chạy với tập tài liệu lớn hoặc chạy song song nhiều cluster, vì người dùng có thể quan sát được cluster được chia như thế nào và đang được xử lý ra sao mà không cần đi sâu vào debugger.
-
-\subsection{Ghi nhận chỉ số vận hành}
-
-Lớp `ExtractionMetrics` được dùng để tổng hợp các chỉ số cho toàn bộ lần chạy. Các nhóm chỉ số chính gồm:
-\begin{itemize}
-    \item \textbf{thống kê file}: số file tổng, số thành công, số lỗi, số bị bỏ qua vì đã có output;
-    \item \textbf{thống kê graph}: tổng số node và relationship được sinh ra;
-    \item \textbf{thống kê tài nguyên}: tổng số token sử dụng và tổng thời gian xử lý;
-    \item \textbf{các chỉ số trung bình}: số node/file, relationship/file, token/file, thời gian/file.
-\end{itemize}
-
-Các chỉ số này được lưu ra file `extraction\_summary\_\{run\_id\}.json`, đồng thời in ra log ở cuối batch. Điều này tạo ra một artifact quan trọng cho quá trình đánh giá thực nghiệm ở luận văn, vì có thể dùng để so sánh ảnh hưởng của cấu hình prompt, provider hoặc threshold clustering tới chất lượng và chi phí extraction.
-
-Bảng~\ref{tab:extraction_config_main} tóm tắt một số tham số cấu hình chính có ảnh hưởng trực tiếp tới hành vi của pipeline.
-
-\begin{table}[h]
-\centering
-\caption{Một số tham số cấu hình quan trọng của pipeline extraction}
-\label{tab:extraction_config_main}
-\begin{tabular}{|l|c|l|}
-\hline
-\textbf{Tham số} & \textbf{Giá trị mặc định} & \textbf{Vai trò} \\
-\hline
-`provider` & 9router & Nhà cung cấp LLM dùng cho extraction \\
-\hline
-`model\_name` & cx/gpt-5.3-codex & Tên mô hình dùng để trích xuất \\
-\hline
-`max\_retries` & 3 & Số lần thử lại khi parse/gọi LLM lỗi \\
-\hline
-`skip\_existing` & True & Bỏ qua file đã có output \\
-\hline
-`context\_char\_budget` & 4000 & Ngân sách ký tự cho layered context \\
-\hline
-`local\_context\_top\_k` & 5 & Số entity record đưa vào local context \\
-\hline
-`rolling\_summary\_max\_items` & 20 & Số fact gần nhất giữ trong summary \\
-\hline
-`cluster\_similarity\_threshold` & 0.3 & Ngưỡng Jaccard để gom file vào cùng cluster \\
-\hline
-`cluster\_max\_workers` & 1 & Số cluster có thể xử lý song song \\
-\hline
-`progress\_log\_every` & 10 & Chu kỳ log tiến độ batch \\
-\hline
-\end{tabular}
-\end{table}
-
-\section{Cấu trúc Property Graph đầu ra}
-
-\subsection{Node như một thực thể có thuộc tính và provenance}
-
-Đầu ra của extraction được tổ chức theo mô hình property graph, trong đó mỗi node đại diện cho một thực thể và có thể mang nhiều thuộc tính. Trong cài đặt hiện tại, pipeline áp dụng quy tắc mỗi node chỉ có một label chính để giữ cho semantics rõ ràng ngay từ đầu. Điều này khác với một số property graph tổng quát cho phép nhiều nhãn trên cùng node, nhưng lại phù hợp với mục tiêu kiểm soát chất lượng extraction trong miền hẹp.
-
-Mỗi node có một `id` được sinh từ tên chuẩn đã sanitize, thường theo dạng:
-\[
-\texttt{node\_[sanitized\_canonical\_name]}
-\]
-Cách sinh id này vừa dễ tái tạo, vừa thuận tiện cho các bước downstream như hợp nhất thực thể hoặc import vào cơ sở dữ liệu đồ thị.
-
-Các thuộc tính `chunk\_id` và `model\_extracted` đóng vai trò provenance tối thiểu, cho phép truy vết node được sinh ra từ file nào và bởi mô hình nào. Đây là một yêu cầu quan trọng nếu muốn hệ thống có khả năng audit và tái lập thực nghiệm.
-
-\subsection{Relationship như liên kết có ngữ cảnh}
-
-Mỗi relationship nối hai node thông qua `source` và `target`, đồng thời có `type` và tập `properties`. Trong cài đặt hiện tại, id của relationship có dạng:
-\[
-\texttt{rel\_[source\_id]\_[target\_id]\_[relationship\_type]}
-\]
-Nhờ vậy, một cạnh vừa có thể được dùng như một primitive trong property graph, vừa mang đủ thông tin để deduplicate hoặc truy vết ở downstream.
-
-Khác với mô hình ba ngôi đơn giản, cạnh ở đây vẫn giữ `description`, `chunk\_id`, `model\_extracted` trong properties. Điều này có nghĩa là quan hệ không chỉ là một nhãn logic rời rạc, mà còn mang theo phần mô tả ngữ cảnh gốc của văn bản. Với các tác vụ reasoning hoặc explanation về sau, đây là một tín hiệu có giá trị.
-
-\subsection{Ví dụ cấu trúc đầu ra}
-
-Bảng~\ref{tab:property_graph_output_fields} tóm tắt các trường chính của output JSON ở mức node và relationship.
-
-\begin{table}[h]
-\centering
-\caption{Các trường chính trong cấu trúc Property Graph đầu ra}
-\label{tab:property_graph_output_fields}
-\begin{tabular}{|l|l|p{7cm}|}
-\hline
-\textbf{Thành phần} & \textbf{Trường} & \textbf{Ý nghĩa} \\
-\hline
-Node & `id` & Định danh cục bộ của thực thể trong lần extraction \\
-\hline
-Node & `labels` & Nhãn loại thực thể, chứa đúng một entity label \\
-\hline
-Node & `properties.name` & Tên chuẩn của thực thể \\
-\hline
-Node & `properties.aliases` & Các biến thể tên, viết tắt, tên dịch hoặc cách gọi tương đương \\
-\hline
-Node & `properties.chunk\_id` & File/chunk nguồn sinh ra thực thể \\
-\hline
-Node & `properties.model\_extracted` & Mô hình LLM đã sinh node \\
-\hline
-Node & `properties.description` & Mô tả ngắn có tính phân biệt ngữ nghĩa \\
-\hline
-Relationship & `id` & Định danh cục bộ của cạnh \\
-\hline
-Relationship & `type` & Loại quan hệ ở dạng `UPPER\_SNAKE\_CASE` \\
-\hline
-Relationship & `source`, `target` & Hai đầu mút của cạnh \\
-\hline
-Relationship & `properties.chunk\_id` & File/chunk nguồn sinh ra cạnh \\
-\hline
-Relationship & `properties.model\_extracted` & Mô hình LLM đã sinh cạnh \\
-\hline
-Relationship & `properties.description` & Câu mô tả mối liên hệ dựa trên văn bản \\
-\hline
-\end{tabular}
-\end{table}
-
-Có thể xem property graph sinh ra ở bước này như một lớp biểu diễn trung gian: đủ giàu để dùng cho các tác vụ sau, nhưng vẫn nhẹ và linh hoạt hơn so với việc ép toàn bộ dữ liệu vào một ontology đầy đủ ở ngay thời điểm extraction.
-
-\section{Cấu hình, vận hành và giới hạn hiện tại}
-
-\subsection{Cách cấu hình và vận hành pipeline}
-
-Pipeline extraction được chạy thông qua CLI, ví dụ:
-\begin{verbatim}
-python -m services.extraction.cli \
-  --input-dir data/raw/uet \
-  --output-dir data/extracted \
-  --provider 9router \
-  --model cx/gpt-5.3-codex
-\end{verbatim}
-
-Cấu hình chạy được gom trong `ExtractionConfig`. Ngoài các tham số về model và thư mục, lớp cấu hình này còn tự tạo `run\_id` theo timestamp để thống nhất tên file log và file summary cho từng lần chạy. Đây là một chi tiết triển khai nhỏ nhưng hữu ích cho việc so sánh thí nghiệm và lưu trữ artifact theo từng run.
-
-Bên cạnh đó, extractor cũng hỗ trợ một số hành vi vận hành quan trọng như:
-\begin{itemize}
-    \item bỏ qua các file đã có output để tiết kiệm chi phí;
-    \item lưu raw response lỗi để phục vụ debug;
-    \item xử lý song song ở mức cluster nếu cần tăng throughput;
-    \item ghi log theo batch và theo cluster để quan sát quá trình chạy.
-\end{itemize}
-
-\subsection{Giới hạn của phương pháp hiện tại}
-
-Mặc dù pipeline extraction đã hoạt động ổn định ở mức thực nghiệm, cách tiếp cận hiện tại vẫn còn một số giới hạn.
-
-Thứ nhất, hệ thống vẫn phụ thuộc đáng kể vào chất lượng và hành vi của LLM. Dù prompt đã ràng buộc khá chặt, mô hình vẫn có thể sinh output lệch schema, thiếu node, hoặc tạo quan hệ quá tự do ở các trường hợp biên.
-
-Thứ hai, bước phân cụm hiện dựa trên heuristic tên file. Đây là một cách làm nhẹ và hiệu quả trong bối cảnh dữ liệu web của luận văn, nhưng không bảo đảm tối ưu trong các tập tài liệu có naming convention kém ổn định. Một hướng cải tiến tự nhiên là kết hợp thêm tín hiệu semantic từ nội dung file hoặc metadata khi tạo cluster.
-
-Thứ ba, context hiện chủ yếu mang tính cục bộ theo cluster. Điều này có lợi để giảm nhiễu, nhưng đồng thời giới hạn khả năng tái sử dụng tri thức ở mức toàn cục giữa các cluster khác nhau. Với các miền dữ liệu lớn hơn, cần nghiên cứu thêm cơ chế memory toàn cục hoặc retrieval theo thực thể đã biết để bổ sung cho local context.
-
-Thứ tư, validation hiện mới chủ yếu dừng ở mức kiểm tra cấu trúc. Hệ thống chưa có một lớp semantic validator đủ mạnh để tự động phát hiện các trường hợp relation type bất thường, mô tả không nhất quán, hay node generic vẫn lọt qua prompt.
-
-Những giới hạn này cho thấy extraction bằng LLM là một bài toán vừa mang tính mô hình hóa tri thức, vừa mang tính kỹ thuật vận hành. Một pipeline tốt không chỉ cần prompt tốt, mà còn cần các cơ chế kiểm soát và đánh giá liên tục trong quá trình chạy thực tế.
-
-\section{Tóm tắt chương}
-
-Chương này trình bày chi tiết pipeline trích xuất tri thức của hệ thống, từ khâu đọc tài liệu Markdown, phân cụm theo tên file, tiêm ngữ cảnh phân lớp, thiết kế prompt và gọi LLM, cho đến kiểm tra cấu trúc đầu ra, ghi nhận chỉ số và tạo JSON property graph trung gian. Điểm cốt lõi của cách tiếp cận là kết hợp sự linh hoạt của LLM với các ràng buộc schema và ngữ cảnh cục bộ để tăng tính nhất quán của tri thức được trích xuất.
-
-Kết quả của giai đoạn này chưa phải là knowledge graph hoàn chỉnh ở mức toàn cục, nhưng tạo ra một lớp graph fragment có provenance rõ ràng, đủ giàu ngữ nghĩa và đủ ổn định để tiếp tục được xử lý ở các bước downstream. Trên nền tảng đó, chương tiếp theo sẽ đi sâu vào việc giải quyết bài toán đồng tham chiếu thực thể và hợp nhất đồ thị ở mức toàn cục.
+\path{apps/frontend} cung cấp giao diện để người dùng tìm kiếm, xem entity, quan sát quan hệ và hỗ trợ thao tác merge. Nhờ đó, hệ thống không chỉ là một pipeline offline mà còn có khả năng được khai thác, quan sát và hiệu chỉnh như một ứng dụng hỏi đáp dựa trên Knowledge Graph.
