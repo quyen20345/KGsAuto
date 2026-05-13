@@ -72,7 +72,7 @@ def _merge_rel_properties(existing: dict, incoming: dict) -> dict:
 
 def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
     canonical = tx.run(
-        "MATCH (n:KgNode {id: $id}) RETURN n, labels(n) AS labels, properties(n) AS props",
+        "MATCH (n) WHERE n.id = $id RETURN n, labels(n) AS labels, properties(n) AS props",
         {"id": canonical_id},
     ).single()
     if not canonical:
@@ -88,7 +88,7 @@ def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
             continue
 
         duplicate = tx.run(
-            "MATCH (n:KgNode {id: $id}) RETURN n, labels(n) AS labels, properties(n) AS props",
+            "MATCH (n) WHERE n.id = $id RETURN n, labels(n) AS labels, properties(n) AS props",
             {"id": merge_id},
         ).single()
         if not duplicate:
@@ -103,7 +103,7 @@ def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
                 canonical_labels.append(label)
 
         outgoing = tx.run(
-            "MATCH (d:KgNode {id: $merge_id})-[r]->(t) RETURN type(r) AS rel_type, properties(r) AS props, t.id AS target_id",
+            "MATCH (d) WHERE d.id = $merge_id MATCH (d)-[r]->(t) RETURN type(r) AS rel_type, properties(r) AS props, t.id AS target_id",
             {"merge_id": merge_id},
         )
         for row in outgoing:
@@ -113,17 +113,17 @@ def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
             rel_type = row["rel_type"]
             props = dict(row["props"] or {})
             existing = tx.run(
-                f"MATCH (c:KgNode {{id: $canonical_id}})-[r:`{rel_type}`]->(t:KgNode {{id: $target_id}}) RETURN properties(r) AS props LIMIT 1",
+                f"MATCH (c) WHERE c.id = $canonical_id MATCH (c)-[r:`{rel_type}`]->(t) WHERE t.id = $target_id RETURN properties(r) AS props LIMIT 1",
                 {"canonical_id": canonical_id, "target_id": target_id},
             ).single()
             merged_props = _merge_rel_properties(dict(existing["props"] or {}) if existing else {}, props)
             tx.run(
-                f"MATCH (c:KgNode {{id: $canonical_id}}), (t:KgNode {{id: $target_id}}) MERGE (c)-[r:`{rel_type}`]->(t) SET r += $props",
+                f"MATCH (c) WHERE c.id = $canonical_id MATCH (t) WHERE t.id = $target_id MERGE (c)-[r:`{rel_type}`]->(t) SET r += $props",
                 {"canonical_id": canonical_id, "target_id": target_id, "props": merged_props},
             )
 
         incoming = tx.run(
-            "MATCH (s)-[r]->(d:KgNode {id: $merge_id}) RETURN type(r) AS rel_type, properties(r) AS props, s.id AS source_id",
+            "MATCH (d) WHERE d.id = $merge_id MATCH (s)-[r]->(d) RETURN type(r) AS rel_type, properties(r) AS props, s.id AS source_id",
             {"merge_id": merge_id},
         )
         for row in incoming:
@@ -133,16 +133,16 @@ def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
             rel_type = row["rel_type"]
             props = dict(row["props"] or {})
             existing = tx.run(
-                f"MATCH (s:KgNode {{id: $source_id}})-[r:`{rel_type}`]->(c:KgNode {{id: $canonical_id}}) RETURN properties(r) AS props LIMIT 1",
+                f"MATCH (s) WHERE s.id = $source_id MATCH (s)-[r:`{rel_type}`]->(c) WHERE c.id = $canonical_id RETURN properties(r) AS props LIMIT 1",
                 {"source_id": source_id, "canonical_id": canonical_id},
             ).single()
             merged_props = _merge_rel_properties(dict(existing["props"] or {}) if existing else {}, props)
             tx.run(
-                f"MATCH (s:KgNode {{id: $source_id}}), (c:KgNode {{id: $canonical_id}}) MERGE (s)-[r:`{rel_type}`]->(c) SET r += $props",
+                f"MATCH (s) WHERE s.id = $source_id MATCH (c) WHERE c.id = $canonical_id MERGE (s)-[r:`{rel_type}`]->(c) SET r += $props",
                 {"source_id": source_id, "canonical_id": canonical_id, "props": merged_props},
             )
 
-        tx.run("MATCH (d:KgNode {id: $merge_id}) DETACH DELETE d", {"merge_id": merge_id})
+        tx.run("MATCH (d) WHERE d.id = $merge_id DETACH DELETE d", {"merge_id": merge_id})
         merged_ids.append(merge_id)
 
     set_clause = "SET c += $props"
@@ -150,7 +150,7 @@ def _merge_entity_transaction(tx, canonical_id: str, merge_ids: list[str]):
         label_clause = ":".join(f"`{label}`" for label in canonical_labels)
         set_clause += f" SET c:{label_clause}"
     tx.run(
-        f"MATCH (c:KgNode {{id: $canonical_id}}) {set_clause}",
+        f"MATCH (c) WHERE c.id = $canonical_id {set_clause}",
         {"canonical_id": canonical_id, "props": canonical_props},
     )
 
@@ -171,6 +171,18 @@ def merge_entities(payload: MergeEntityModel):
     try:
         with driver.session() as session:
             data = session.execute_write(_merge_entity_transaction, payload.canonical_id, merge_ids)
+        with driver.session() as session:
+            if payload.canonical_name:
+                session.run(
+                    "MATCH (n) WHERE n.id = $id SET n.name = $name",
+                    {"id": payload.canonical_id, "name": payload.canonical_name},
+                )
+            if payload.canonical_new_id and payload.canonical_new_id != payload.canonical_id:
+                session.run(
+                    "MATCH (n) WHERE n.id = $old_id SET n.id = $new_id",
+                    {"old_id": payload.canonical_id, "new_id": payload.canonical_new_id},
+                )
+                data["canonical_id"] = payload.canonical_new_id
         return {"success": True, "data": data, "error": None}
     except Exception as exc:
         return {"success": False, "data": None, "error": str(exc)}
