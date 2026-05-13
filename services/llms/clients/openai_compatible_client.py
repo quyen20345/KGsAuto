@@ -1,14 +1,12 @@
 import os
 from typing import Dict, List, Optional
 
-from dotenv import load_dotenv
-from openai import OpenAI, AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 
+from services.config import OPENAI_COMPATIBLE_MODEL as _DEFAULT_OPENAI_MODEL
 from services.llms.base import BaseLLM
 from services.llms.factory import register_llm
 from services.llms.types import LLMResponse
-
-load_dotenv()
 
 
 class OpenAICompatibleClient(BaseLLM):
@@ -165,6 +163,6 @@ class OpenAICompatibleProviderClient(OpenAICompatibleClient):
 
 
 if __name__ == "__main__":
-    demo_model = os.getenv("OPENAI_COMPATIBLE_MODEL", "cx/gpt-5.3-codex")
+    demo_model = _DEFAULT_OPENAI_MODEL or "cx/gpt-5.3-codex"
     client = OpenAICompatibleProviderClient(demo_model)
     print(client.generate("why is the sky blue?"))
