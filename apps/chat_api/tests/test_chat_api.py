@@ -15,6 +15,7 @@ class FakePipeline:
             "retrieval_time_ms": 1.0,
             "synthesis_time_ms": 2.0,
             "total_time_ms": 3.0,
+            "reasoning_steps": ["find relevant context", "synthesize answer"],
             "metadata": {"top_k": top_k},
         }
 
@@ -63,6 +64,7 @@ def test_query_success(monkeypatch, client):
     assert body["citations"] == ["c1"]
     assert body["evidence"] == {"markdown_chunks": []}
     assert body["metadata"]["total_time_ms"] == 3.0
+    assert body["metadata"]["reasoning_steps"] == ["find relevant context", "synthesize answer"]
     assert body["error"] is None
 
 
@@ -75,3 +77,57 @@ def test_query_rejects_invalid_mode(client):
 def test_query_rejects_empty_message(client):
     res = client.post("/query", json={"message": ""})
     assert res.status_code == 422
+
+
+def test_openai_models(client):
+    res = client.get("/v1/models")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["object"] == "list"
+    assert {model["id"] for model in body["data"]} == {"semantic_search", "graph_search", "naive_grag", "hybrid"}
+
+
+def test_openai_chat_completion_success(monkeypatch, client):
+    monkeypatch.setattr(service, "get_pipeline", lambda: FakePipeline())
+
+    res = client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "semantic_search",
+            "messages": [{"role": "user", "content": "Hiệu trưởng là ai?"}],
+            "stream": False,
+            "include_evidence": True,
+        },
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["object"] == "chat.completion"
+    assert body["choices"][0]["message"]["content"] == "ok"
+    assert body["kgsauto"]["mode"] == "semantic_search"
+    assert body["kgsauto"]["evidence"] == {"markdown_chunks": []}
+    assert body["kgsauto"]["metadata"]["reasoning_steps"] == ["find relevant context", "synthesize answer"]
+
+
+def test_openai_chat_completion_stream(monkeypatch, client):
+    monkeypatch.setattr(service, "get_pipeline", lambda: FakePipeline())
+
+    with client.stream(
+        "POST",
+        "/v1/chat/completions",
+        json={
+            "model": "semantic_search",
+            "messages": [{"role": "user", "content": "Hiệu trưởng là ai?"}],
+            "stream": True,
+        },
+    ) as res:
+        assert res.status_code == 200
+        text = "".join(res.iter_text())
+
+    assert "chat.completion.chunk" in text
+    assert "status" in text
+    assert "Đang truy xuất tài liệu" in text
+    assert "reasoning_step" in text
+    assert "find relevant context" in text
+    assert "ok" in text
+    assert "data: [DONE]" in text

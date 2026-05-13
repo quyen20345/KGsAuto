@@ -37,3 +37,35 @@ class ChatHealthResponse(BaseModel):
     status: str
     service: str
     modes: list[str]
+
+
+class OpenAIChatMessage(BaseModel):
+    role: str
+    content: str | list[dict[str, Any]] | None = None
+
+
+class OpenAIChatCompletionRequest(BaseModel):
+    model: str = "semantic_search"
+    messages: list[OpenAIChatMessage]
+    stream: bool = False
+    temperature: float | None = None
+    max_tokens: int | None = None
+
+    # KGsAuto-specific optional knobs. OpenAI-compatible clients will ignore
+    # them, but custom UIs can pass them through the same endpoint.
+    mode: str | None = None
+    top_k: int = Field(default=5, ge=1, le=20)
+    include_evidence: bool = False
+    conversation_id: str | None = None
+
+
+class OpenAIModel(BaseModel):
+    id: str
+    object: str = "model"
+    created: int = 0
+    owned_by: str = "kgsauto"
+
+
+class OpenAIModelsResponse(BaseModel):
+    object: str = "list"
+    data: list[OpenAIModel]
