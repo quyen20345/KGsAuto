@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import EntityLink from '../components/EntityLink';
 import RelationshipTooltip from '../components/RelationshipTooltip';
+import CompareModal from '../components/CompareModal';
 
 export default function Entity() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [entityState, setEntityState] = useState({
     id: null,
     entity: null,
@@ -13,6 +15,7 @@ export default function Entity() {
   });
   const [duplicates, setDuplicates] = useState([]);
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [compareTarget, setCompareTarget] = useState(null);
 
   const loading = entityState.id !== id && !entityState.error;
   const entity = entityState.id === id ? entityState.entity : null;
@@ -27,7 +30,6 @@ export default function Entity() {
       });
   }, [id]);
 
-  // Search for possible duplicates when entity loads
   useEffect(() => {
     if (!entity?.name) return;
 
@@ -46,6 +48,14 @@ export default function Entity() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const handleMergeComplete = (canonicalId) => {
+    setCompareTarget(null);
+    navigate(`/entity/${encodeURIComponent(canonicalId)}`);
+    if (canonicalId === entity.id) {
+      window.location.reload();
+    }
   };
 
   if (loading) return <main><div>Loading entity...</div></main>;
@@ -129,11 +139,26 @@ export default function Entity() {
                 >
                   Copy ID
                 </button>
+                <button
+                  className="merge-button"
+                  style={{ padding: '4px 10px', fontSize: '0.85rem', backgroundColor: '#2563eb' }}
+                  onClick={() => setCompareTarget(dup.id)}
+                >
+                  Compare
+                </button>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <CompareModal
+        isOpen={!!compareTarget}
+        onClose={() => setCompareTarget(null)}
+        entityA={entity}
+        duplicateId={compareTarget}
+        onMergeComplete={handleMergeComplete}
+      />
     </main>
   );
 }
