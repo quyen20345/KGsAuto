@@ -15,7 +15,12 @@ class OllamaClient(BaseLLM):
     }
     
     
-  def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+  def generate(
+    self,
+    prompt: str,
+    system_prompt: Optional[str] = None,
+    temperature: Optional[float] = None,
+  ) -> LLMResponse:
     try:
       messages = []
       if system_prompt:
@@ -23,10 +28,14 @@ class OllamaClient(BaseLLM):
         
       messages.append({'role': 'user', 'content': prompt})
       
+      options = dict(self.options)
+      if temperature is not None:
+        options["temperature"] = temperature
+
       response = self.client.chat(
         model=self.model_name,
         messages=messages,
-        options=self.options
+        options=options
       )
       
       # Ollama tokens = prompt_eval (input) + eval (output)

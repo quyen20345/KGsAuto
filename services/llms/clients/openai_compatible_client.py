@@ -1,9 +1,9 @@
-import os
 from typing import Dict, List, Optional
 
 from openai import AsyncOpenAI, OpenAI
 
 from services.config import OPENAI_COMPATIBLE_MODEL as _DEFAULT_OPENAI_MODEL
+from services.config import settings
 from services.llms.base import BaseLLM
 from services.llms.factory import register_llm
 from services.llms.types import LLMResponse
@@ -18,8 +18,9 @@ class OpenAICompatibleClient(BaseLLM):
 
     def __init__(self, model_name: Optional[str] = None, **kwargs):
         self.model_name = model_name
-        self.host = kwargs.get("host") or kwargs.get("base_url") or self._env(self.base_url_env) or self.default_base_url
-        self.api_key = kwargs.get("api_key") or self._env(self.api_key_env) or self.default_api_key
+        self.temperature = kwargs.get("temperature")
+        self.host = kwargs.get("host") or kwargs.get("base_url") or self._setting(self.base_url_env) or self.default_base_url
+        self.api_key = kwargs.get("api_key") or self._setting(self.api_key_env) or self.default_api_key
 
         if not self.host:
             raise ValueError(f"{self.provider_name} base URL is not set")
@@ -32,7 +33,12 @@ class OpenAICompatibleClient(BaseLLM):
             timeout=None,
         )
 
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+    ) -> LLMResponse:
         try:
             messages: List[Dict[str, str]] = []
 
@@ -41,10 +47,15 @@ class OpenAICompatibleClient(BaseLLM):
             if prompt:
                 messages.append({"role": "user", "content": prompt})
 
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-            )
+            request_kwargs = {
+                "model": self.model_name,
+                "messages": messages,
+            }
+            effective_temperature = self.temperature if temperature is None else temperature
+            if effective_temperature is not None:
+                request_kwargs["temperature"] = effective_temperature
+
+            response = self.client.chat.completions.create(**request_kwargs)
 
             usage_tokens = response.usage.total_tokens if response.usage else None
             response_model = getattr(response, "model", None) or self.model_name
@@ -73,7 +84,12 @@ class OpenAICompatibleClient(BaseLLM):
                 model=self.model_name,
             )
 
-    async def agenerate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+    ) -> LLMResponse:
         """Async generate text from prompt using AsyncOpenAI."""
         client = AsyncOpenAI(
             api_key=self.api_key,
@@ -87,10 +103,15 @@ class OpenAICompatibleClient(BaseLLM):
             if prompt:
                 messages.append({"role": "user", "content": prompt})
 
-            response = await client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-            )
+            request_kwargs = {
+                "model": self.model_name,
+                "messages": messages,
+            }
+            effective_temperature = self.temperature if temperature is None else temperature
+            if effective_temperature is not None:
+                request_kwargs["temperature"] = effective_temperature
+
+            response = await client.chat.completions.create(**request_kwargs)
 
             usage_tokens = response.usage.total_tokens if response.usage else None
             response_model = getattr(response, "model", None) or self.model_name
@@ -125,8 +146,15 @@ class OpenAICompatibleClient(BaseLLM):
                 pass
 
     @staticmethod
-    def _env(name: Optional[str]) -> Optional[str]:
-        return os.getenv(name) if name else None
+    def _setting(name: Optional[str]) -> Optional[str]:
+        values = {
+            "OPENAI_COMPATIBLE_API_KEY": settings.llm.openai_compatible_api_key,
+            "OPENAI_COMPATIBLE_BASE_URL": settings.llm.openai_compatible_base_url,
+            "OPENAI_API_KEY": settings.llm.openai_api_key,
+            "OPENAI_BASE_URL": settings.llm.openai_base_url,
+            "GOOGLE_API_KEY": settings.llm.google_api_key,
+        }
+        return values.get(name) if name else None
 
     @staticmethod
     def _extract_text_from_message_parts(message) -> Optional[str]:
@@ -159,7 +187,7 @@ class OpenAICompatibleProviderClient(OpenAICompatibleClient):
     provider_name = "OpenAICompatible"
     api_key_env = "OPENAI_COMPATIBLE_API_KEY"
     base_url_env = "OPENAI_COMPATIBLE_BASE_URL"
-    default_base_url = "http://localhost:20128/v1"
+    default_base_url = settings.llm.openai_compatible_base_url or "http://localhost:20128/v1"
 
 
 if __name__ == "__main__":
