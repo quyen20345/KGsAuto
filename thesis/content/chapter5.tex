@@ -73,6 +73,16 @@ Bước tiếp theo là cập nhật graph. Mọi relationship trỏ đến node
 
 Kết quả cuối cùng là một Knowledge Graph đã được hợp nhất ở mức thực thể, sẵn sàng cho bước import vào Neo4j và khai thác trong hệ thống hỏi đáp. So với graph thô sau extraction, graph sau Entity Resolution có cấu trúc nhất quán hơn, giảm phân mảnh và hỗ trợ tốt hơn cho các truy vấn cần tổng hợp thông tin từ nhiều nguồn.
 
+\section{Human-in-the-loop trong hợp nhất và tối ưu chất lượng graph}
+
+Mặc dù pipeline Entity Resolution được thiết kế theo hướng thận trọng, một số quyết định merge vẫn khó xử lý hoàn toàn tự động. Các trường hợp thường gặp gồm tên đơn vị viết tắt, tên người đi kèm chức danh hoặc học hàm, các tổ chức có tên gần giống nhau nhưng khác cấp quản lý, hoặc những thực thể có alias chưa đầy đủ do giai đoạn trích xuất sinh ra. Vì vậy, hệ thống bổ sung cơ chế human-in-the-loop để người quản trị có thể kiểm tra và hiệu chỉnh graph sau khi pipeline tự động đã chạy.
+
+Workflow human-in-the-loop bắt đầu từ trang chi tiết thực thể. Khi người dùng mở một entity, hệ thống tìm các ứng viên có khả năng trùng lặp dựa trên tên và alias, sau đó hiển thị chúng như các duplicate candidates. Người dùng có thể chọn một ứng viên để so sánh với entity hiện tại. Ở bước so sánh, hệ thống sử dụng LLM để phân tích tên, alias, nhãn thực thể, mô tả và các quan hệ lân cận, từ đó đưa ra checklist, mức độ tin cậy, lập luận và gợi ý có nên merge hay không.
+
+Quyết định cuối cùng không được thực hiện tự động bởi LLM. Người dùng xác nhận merge hoặc giữ hai entity tách biệt. Nếu merge, người dùng chọn canonical entity, tên chuẩn và ID chuẩn nếu cần. Sau khi xác nhận, backend hợp nhất thuộc tính, alias và provenance của các node thành phần, đồng thời rewiring các relationship trong Neo4j để các cạnh đi vào hoặc đi ra từ node bị gộp được chuyển về canonical entity. Các relationship trùng lặp hoặc không còn hợp lệ sau rewiring cần được xử lý để graph sau merge vẫn nhất quán.
+
+Cơ chế này không thay thế pipeline Entity Resolution offline, mà bổ sung một vòng kiểm soát chất lượng cho các ca khó hoặc các lỗi được phát hiện sau triển khai. Nhờ đó, Knowledge Graph không còn là artifact tĩnh sinh ra một lần, mà có thể được cải thiện dần thông qua phản hồi của con người. Về mặt chất lượng, human-in-the-loop giúp giảm nguy cơ over-merge do quyết định tự động quá mạnh, đồng thời xử lý under-merge còn sót lại khi hai node thật sự cùng thực thể nhưng chưa được pipeline gộp.
+
 \section{Kiểm soát chất lượng và tóm tắt chương}
 
 Entity Resolution luôn phải cân bằng giữa hai loại lỗi. \textit{Under-merge} xảy ra khi hai node cùng thực thể nhưng không được gộp, khiến graph vẫn bị phân mảnh. \textit{Over-merge} xảy ra khi hai thực thể khác nhau bị gộp nhầm, làm sai lệch tri thức. Pipeline trong chương này được thiết kế để tạo ứng viên theo hướng rộng ở Stage~2, nhưng ra quyết định merge theo hướng thận trọng ở Stage~3. Sự kết hợp giữa nhãn thực thể, embedding similarity, LLM reasoning và kiểm tra bằng ngưỡng giúp giảm nguy cơ over-merge mà vẫn xử lý được nhiều biến thể tên gọi phổ biến trong dữ liệu tiếng Việt.

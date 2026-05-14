@@ -18,7 +18,7 @@ Thứ hai, hệ thống phải xử lý được chất lượng graph sau tríc
 
 Thứ ba, hệ thống phải hỗ trợ truy xuất bằng chứng cho ứng dụng hỏi đáp. Người dùng đặt câu hỏi tự nhiên, trong khi hệ thống cần tìm bằng chứng phù hợp từ cả văn bản gốc và graph. Với câu hỏi mô tả trực tiếp, Semantic Search trên văn bản có thể đủ. Với câu hỏi về quan hệ, Naive Graph RAG, Graph Search hoặc Hybrid RAG có thể phù hợp hơn. Do đó, hệ thống cần hỗ trợ nhiều chế độ truy xuất để so sánh và lựa chọn chiến lược phù hợp.
 
-Thứ tư, hệ thống cần có khả năng quan sát, kiểm chứng và đánh giá. Câu trả lời nên đi kèm bằng chứng truy xuất để người dùng hoặc người phát triển có thể kiểm tra nguồn gốc. Các API và giao diện cũng cần hỗ trợ tìm kiếm thực thể, xem quan hệ, quan sát provenance và hiệu chỉnh graph khi phát hiện lỗi. Những yêu cầu này tạo nền tảng cho phần đánh giá hỏi đáp ở Chương~7.
+Thứ tư, hệ thống cần có khả năng quan sát, kiểm chứng và đánh giá. Câu trả lời nên đi kèm bằng chứng truy xuất để người dùng hoặc người phát triển có thể kiểm tra nguồn gốc. Các API và giao diện cũng cần hỗ trợ tìm kiếm thực thể, xem quan hệ, quan sát provenance và hiệu chỉnh graph khi phát hiện lỗi. Đặc biệt, chất lượng graph sau Entity Resolution cần có cơ chế human-in-the-loop để người quản trị kiểm tra các trường hợp nghi trùng, nhận hỗ trợ so sánh từ LLM và xác nhận merge trước khi cập nhật Neo4j. Những yêu cầu này tạo nền tảng cho cả Pipeline Evaluation và RAG Evaluation ở Chương~7.
 
 \section{Kiến trúc tổng thể hệ thống KGsAuto}
 
@@ -31,7 +31,7 @@ Hệ thống KGsAuto được thiết kế theo hướng pipeline gồm nhiều 
     \label{fig:architecture-overview}
 \end{figure}
 
-Kiến trúc này có thể hiểu như một chuỗi tầng xử lý liên kết với nhau. Tầng dữ liệu đầu vào chứa các tài liệu Markdown về Đại học Công nghệ. Tầng trích xuất sử dụng LLM và prompt có ràng buộc schema để tạo graph fragment gồm node, relationship và provenance. Tầng xử lý chất lượng thực hiện Entity Resolution nhằm phát hiện, hợp nhất và chuẩn hóa các thực thể trùng lặp. Sau đó, tầng lưu trữ nhập graph đã xử lý vào Neo4j và lập chỉ mục văn bản vào Qdrant. Tầng truy xuất và hỏi đáp cung cấp bốn chế độ Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG. Cuối cùng, tầng ứng dụng gồm Chat API, Graph API và frontend để người dùng khai thác hệ thống.
+Kiến trúc này có thể hiểu như một chuỗi tầng xử lý liên kết với nhau. Tầng dữ liệu đầu vào chứa các tài liệu Markdown về Đại học Công nghệ. Tầng trích xuất sử dụng LLM và prompt có ràng buộc schema để tạo graph fragment gồm node, relationship và provenance. Tầng xử lý chất lượng thực hiện Entity Resolution nhằm phát hiện, hợp nhất và chuẩn hóa các thực thể trùng lặp. Sau đó, tầng lưu trữ nhập graph đã xử lý vào Neo4j và lập chỉ mục văn bản vào Qdrant. Trên graph đã nhập, Graph API và frontend cung cấp thêm vòng kiểm soát chất lượng human-in-the-loop để người quản trị kiểm tra duplicate candidates, so sánh thực thể bằng LLM và xác nhận merge khi cần. Tầng truy xuất và hỏi đáp cung cấp bốn chế độ Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG. Cuối cùng, tầng ứng dụng gồm Chat API, Graph API và frontend để người dùng khai thác, kiểm chứng và hiệu chỉnh hệ thống.
 
 Trong codebase, tầng trích xuất được triển khai trong \path{services/extraction}, tầng Entity Resolution trong \path{services/entity_resolution}, tầng hỏi đáp trong \path{services/rag_system} và \path{apps/chat_api}, Graph API trong \path{apps/graph_api}, còn frontend trong \path{apps/frontend}.
 
@@ -65,4 +65,4 @@ Neo4j và Qdrant đóng vai trò hai kho lưu trữ bổ trợ. Neo4j lưu Knowl
 
 \path{services/rag_system} cung cấp tầng truy xuất và hỏi đáp đa chế độ. Thành phần này trừu tượng hóa các chiến lược truy xuất khác nhau để cùng một câu hỏi có thể được chạy qua Semantic Search, Naive Graph RAG, Graph Search hoặc Hybrid RAG. \path{apps/chat_api} đóng vai trò API hỏi đáp, còn \path{apps/graph_api} cung cấp các API thao tác graph, tìm kiếm thực thể và truy xuất dữ liệu phục vụ frontend.
 
-\path{apps/frontend} cung cấp giao diện để người dùng tìm kiếm, xem entity, quan sát quan hệ và hỗ trợ thao tác merge. Nhờ đó, hệ thống không chỉ là một pipeline offline mà còn có khả năng được khai thác, quan sát và hiệu chỉnh như một ứng dụng hỏi đáp dựa trên Knowledge Graph.
+\path{apps/frontend} cung cấp giao diện để người dùng tìm kiếm, xem entity, quan sát quan hệ và hỗ trợ thao tác merge. Trong cơ chế human-in-the-loop, frontend phối hợp với Graph API để hiển thị ứng viên trùng lặp, gọi LLM so sánh hai thực thể và chỉ thực hiện merge sau khi người dùng xác nhận canonical entity. Nhờ đó, hệ thống không chỉ là một pipeline offline mà còn có khả năng được khai thác, quan sát và hiệu chỉnh như một ứng dụng hỏi đáp dựa trên Knowledge Graph.
