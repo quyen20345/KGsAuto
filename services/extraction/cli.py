@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from services.config import ConfigValidationError, validate_settings
 from services.extraction.config import ExtractionConfig
 from services.extraction.extract import KGExtractor
 
@@ -126,6 +127,12 @@ def main():
 
     if not input_path.is_dir():
         print(f"Error: Input path is not a directory: {args.input_dir}")
+        sys.exit(1)
+
+    try:
+        validate_settings("extraction")
+    except ConfigValidationError as e:
+        print(f"Error: {e}")
         sys.exit(1)
 
     # Create configuration

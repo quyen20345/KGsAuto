@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from services.config import settings
+
 
 def _new_run_id() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
@@ -19,8 +21,8 @@ class RunConfig:
     collection_name: str | None = None
 
     # Embedding configuration
-    embedding_model: str = "paraphrase-multilingual-mpnet-base-v2"
-    embedding_dim: int = 768  # Auto-detected from model if semantic
+    embedding_model: str = settings.embedding.model
+    embedding_dim: int = settings.embedding.dim  # Auto-detected from model if semantic
 
     # Clustering configuration
     min_cluster_size: int = 2
@@ -29,12 +31,12 @@ class RunConfig:
     enable_llm_blocking: bool = True  # Use LLM for blocking strategy
 
     # Storage
-    qdrant_url: str = "http://localhost:6333"
+    qdrant_url: str = settings.qdrant.url
     store_backend: str = "qdrant"  # qdrant|memory
 
     # LLM Configuration (for LLM-CER and LLM blocking)
-    llm_provider: str = "OpenAICompatible"  # OpenAICompatible|openai|anthropic
-    llm_model: str = "cx/gpt-5.3-codex"
+    llm_provider: str = settings.llm.provider  # OpenAICompatible|openai|anthropic
+    llm_model: str = settings.llm.model
     llm_api_key: str | None = None
     llm_temperature: float = 0.0
     llm_max_tokens: int = 2000

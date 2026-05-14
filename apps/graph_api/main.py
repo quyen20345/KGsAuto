@@ -1,8 +1,18 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apps.graph_api import compare, entity, graph, health
+from services.config import validate_settings
 
-app = FastAPI(title="KGsAuto Graph API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_settings("graph_api")
+    yield
+
+
+app = FastAPI(title="KGsAuto Graph API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

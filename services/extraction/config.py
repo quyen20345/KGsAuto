@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
 
+from services.config import settings
+
 
 def _new_run_id() -> str:
     """Generate a unique run ID based on timestamp"""
@@ -19,8 +21,8 @@ class ExtractionConfig:
     output_dir: Path
 
     # LLM Configuration
-    provider: str = "OpenAICompatible"
-    model_name: str = "cx/gpt-5.3-codex"
+    provider: str = settings.llm.provider
+    model_name: str = settings.llm.model
 
     # Extraction Behavior
     max_retries: int = 3

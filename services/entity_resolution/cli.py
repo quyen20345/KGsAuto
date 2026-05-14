@@ -4,6 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
+from services.config import ConfigValidationError, validate_settings
+
 from .config import RunConfig
 from .pipeline import run_entity_resolution
 
@@ -44,6 +46,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    try:
+        if args.store_backend == "qdrant":
+            validate_settings("pipeline_api")
+        if args.enable_llm_blocking is not False:
+            validate_settings("extraction")
+    except ConfigValidationError as exc:
+        raise SystemExit(f"Error: {exc}") from exc
+
     cfg = RunConfig(
         input_dir=Path(args.input_dir),
         artifacts_dir=Path(args.artifacts_dir),

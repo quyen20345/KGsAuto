@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -21,9 +23,16 @@ from apps.chat_api.service import (
     query_chat,
     query_openai_compatible,
 )
+from services.config import validate_settings
 
 
-app = FastAPI(title="KGsAuto Chat API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_settings("rag")
+    yield
+
+
+app = FastAPI(title="KGsAuto Chat API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

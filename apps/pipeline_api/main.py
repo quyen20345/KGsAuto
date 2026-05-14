@@ -1,9 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from apps.pipeline_api.routes import crawl, events, files, pipeline
+from services.config import validate_settings
 
-app = FastAPI(title="KGsAuto Pipeline API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_settings("pipeline_api")
+    yield
+
+
+app = FastAPI(title="KGsAuto Pipeline API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
