@@ -85,7 +85,32 @@ VITE_API_BASE_URL=http://localhost:8000
 VITE_CHAT_API_BASE_URL=http://localhost:8002
 ```
 
-## 4. Chạy evaluation runner
+## 4. Chuẩn bị Qdrant: Re-embed dữ liệu
+
+Khi cần re-embed toàn bộ dữ liệu markdown lên Qdrant (ví dụ sau khi import Neo4j mới hoặc cập nhật dữ liệu):
+
+```bash
+# Xóa collection cũ
+python -m services.rag_system.cli delete-collection
+
+# Tạo collection mới
+python -m services.rag_system.cli create-collection
+
+# Index toàn bộ (không limit)
+python -m services.rag_system.cli index --force
+```
+
+Hoặc kiểm tra kết nối trước:
+
+```bash
+python -m services.rag_system.cli test-connections
+```
+
+Lưu ý:
+- Neo4j phải chạy và có dữ liệu đã import
+- `.env` phải có `OPENAI_COMPATIBLE_*` hoặc `GOOGLE_API_KEY` cho embedding
+
+## 5. Chạy evaluation runner
 
 Runner dùng để chạy một hoặc nhiều chế độ RAG trên tập câu hỏi và lưu kết quả raw.
 
@@ -125,7 +150,7 @@ Output chính:
 *.csv     bản CSV tương ứng
 ```
 
-## 5. Chạy RAGAS scoring
+## 6. Chạy RAGAS scoring
 
 Scoring dùng RAGAS để chấm các kết quả đã sinh từ runner.
 
@@ -156,7 +181,7 @@ Output chính:
 *_scored.summary.csv thống kê trung bình theo mode
 ```
 
-## 6. Gợi ý thứ tự chạy đầy đủ
+## 7. Gợi ý thứ tự chạy đầy đủ
 
 ```bash
 # 1. Hạ tầng
@@ -169,12 +194,17 @@ uvicorn apps.chat_api.main:app --host 0.0.0.0 --port 8002 --reload
 # 3. Frontend
 cd apps/frontend && npm install && npm run dev
 
-# 4. Evaluation runner
+# 4. Re-embed dữ liệu lên Qdrant
+python -m services.rag_system.cli delete-collection
+python -m services.rag_system.cli create-collection
+python -m services.rag_system.cli index --force
+
+# 5. Evaluation runner
 conda run -n py312 python -m services.rag_system.cli evaluate run-comparison \
   --dataset data/evaluation/testset_clean_30.csv \
   --output data/evaluation/rag_eval_comparison.jsonl
 
-# 5. RAGAS scoring
+# 6. RAGAS scoring
 conda run -n py312 python -m services.rag_system.cli evaluate score \
   --results data/evaluation/rag_eval_comparison.jsonl \
   --output data/evaluation/rag_eval_scored.jsonl

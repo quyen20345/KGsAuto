@@ -8,15 +8,26 @@ from services.config import (
     EMBEDDING_DIM,
     EMBEDDING_MODEL,
     GRAPH_ALLOW_LEGACY_SCAN_FALLBACK,
+    GRAPH_CONTEXT_DESCRIPTION_MAX_CHARS,
+    GRAPH_CONTEXT_ENTITY_TOP_K_MULTIPLIER,
+    GRAPH_CONTEXT_RELATIONSHIP_TOP_K_MULTIPLIER,
     GRAPH_DESCRIPTION_FALLBACK_MIN_TERM_LENGTH,
     GRAPH_ENABLE_RELATIONSHIP_FULLTEXT,
     GRAPH_ENABLE_SUBSTRING_FALLBACK,
+    GRAPH_ENTITY_SEARCH_TOP_K_MULTIPLIER,
     GRAPH_FULLTEXT_CANDIDATE_LIMIT,
     GRAPH_FULLTEXT_ENTITY_INDEX,
     GRAPH_FULLTEXT_RELATIONSHIP_INDEX,
     GRAPH_KEYWORD_MAX_TERMS,
     GRAPH_KEYWORD_TIMEOUT_SECONDS,
     GRAPH_NEIGHBOR_LIMIT_PER_ENTITY,
+    GRAPH_RELATIONSHIP_SEARCH_TOP_K_MULTIPLIER,
+    GRAPH_SCORE_DESCRIPTION,
+    GRAPH_SCORE_EXACT_ALIAS,
+    GRAPH_SCORE_EXACT_NAME,
+    GRAPH_SCORE_PARTIAL_ALIAS,
+    GRAPH_SCORE_PARTIAL_NAME,
+    GRAPH_SCORE_SEARCH_TEXT,
     GRAPH_SUBSTRING_FALLBACK_LIMIT,
     LLM_MODEL,
     LLM_PROVIDER,
@@ -78,7 +89,7 @@ class RAGConfig:
     # LLM configuration
     llm_provider: str = field(default_factory=lambda: LLM_PROVIDER)
     llm_model: str = field(default_factory=lambda: LLM_MODEL)
-    llm_temperature: float = 0.0
+    llm_temperature: float = 0.3
     llm_max_tokens: int = 2000
 
     # Fusion configuration
@@ -100,6 +111,21 @@ class RAGConfig:
         default_factory=lambda: GRAPH_DESCRIPTION_FALLBACK_MIN_TERM_LENGTH
     )
     graph_allow_legacy_scan_fallback: bool = field(default_factory=lambda: GRAPH_ALLOW_LEGACY_SCAN_FALLBACK)
+
+    # GraphSearch context sizing
+    graph_entity_search_top_k_multiplier: int = field(default_factory=lambda: GRAPH_ENTITY_SEARCH_TOP_K_MULTIPLIER)
+    graph_relationship_search_top_k_multiplier: int = field(default_factory=lambda: GRAPH_RELATIONSHIP_SEARCH_TOP_K_MULTIPLIER)
+    graph_context_entity_top_k_multiplier: int = field(default_factory=lambda: GRAPH_CONTEXT_ENTITY_TOP_K_MULTIPLIER)
+    graph_context_relationship_top_k_multiplier: int = field(default_factory=lambda: GRAPH_CONTEXT_RELATIONSHIP_TOP_K_MULTIPLIER)
+    graph_context_description_max_chars: int = field(default_factory=lambda: GRAPH_CONTEXT_DESCRIPTION_MAX_CHARS)
+
+    # GraphSearch scoring weights
+    graph_score_exact_name: float = field(default_factory=lambda: GRAPH_SCORE_EXACT_NAME)
+    graph_score_exact_alias: float = field(default_factory=lambda: GRAPH_SCORE_EXACT_ALIAS)
+    graph_score_partial_alias: float = field(default_factory=lambda: GRAPH_SCORE_PARTIAL_ALIAS)
+    graph_score_partial_name: float = field(default_factory=lambda: GRAPH_SCORE_PARTIAL_NAME)
+    graph_score_search_text: float = field(default_factory=lambda: GRAPH_SCORE_SEARCH_TEXT)
+    graph_score_description: float = field(default_factory=lambda: GRAPH_SCORE_DESCRIPTION)
 
     # Evaluation configuration (based on user decision: 30 questions pilot)
     eval_pilot_size: int = 30  # Start with 30 questions
