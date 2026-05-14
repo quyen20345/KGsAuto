@@ -4,6 +4,7 @@ from pathlib import Path
 from pprint import pformat
 
 import click
+from services.config import ConfigValidationError, validate_settings
 from services.rag_system.config import RAGConfig
 
 
@@ -20,6 +21,13 @@ def _preview_text(item, *keys, limit=120):
     return pformat(item, compact=True)[:limit]
 
 
+def _validate_config(profile):
+    try:
+        validate_settings(profile)
+    except ConfigValidationError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
 @click.group()
 def cli():
     """RAG System CLI - Retrieval-Augmented Generation for UET Knowledge Base"""
@@ -32,6 +40,7 @@ def create_collection(collection):
     """Create Qdrant collection for markdown chunks"""
     from services.rag_system.retrieval.store import Store
 
+    _validate_config("rag")
     config = RAGConfig()
     if collection:
         config.markdown_collection = collection
@@ -46,6 +55,7 @@ def delete_collection(collection):
     """Delete Qdrant collection"""
     from services.rag_system.retrieval.store import Store
 
+    _validate_config("rag")
     config = RAGConfig()
     if collection:
         config.markdown_collection = collection
@@ -62,6 +72,7 @@ def index(limit, force):
     """Index markdown documents to Qdrant"""
     from services.rag_system.retrieval.indexing import Indexer
 
+    _validate_config("rag")
     config = RAGConfig()
     indexer = Indexer(config)
 
@@ -90,6 +101,7 @@ def query(question, mode, top_k, show_evidence):
     """Query the unified retrieval system"""
     from services.rag_system.pipeline import UnifiedRetrievalPipeline
 
+    _validate_config("rag")
     config = RAGConfig()
     pipeline = UnifiedRetrievalPipeline(config)
 
@@ -209,6 +221,7 @@ def evaluate_run(dataset, output, mode, top_k, verbose):
     """Run one RAG mode over a JSONL question set."""
     from services.rag_system.evaluation.runner import run_dataset
 
+    _validate_config("rag")
     click.echo(f"Dataset: {dataset}")
     click.echo(f"Mode: {mode}")
     click.echo(f"Output: {output}")
@@ -243,6 +256,7 @@ def evaluate_run_comparison(dataset, output, modes, top_k, verbose):
     """Run multiple RAG modes over a JSONL question set."""
     from services.rag_system.evaluation.runner import ALL_MODES, run_dataset_for_modes
 
+    _validate_config("rag")
     selected_modes = list(modes) or ALL_MODES
     click.echo(f"Dataset: {dataset}")
     click.echo(f"Modes: {', '.join(selected_modes)}")
@@ -250,6 +264,60 @@ def evaluate_run_comparison(dataset, output, modes, top_k, verbose):
     click.echo(f"Output: {output}")
     results = run_dataset_for_modes(dataset, output, modes=selected_modes, top_k=top_k, verbose=verbose)
     click.echo(f"Wrote {len(results)} results to {output}")
+    click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
+
+
+@evaluate.command("retry-failures")
+@click.option(
+    "--dataset",
+    type=click.Path(path_type=Path),
+    required=True,
+    help="Original input JSONL evaluation dataset",
+)
+@click.option(
+    "--results",
+    type=click.Path(path_type=Path),
+    required=True,
+    help="Existing generated evaluation JSONL to inspect for failed answers",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    required=True,
+    help="Merged output JSONL path; CSV is written next to it",
+)
+@click.option(
+    "--mode",
+    "modes",
+    type=click.Choice(RAG_MODES),
+    multiple=True,
+    help="Mode to retry; repeat for multiple modes. Defaults to modes found in results.",
+)
+@click.option("--top-k", default=5, type=int, help="Number of results to retrieve")
+@click.option("--error-contains", default="429", help="Retry rows containing this error text anywhere in the row")
+@click.option("--verbose", is_flag=True, help="Print per-sample retry decisions")
+def evaluate_retry_failures(dataset, results, output, modes, top_k, error_contains, verbose):
+    """Retry missing or provider-error answers from a previous evaluation run."""
+    from services.rag_system.evaluation.runner import retry_failed_results
+
+    _validate_config("rag")
+    selected_modes = list(modes) or None
+    click.echo(f"Dataset: {dataset}")
+    click.echo(f"Results: {results}")
+    click.echo(f"Output: {output}")
+    if selected_modes:
+        click.echo(f"Modes: {', '.join(selected_modes)}")
+    click.echo(f"Error contains: {error_contains}")
+    merged = retry_failed_results(
+        dataset,
+        results,
+        output,
+        modes=selected_modes,
+        top_k=top_k,
+        error_contains=error_contains,
+        verbose=verbose,
+    )
+    click.echo(f"Wrote {len(merged)} merged results to {output}")
     click.echo(f"Wrote CSV results to {output.with_suffix('.csv')}")
 
 
@@ -284,6 +352,7 @@ def evaluate_score(results, output, metrics, incremental, no_resume):
         summarize_scores,
     )
 
+    _validate_config("evaluation")
     click.echo(f"Results: {results}")
     click.echo(f"Output: {output}")
     try:
@@ -310,6 +379,7 @@ def test_connections():
     from services.rag_system.retrieval.store import Store
     from apps.graph_api.neo4j import get_driver
 
+    _validate_config("rag")
     config = RAGConfig()
 
     click.echo("Testing connections...")

@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import math
-import os
 import json
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from dotenv import find_dotenv, load_dotenv
-
 from services.rag_system.evaluation.runner import load_dataset, load_jsonl, write_csv, write_jsonl
-from services.config import RAGAS_SCORE_MAX_WORKERS
+from services.config import RAGAS_SCORE_MAX_WORKERS, ConfigValidationError, settings, validate_settings
 
 
 DEFAULT_METRICS = ["faithfulness", "answer_correctness", "answer_relevancy", "context_precision", "context_recall"]
@@ -41,7 +38,7 @@ def score_results(
     output_path: str | Path,
     metrics: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
-    _load_environment()
+    _validate_evaluation_config()
     rows = load_dataset(results_path)
     selected_metrics = list(metrics or DEFAULT_METRICS)
     scored_rows = [_empty_scored_row(row) for row in rows]
@@ -89,7 +86,7 @@ def score_results_incremental(
 ) -> list[dict[str, Any]]:
     """Score rows one-by-one and append each completed row to JSONL immediately."""
 
-    _load_environment()
+    _validate_evaluation_config()
     rows = load_dataset(results_path)
     selected_metrics = list(metrics or DEFAULT_METRICS)
     output = Path(output_path)
@@ -301,45 +298,35 @@ def _build_ragas_embeddings() -> Any:
             "Install/update with: pip install '.[ragas]' openai"
         ) from exc
 
-    api_key = _env_first("RAGAS_EMBEDDING_API_KEY", "NVIDIA_API_KEY")
+    api_key = settings.evaluation.ragas_embedding_api_key
     if not api_key:
         raise RagasScoringError("Missing RAGAS embedding configuration: RAGAS_EMBEDDING_API_KEY or NVIDIA_API_KEY")
 
-    model = _env_first("RAGAS_EMBEDDING_MODEL", "NVIDIA_EMBED_MODEL") or "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
-    base_url = _env_first("RAGAS_EMBEDDING_BASE_URL", "NVIDIA_BASE_URL") or "https://integrate.api.nvidia.com/v1"
-    delay_seconds = _optional_float(_env_first("RAGAS_EMBEDDING_DELAY_SECONDS")) or 0.1
-
-    client = OpenAI(api_key=api_key, base_url=base_url)
-    return NvidiaEmbeddings(client=client, model=model, delay_seconds=delay_seconds)
+    client = OpenAI(api_key=api_key, base_url=settings.evaluation.ragas_embedding_base_url)
+    return NvidiaEmbeddings(
+        client=client,
+        model=settings.evaluation.ragas_embedding_model,
+        delay_seconds=settings.evaluation.ragas_embedding_delay_seconds,
+    )
 
 
 def _resolve_ragas_openai_config() -> dict[str, str]:
-    api_key = _env_first("OPENAI_API_KEY", "OPENAI_COMPATIBLE_API_KEY")
-    base_url = _env_first("OPENAI_BASE_URL", "OPENAI_COMPATIBLE_BASE_URL")
-    model = _env_first("OPENAI_MODEL", "OPENAI_COMPATIBLE_MODEL")
-    missing = []
-    if not api_key:
-        missing.append("OPENAI_API_KEY or OPENAI_COMPATIBLE_API_KEY")
-    if not base_url:
-        missing.append("OPENAI_BASE_URL or OPENAI_COMPATIBLE_BASE_URL")
-    if not model:
-        missing.append("OPENAI_MODEL or OPENAI_COMPATIBLE_MODEL")
-    if missing:
-        raise RagasScoringError("Missing RAGAS evaluator configuration: " + ", ".join(missing))
-    return {"api_key": api_key, "base_url": base_url, "model": model}
+    try:
+        validate_settings("evaluation")
+    except ConfigValidationError as exc:
+        raise RagasScoringError(str(exc)) from exc
+    return {
+        "api_key": settings.evaluation.ragas_llm_api_key or "",
+        "base_url": settings.evaluation.ragas_llm_base_url or "",
+        "model": settings.evaluation.ragas_llm_model or "",
+    }
 
 
-def _load_environment() -> None:
-    dotenv_path = find_dotenv(usecwd=True)
-    load_dotenv(dotenv_path or None)
-
-
-def _env_first(*names: str) -> str | None:
-    for name in names:
-        value = os.getenv(name)
-        if value:
-            return value
-    return None
+def _validate_evaluation_config() -> None:
+    try:
+        validate_settings("evaluation")
+    except ConfigValidationError as exc:
+        raise RagasScoringError(str(exc)) from exc
 
 
 def _safe_error_message(exc: Exception) -> str:

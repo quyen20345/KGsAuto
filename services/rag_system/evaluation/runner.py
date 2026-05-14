@@ -40,6 +40,15 @@ class EvaluationResult:
     reasoning_steps: Any
     citations: list[str]
     latency_ms: float | None
+    retrieval_time_ms: float | None
+    synthesis_time_ms: float | None
+    token_usage: Any
+    effective_top_k_markdown: int | None
+    effective_top_k_graph: int | None
+    retrieved_markdown_count: int | None
+    retrieved_graph_count: int | None
+    dropped_context_count: int
+    invalid_citations: list[str]
     tags: list[str]
     top_k: int
     context_count: int
@@ -61,6 +70,15 @@ RESULT_FIELDNAMES = [
     "reasoning_steps",
     "citations",
     "latency_ms",
+    "retrieval_time_ms",
+    "synthesis_time_ms",
+    "token_usage",
+    "effective_top_k_markdown",
+    "effective_top_k_graph",
+    "retrieved_markdown_count",
+    "retrieved_graph_count",
+    "dropped_context_count",
+    "invalid_citations",
     "tags",
     "top_k",
     "context_count",
@@ -71,6 +89,14 @@ RESULT_FIELDNAMES = [
 
 
 ALL_MODES = ["semantic_search", "graph_search", "naive_grag", "hybrid"]
+INITIAL_STAGE = "initial"
+DERIVED_CONTEXT_KEYS = ("text_summary", "kg_summary")
+PROVIDER_ERROR_MARKERS = (
+    "OpenAICompatible Error",
+    "Error code: 429",
+    "rate_limit_exceeded",
+    "[429]",
+)
 
 
 def load_jsonl(path: str | Path) -> list[dict[str, Any]]:
@@ -177,6 +203,10 @@ def extract_contexts(response: dict[str, Any]) -> list[str]:
 
 
 def extract_retrieved_contexts(response: dict[str, Any]) -> list[str]:
+    initial_contexts = _initial_contexts_from_retrieved_evidence(response.get("retrieved_evidence"))
+    if initial_contexts:
+        return initial_contexts
+
     retrieved_from_response = _contexts_from_retrieved_evidence(response.get("retrieved_evidence"))
     if retrieved_from_response:
         return retrieved_from_response
@@ -219,18 +249,77 @@ def extract_derived_contexts(response: dict[str, Any]) -> dict[str, Any]:
     derived: dict[str, Any] = {}
     response_derived = response.get("derived_evidence")
     if isinstance(response_derived, dict):
-        derived.update(response_derived)
+        _copy_summary_keys(derived, response_derived)
+        graph_derived = response_derived.get("graph_derived")
+        if isinstance(graph_derived, dict):
+            _copy_summary_keys(derived, graph_derived)
 
     evidence = response.get("evidence") or {}
-    graph_context = evidence.get("graph_context")
-    if isinstance(graph_context, dict):
-        for key in ("text_summary", "kg_summary"):
-            value = graph_context.get(key)
-            if value:
-                derived.setdefault(key, value)
-    if evidence.get("graph_reasoning"):
-        derived.setdefault("graph_reasoning", evidence["graph_reasoning"])
+    if isinstance(evidence, dict):
+        _copy_summary_keys(derived, evidence)
+        graph_context = evidence.get("graph_context")
+        if isinstance(graph_context, dict):
+            _copy_summary_keys(derived, graph_context)
     return derived
+
+
+def extract_retrieval_evidence(response: dict[str, Any]) -> Any:
+    initial_evidence = _initial_retrieved_evidence(response.get("retrieved_evidence"))
+    if initial_evidence:
+        return initial_evidence
+    return response.get("retrieved_evidence")
+
+
+def extract_reasoning_steps(response: dict[str, Any]) -> Any:
+    raw = response.get("reasoning_steps")
+    if not isinstance(raw, dict):
+        return raw
+    return {
+        "subqueries": {
+            "text": raw.get("text_queries") or [],
+            "kg": raw.get("kg_queries") or [],
+            "text_expanded": raw.get("text_expanded_queries") or [],
+            "kg_expanded": raw.get("kg_expanded_queries") or [],
+        },
+        "reasoning": {
+            "text_final": raw.get("text_final_reasoning"),
+            "kg_final": raw.get("kg_final_reasoning"),
+            "final": raw.get("final_reasoning"),
+        },
+        "verification": {
+            "text": raw.get("text_verification"),
+            "kg": raw.get("kg_verification"),
+        },
+    }
+
+
+def _initial_retrieved_evidence(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        return _initial_retrieved_evidence(value.get("graph_retrieval"))
+
+    if isinstance(value, list):
+        return [
+            item
+            for item in value
+            if isinstance(item, dict) and item.get("stage") == INITIAL_STAGE
+        ]
+    return []
+
+
+def _initial_contexts_from_retrieved_evidence(value: Any) -> list[str]:
+    contexts = []
+    for item in _initial_retrieved_evidence(value):
+        text = _first_text(item, "context", "text", "content")
+        if text:
+            contexts.append(text)
+    return contexts
+
+
+def _copy_summary_keys(target: dict[str, Any], source: dict[str, Any]) -> None:
+    for key in DERIVED_CONTEXT_KEYS:
+        value = source.get(key)
+        if value:
+            target.setdefault(key, value)
 
 
 def _contexts_from_retrieved_evidence(value: Any) -> list[str]:
@@ -256,6 +345,14 @@ def _contexts_from_retrieved_evidence(value: Any) -> list[str]:
     return contexts
 
 
+def _dropped_context_count(metadata: dict[str, Any]) -> int:
+    total = 0
+    for key, value in metadata.items():
+        if key.startswith("dropped_") and key.endswith("_count") and isinstance(value, int):
+            total += value
+    return total
+
+
 def run_sample(
     pipeline: UnifiedRetrievalPipeline,
     sample: EvaluationSample,
@@ -271,6 +368,7 @@ def run_sample(
         )
         contexts = extract_contexts(response)
         retrieved_contexts = extract_retrieved_contexts(response)
+        response_metadata = response.get("metadata") or {}
         result = EvaluationResult(
             id=sample.id,
             question=sample.question,
@@ -279,17 +377,26 @@ def run_sample(
             answer=response.get("answer") or "",
             contexts=contexts,
             retrieved_contexts=retrieved_contexts,
-            retrieval_evidence=response.get("retrieved_evidence"),
+            retrieval_evidence=extract_retrieval_evidence(response),
             derived_contexts=extract_derived_contexts(response),
-            reasoning_steps=response.get("reasoning_steps"),
+            reasoning_steps=extract_reasoning_steps(response),
             citations=list(response.get("citations") or []),
             latency_ms=response.get("total_time_ms"),
+            retrieval_time_ms=response.get("retrieval_time_ms"),
+            synthesis_time_ms=response.get("synthesis_time_ms"),
+            token_usage=response.get("token_usage") or response_metadata.get("token_usage"),
+            effective_top_k_markdown=response_metadata.get("effective_top_k_markdown"),
+            effective_top_k_graph=response_metadata.get("effective_top_k_graph"),
+            retrieved_markdown_count=response_metadata.get("retrieved_markdown_count"),
+            retrieved_graph_count=response_metadata.get("retrieved_graph_count"),
+            dropped_context_count=_dropped_context_count(response_metadata),
+            invalid_citations=list(response_metadata.get("invalid_citations") or []),
             tags=sample.tags,
             top_k=top_k,
             context_count=len(retrieved_contexts),
             status="ok",
             error=None,
-            metadata=sample.metadata,
+            metadata={**sample.metadata, "response_metadata": response_metadata},
         )
         return asdict(result)
     except Exception as exc:
@@ -306,6 +413,15 @@ def run_sample(
             reasoning_steps=None,
             citations=[],
             latency_ms=None,
+            retrieval_time_ms=None,
+            synthesis_time_ms=None,
+            token_usage=None,
+            effective_top_k_markdown=None,
+            effective_top_k_graph=None,
+            retrieved_markdown_count=None,
+            retrieved_graph_count=None,
+            dropped_context_count=0,
+            invalid_citations=[],
             tags=sample.tags,
             top_k=top_k,
             context_count=0,
@@ -314,6 +430,120 @@ def run_sample(
             metadata=sample.metadata,
         )
         return asdict(result)
+
+
+def _iter_strings(value: Any) -> Iterable[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _iter_strings(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _iter_strings(item)
+
+
+def result_contains_error(row: dict[str, Any], error_contains: str = "429") -> bool:
+    markers = [*PROVIDER_ERROR_MARKERS]
+    if error_contains:
+        markers.append(error_contains)
+    return any(marker in text for text in _iter_strings(row) for marker in markers)
+
+
+def is_unanswered_or_failed(row: dict[str, Any] | None, error_contains: str = "429") -> bool:
+    if not row:
+        return True
+    answer = row.get("answer")
+    return (
+        not isinstance(answer, str)
+        or not answer.strip()
+        or row.get("status") == "error"
+        or bool(row.get("error"))
+        or result_contains_error(row, error_contains=error_contains)
+    )
+
+
+def _normalize_key_text(value: Any) -> str:
+    return " ".join(str(value or "").split())
+
+
+def _row_key(row: dict[str, Any]) -> tuple[str, str]:
+    return str(row.get("id") or ""), str(row.get("mode") or "")
+
+
+def _question_key(question: Any, mode: str) -> tuple[str, str]:
+    return _normalize_key_text(question), mode
+
+
+def retry_failed_results(
+    dataset_path: str | Path,
+    results_path: str | Path,
+    output_path: str | Path,
+    modes: Sequence[str] | None = None,
+    top_k: int = 5,
+    error_contains: str = "429",
+    verbose: bool = False,
+) -> list[dict[str, Any]]:
+    dataset_rows = load_dataset(dataset_path)
+    samples = [parse_sample(row) for row in dataset_rows]
+    dataset_has_ids = any(row.get("id") for row in dataset_rows)
+    existing_rows = load_dataset(results_path)
+    existing_by_key = {_row_key(row): row for row in existing_rows}
+    existing_by_question = {
+        _question_key(row.get("question"), str(row.get("mode") or "")): row
+        for row in existing_rows
+        if row.get("question") and row.get("mode")
+    }
+    selected_modes = list(modes or sorted({str(row.get("mode")) for row in existing_rows if row.get("mode")}))
+    if not selected_modes:
+        selected_modes = ALL_MODES
+
+    pipeline = UnifiedRetrievalPipeline(RAGConfig())
+    merged = []
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    kept_count = 0
+    retried_count = 0
+    missing_count = 0
+    total = len(samples) * len(selected_modes)
+    current = 0
+
+    with output.open("w", encoding="utf-8") as f:
+        for sample_index, sample in enumerate(samples, start=1):
+            for mode in selected_modes:
+                current += 1
+                key = (sample.id, mode)
+                existing = existing_by_key.get(key) if dataset_has_ids else None
+                if existing is None:
+                    existing = existing_by_question.get(_question_key(sample.question, mode))
+                should_retry = is_unanswered_or_failed(existing, error_contains=error_contains)
+                if not should_retry:
+                    kept_count += 1
+                    result = existing
+                    action = "keep"
+                else:
+                    if existing is None:
+                        missing_count += 1
+                    retried_count += 1
+                    action = "retry"
+                    result = run_sample(pipeline, sample, mode=mode, top_k=top_k)
+
+                merged.append(result)
+                f.write(json.dumps(result, ensure_ascii=False) + "\n")
+                f.flush()
+
+                if verbose:
+                    print(
+                        f"[{current}/{total}] {action} sample={sample_index}/{len(samples)} "
+                        f"mode={mode} id={sample.id} status={result.get('status')} error={result.get('error') or ''}",
+                        flush=True,
+                    )
+
+    write_csv(output.with_suffix(".csv"), merged)
+    if verbose:
+        print(f"Retry summary: kept={kept_count} retried={retried_count} missing={missing_count}", flush=True)
+    return merged
 
 
 def run_dataset(
@@ -339,30 +569,34 @@ def run_dataset_for_modes(
     selected_modes = list(modes or ALL_MODES)
     results = []
 
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
     total = len(samples) * len(selected_modes)
     current = 0
-    for sample_index, sample in enumerate(samples, start=1):
-        for mode in selected_modes:
-            current += 1
-            if verbose:
-                print(
-                    f"[{current}/{total}] sample={sample_index}/{len(samples)} "
-                    f"mode={mode} id={sample.id} question={sample.question[:120]}",
-                    flush=True,
-                )
-            result = run_sample(pipeline, sample, mode=mode, top_k=top_k)
-            results.append(result)
-            if verbose:
-                latency = result.get("latency_ms")
-                latency_text = f" latency_ms={latency:.1f}" if isinstance(latency, (int, float)) else ""
-                print(
-                    f"    -> status={result.get('status')} contexts={result.get('context_count')}"
-                    f"{latency_text} error={result.get('error') or ''}",
-                    flush=True,
-                )
+    with output.open("w", encoding="utf-8") as f:
+        for sample_index, sample in enumerate(samples, start=1):
+            for mode in selected_modes:
+                current += 1
+                if verbose:
+                    print(
+                        f"[{current}/{total}] sample={sample_index}/{len(samples)} "
+                        f"mode={mode} id={sample.id} question={sample.question[:120]}",
+                        flush=True,
+                    )
+                result = run_sample(pipeline, sample, mode=mode, top_k=top_k)
+                results.append(result)
+                f.write(json.dumps(result, ensure_ascii=False) + "\n")
+                f.flush()
+                if verbose:
+                    latency = result.get("latency_ms")
+                    latency_text = f" latency_ms={latency:.1f}" if isinstance(latency, (int, float)) else ""
+                    print(
+                        f"    -> status={result.get('status')} contexts={result.get('context_count')}"
+                        f"{latency_text} error={result.get('error') or ''}",
+                        flush=True,
+                    )
 
-    write_jsonl(output_path, results)
-    csv_path = Path(output_path).with_suffix(".csv")
+    csv_path = output.with_suffix(".csv")
     write_csv(csv_path, results)
     return results
 

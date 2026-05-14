@@ -9,12 +9,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import time
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from openai import OpenAI
 from ragas.embeddings.base import BaseRagasEmbeddings
@@ -38,38 +36,25 @@ from ragas.testset.transforms import (
     apply_transforms,
 )
 
-from services.config import OPENAI_COMPATIBLE_BASE_URL, OPENAI_COMPATIBLE_MODEL
+from services.config import settings
 
 
 DEFAULT_INPUT_DIR = Path("data/evaluation/clean_docs")
 DEFAULT_GRAPH_PATH = Path("data/evaluation/gpt52_ragas/knowledge_graph_clean.json")
 DEFAULT_OUTPUT_PATH = Path("data/evaluation/testset_clean_150.csv")
 DEFAULT_TESTSET_SIZE = 150
-DEFAULT_GENERATOR_MODEL = OPENAI_COMPATIBLE_MODEL or "cx/gpt-5.2"
-DEFAULT_GENERATOR_BASE_URL = OPENAI_COMPATIBLE_BASE_URL or "http://localhost:20128/v1"
-DEFAULT_EMBED_MODEL = "nvidia/llama-3.2-nemoretriever-300m-embed-v1"
-DEFAULT_EMBED_BASE_URL = "https://integrate.api.nvidia.com/v1"
+DEFAULT_GENERATOR_MODEL = settings.evaluation.ragas_llm_model or "cx/gpt-5.2"
+DEFAULT_GENERATOR_BASE_URL = settings.evaluation.ragas_llm_base_url or "http://localhost:20128/v1"
+DEFAULT_EMBED_MODEL = settings.evaluation.ragas_embedding_model
+DEFAULT_EMBED_BASE_URL = settings.evaluation.ragas_embedding_base_url
 HEADLINE_SPLITTER_MIN_TOKENS = 200
 VIETNAMESE_CHARS = set("ăâđêôơưáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
 
 
-def env_value(*names: str, default: str | None = None) -> str | None:
-    for name in names:
-        value = os.getenv(name)
-        if value:
-            return value
-    return default
-
-
-def require_env(*names: str) -> str:
-    value = env_value(*names)
+def require_value(value: str | None, *names: str) -> str:
     if value:
         return value
     raise SystemExit(f"Missing required environment variable: {' or '.join(names)}")
-
-
-def load_environment() -> None:
-    load_dotenv()
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,14 +73,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--embed-delay-seconds", type=float, default=0.5)
     parser.add_argument(
         "--generator-model",
-        default=env_value("OPENAI_COMPATIBLE_MODEL", "OPENAI_MODEL", default=DEFAULT_GENERATOR_MODEL),
+        default=DEFAULT_GENERATOR_MODEL,
     )
     parser.add_argument(
         "--generator-base-url",
-        default=env_value("OPENAI_COMPATIBLE_BASE_URL", "OPENAI_BASE_URL", default=DEFAULT_GENERATOR_BASE_URL),
+        default=DEFAULT_GENERATOR_BASE_URL,
     )
-    parser.add_argument("--embed-model", default=env_value("NVIDIA_EMBED_MODEL", default=DEFAULT_EMBED_MODEL))
-    parser.add_argument("--embed-base-url", default=env_value("NVIDIA_BASE_URL", default=DEFAULT_EMBED_BASE_URL))
+    parser.add_argument("--embed-model", default=DEFAULT_EMBED_MODEL)
+    parser.add_argument("--embed-base-url", default=DEFAULT_EMBED_BASE_URL)
     return parser.parse_args()
 
 
@@ -147,13 +132,13 @@ def load_markdown_documents(input_dir: Path):
 
 
 def create_generator_llm(model: str, base_url: str):
-    api_key = require_env("OPENAI_COMPATIBLE_API_KEY", "OPENAI_API_KEY", "CX_API_KEY")
+    api_key = require_value(settings.evaluation.ragas_llm_api_key, "OPENAI_API_KEY", "OPENAI_COMPATIBLE_API_KEY", "CX_API_KEY")
     client = OpenAI(api_key=api_key, base_url=base_url)
     return llm_factory(model=model, client=client)
 
 
 def create_embeddings(model: str, base_url: str, delay_seconds: float) -> NvidiaEmbeddings:
-    api_key = require_env("NVIDIA_API_KEY")
+    api_key = require_value(settings.evaluation.ragas_embedding_api_key, "RAGAS_EMBEDDING_API_KEY", "NVIDIA_API_KEY")
     client = OpenAI(api_key=api_key, base_url=base_url)
     return NvidiaEmbeddings(client=client, model=model, delay_seconds=delay_seconds)
 
@@ -389,7 +374,6 @@ def looks_vietnamese(text: str) -> bool:
 
 
 def main() -> None:
-    load_environment()
     args = parse_args()
     generator_llm = create_generator_llm(args.generator_model, args.generator_base_url)
     embeddings = create_embeddings(args.embed_model, args.embed_base_url, args.embed_delay_seconds)
