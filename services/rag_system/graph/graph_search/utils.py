@@ -9,12 +9,16 @@ from typing import Any
 from services.llms import get_llm
 
 
-def _get_llm_client(model_name: str | None = None):
+def _get_llm_client(model_name: str | None = None, temperature: float | None = None):
     """Get the unified LLM client from RAG config / env defaults."""
     from services.rag_system.config import RAGConfig
 
     config = RAGConfig()
-    return get_llm(config.llm_provider, model_name=model_name or config.llm_model)
+    return get_llm(
+        config.llm_provider,
+        model_name=model_name or config.llm_model,
+        temperature=config.llm_temperature if temperature is None else temperature,
+    )
 
 
 async def openai_complete(
@@ -36,8 +40,12 @@ async def openai_complete(
         parts.append(f"[user]: {prompt}")
         effective_prompt = "\n".join(parts)
 
-    llm = _get_llm_client(model)
-    response = await llm.agenerate(prompt=effective_prompt, system_prompt=system_prompt)
+    llm = _get_llm_client(model, temperature=temperature)
+    response = await llm.agenerate(
+        prompt=effective_prompt,
+        system_prompt=system_prompt,
+        temperature=temperature,
+    )
     return response.content or ""
 
 

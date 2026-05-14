@@ -38,8 +38,6 @@ class UnifiedRetrievalPipeline:
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
         canonical = canonical_unified_mode(mode)
-        if top_k is None:
-            top_k = self.config.top_k_markdown
 
         if canonical == "semantic_search":
             result = run_semantic_search(self, question, top_k, include_evidence)
@@ -62,8 +60,6 @@ class UnifiedRetrievalPipeline:
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
         canonical = canonical_unified_mode(mode)
-        if top_k is None:
-            top_k = self.config.top_k_markdown
 
         if canonical == "semantic_search":
             result = await asyncio.to_thread(run_semantic_search, self, question, top_k, include_evidence)

@@ -162,17 +162,17 @@ class Neo4jAdapter:
         self.driver = get_driver()
         self.config = config or RAGConfig()
         self.top_k = top_k
-        self.keyword_max_terms = getattr(self.config, "graph_keyword_max_terms", 16)
-        self.keyword_timeout_seconds = getattr(self.config, "graph_keyword_timeout_seconds", 15.0)
-        self.fulltext_candidate_limit = getattr(self.config, "graph_fulltext_candidate_limit", 50)
-        self.neighbor_limit_per_entity = getattr(self.config, "graph_neighbor_limit_per_entity", 10)
-        self.fulltext_entity_index = getattr(self.config, "graph_fulltext_entity_index", "kg_entity_search")
-        self.fulltext_relationship_index = getattr(self.config, "graph_fulltext_relationship_index", "kg_relationship_search")
-        self.enable_relationship_fulltext = getattr(self.config, "graph_enable_relationship_fulltext", True)
-        self.enable_substring_fallback = getattr(self.config, "graph_enable_substring_fallback", True)
-        self.substring_fallback_limit = getattr(self.config, "graph_substring_fallback_limit", 20)
-        self.description_fallback_min_term_length = getattr(self.config, "graph_description_fallback_min_term_length", 5)
-        self.allow_legacy_scan_fallback = getattr(self.config, "graph_allow_legacy_scan_fallback", True)
+        self.keyword_max_terms = self.config.graph_keyword_max_terms
+        self.keyword_timeout_seconds = self.config.graph_keyword_timeout_seconds
+        self.fulltext_candidate_limit = self.config.graph_fulltext_candidate_limit
+        self.neighbor_limit_per_entity = self.config.graph_neighbor_limit_per_entity
+        self.fulltext_entity_index = self.config.graph_fulltext_entity_index
+        self.fulltext_relationship_index = self.config.graph_fulltext_relationship_index
+        self.enable_relationship_fulltext = self.config.graph_enable_relationship_fulltext
+        self.enable_substring_fallback = self.config.graph_enable_substring_fallback
+        self.substring_fallback_limit = self.config.graph_substring_fallback_limit
+        self.description_fallback_min_term_length = self.config.graph_description_fallback_min_term_length
+        self.allow_legacy_scan_fallback = self.config.graph_allow_legacy_scan_fallback
         self._available_indexes: set[str] | None = None
         self._store = None
 
@@ -213,7 +213,7 @@ class Neo4jAdapter:
                 entities_by_id[entity_id] = {
                     "entity_name": details.get("name") or entity_id,
                     "entity_type": ", ".join(details.get("labels") or []),
-                    "description": _join_text(properties.get("description"), limit=1200),
+                    "description": _join_text(properties.get("description"), limit=self.config.graph_context_description_max_chars),
                     "aliases": _as_list(properties.get("aliases")),
                     "source_id": entity_id,
                     "chunk_id": _chunk_ids(properties),
@@ -237,7 +237,7 @@ class Neo4jAdapter:
             relationships_by_key[key] = {
                 "src_id": source,
                 "tgt_id": target,
-                "description": _join_text(props.get("description"), limit=1200) or f"{source} {relation} {target}",
+                "description": _join_text(props.get("description"), limit=self.config.graph_context_description_max_chars) or f"{source} {relation} {target}",
                 "keywords": relation,
                 "weight": 1.0,
                 "chunk_id": chunk_ids,
@@ -246,7 +246,7 @@ class Neo4jAdapter:
                 "retrieval_score": float(rel.get("score") or rel.get("retrieval_score") or 0.0),
             }
         graph_started_at = time.perf_counter()
-        entity_task = asyncio.to_thread(self._search_entities_batch, keywords, self.top_k * 4)
+        entity_task = asyncio.to_thread(self._search_entities_batch, keywords, self.top_k * self.config.graph_entity_search_top_k_multiplier)
         vector_task = asyncio.to_thread(self._search_chunks, question)
         entity_hits, vector_chunks = await asyncio.gather(entity_task, vector_task)
 
@@ -261,7 +261,7 @@ class Neo4jAdapter:
             )
         ]
         if self.enable_relationship_fulltext:
-            relationship_tasks.append(asyncio.to_thread(self._search_relationships_batch, keywords, self.top_k * 3))
+            relationship_tasks.append(asyncio.to_thread(self._search_relationships_batch, keywords, self.top_k * self.config.graph_relationship_search_top_k_multiplier))
 
         relationship_results = await asyncio.gather(*relationship_tasks)
         for rels in relationship_results:
@@ -289,8 +289,8 @@ class Neo4jAdapter:
             reverse=True,
         )
         return format_graphsearch_context(
-            entities[: self.top_k * 2],
-            relationships[: self.top_k * 3],
+            entities[: self.top_k * self.config.graph_context_entity_top_k_multiplier],
+            relationships[: self.top_k * self.config.graph_context_relationship_top_k_multiplier],
             list(chunks_by_id.values())[: self.top_k],
             list(sources_by_id.values())[: self.top_k],
         )
@@ -440,17 +440,17 @@ Knowledge Graph Data (Relationship):
         score = float(fulltext_score or entity.get("score") or entity.get("fulltext_score") or 0.0)
         for term in normalized_terms:
             if term in normalized_names:
-                score = max(score, 100.0)
+                score = max(score, self.config.graph_score_exact_name)
             if term in normalized_aliases:
-                score = max(score, 95.0)
+                score = max(score, self.config.graph_score_exact_alias)
             if any(term in alias for alias in normalized_aliases):
-                score = max(score, 90.0)
+                score = max(score, self.config.graph_score_partial_alias)
             if any(term in name for name in normalized_names):
-                score = max(score, 80.0)
+                score = max(score, self.config.graph_score_partial_name)
             if term in search_text:
-                score = max(score, 70.0)
+                score = max(score, self.config.graph_score_search_text)
             if len(term) >= self.description_fallback_min_term_length and any(term in desc for desc in normalized_descriptions):
-                score = max(score, 60.0)
+                score = max(score, self.config.graph_score_description)
         return score
 
     def _search_entities_batch(self, terms: list[str], limit: int = 20) -> List[Dict[str, Any]]:
@@ -647,8 +647,6 @@ Knowledge Graph Data (Relationship):
         UNWIND $entity_ids AS entity_id
         MATCH (n {id: entity_id})-[r]-(m)
         WHERE m.id IS NOT NULL
-        WITH entity_id, n, r, m
-        ORDER BY coalesce(r.weight, 1.0) DESC
         WITH entity_id, collect({n:n, r:r, m:m})[..$limit_per_entity] AS rels
         UNWIND rels AS item
         RETURN item.n.id as source_id, coalesce(item.n.name, item.n.id) as source,

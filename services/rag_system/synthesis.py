@@ -79,7 +79,11 @@ class AnswerSynthesizer:
 
     def __init__(self, config):
         self.config = config
-        self.llm = get_llm(config.llm_provider, model_name=config.llm_model)
+        self.llm = get_llm(
+            config.llm_provider,
+            model_name=config.llm_model,
+            temperature=config.llm_temperature,
+        )
 
     def synthesize(
         self,
@@ -90,17 +94,22 @@ class AnswerSynthesizer:
         user_prompt: str,
     ) -> Answer:
         try:
-            response = self.llm.generate(prompt=user_prompt, system_prompt=system_prompt)
+            response = self.llm.generate(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=self.config.llm_temperature,
+            )
 
             answer_text = response.content.strip()
             token_usage = response.usage_tokens
             citations = self._extract_citations(answer_text)
+            citation_metadata = self._validate_citations(citations, evidence)
 
             return Answer(
                 text=answer_text,
                 citations=citations,
                 confidence=None,
-                metadata={"model": response.model, "token_usage": token_usage, "mode": mode},
+                metadata={"model": response.model, "token_usage": token_usage, "mode": mode, **citation_metadata},
             )
 
         except Exception as e:
@@ -123,6 +132,21 @@ class AnswerSynthesizer:
                 seen.add(match)
 
         return citations
+
+    def _validate_citations(self, citations: List[str], evidence: List[Dict[str, Any]]) -> Dict[str, Any]:
+        allowed = set()
+        for item in evidence:
+            if not isinstance(item, dict):
+                continue
+            for key in ("chunk_id", "citation_id", "entity_id"):
+                value = item.get(key)
+                if value:
+                    allowed.add(str(value))
+        if not allowed:
+            return {"valid_citations": citations, "invalid_citations": []}
+        valid = [citation for citation in citations if citation in allowed]
+        invalid = [citation for citation in citations if citation not in allowed]
+        return {"valid_citations": valid, "invalid_citations": invalid}
 
     def synthesize_markdown_only(self, question: str, chunks: List[Dict[str, Any]]) -> Answer:
         user_prompt = build_markdown_prompt(question, chunks)
@@ -148,6 +172,20 @@ Nội dung:
 """
             )
         return chr(10).join(markdown_parts) if markdown_parts else "Không có markdown evidence."
+
+    def _format_graph_context_summary(self, graph_context: Dict[str, Any] | None) -> str:
+        if not graph_context:
+            return "Không có graph_search context."
+        if isinstance(graph_context, str):
+            return graph_context[:4000]
+        summary_parts = []
+        for key in ("text_summary", "kg_summary", "final_reasoning", "answer"):
+            value = graph_context.get(key) if isinstance(graph_context, dict) else None
+            if isinstance(value, str) and value.strip():
+                summary_parts.append(f"{key}: {value.strip()}")
+        if summary_parts:
+            return "\n\n".join(summary_parts)[:4000]
+        return pformat(graph_context, compact=True)[:4000]
 
     def synthesize_hybrid_graphsearch(
         self,
@@ -177,9 +215,9 @@ Deep graph_search answer:
 {"=" * 60}
 {graph_answer or "Không có câu trả lời từ graph_search."}
 
-Deep graph_search evidence/context:
+Deep graph_search evidence/context summary:
 {"=" * 60}
-{pformat(graph_context, compact=False) if graph_context else "Không có graph_search context."}
+{self._format_graph_context_summary(graph_context)}
 
 Deep graph_search reasoning summary:
 {"=" * 60}

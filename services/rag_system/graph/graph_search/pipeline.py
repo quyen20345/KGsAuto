@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -147,118 +148,162 @@ async def graph_search_reasoning(question: str, grag_method: GraphSearchMethod) 
 
     initial_context = await timed("CR.initial_context_retrieval", grag_method.aquery_context(question=question), "retrieval")
     retrieval_evidence.append(_retrieval_record(stage="initial", query=question, context=initial_context))
-    text_initial_summary = await timed("CR.initial_text_summary", text_summary(question, initial_context), "synthesis")
-    kg_initial_summary = await timed("CR.initial_kg_summary", kg_summary(question, initial_context), "synthesis")
 
-    logging.info("[QD] Decomposing semantic and relational queries")
-    semantic_decomposition = await timed("QD.semantic_decomposition", question_decomposition_deep(question), "synthesis")
-    relational_decomposition = await timed("QD.relational_decomposition", question_decomposition_deep_kg(question), "synthesis")
+    # Parallel: initial summaries + decompositions
+    text_initial_summary, kg_initial_summary, semantic_decomposition, relational_decomposition = await asyncio.gather(
+        timed("CR.initial_text_summary", text_summary(question, initial_context), "synthesis"),
+        timed("CR.initial_kg_summary", kg_summary(question, initial_context), "synthesis"),
+        timed("QD.semantic_decomposition", question_decomposition_deep(question), "synthesis"),
+        timed("QD.relational_decomposition", question_decomposition_deep_kg(question), "synthesis"),
+    )
 
+    logging.info("[QD] Decomposed semantic and relational queries (parallel)")
     sub_queries = parse_semantic_sub_queries(semantic_decomposition, max_items=MAX_SUB_QUERIES)
     sub_kg_queries = parse_relational_sub_queries(relational_decomposition, max_items=MAX_SUB_QUERIES)
 
-    text_query_history: list[tuple[str, str, str]] = []
-    text_expanded_queries: list[str] = []
-    for sub_query in sub_queries:
-        text_query_history_str = format_history_context(text_query_history)
-        if "#" in sub_query:
-            completed = await timed(
-                "QG.semantic_query_grounding",
-                query_completer(sub_query, semantic_decomposition + "\n\n" + text_query_history_str),
-                "synthesis",
-            )
-            sub_query = completed or sub_query
+    # Run semantic and relational branches in parallel
+    async def _semantic_branch():
+        branch_evidence: list[dict[str, Any]] = []
+        text_query_history: list[tuple[str, str, str]] = []
+        text_expanded_queries: list[str] = []
 
-        sub_query_raw_context = await timed("CR.semantic_subquery_retrieval", grag_method.aquery_context(question=sub_query), "retrieval")
-        retrieval_evidence.append(_retrieval_record(stage="semantic_subquery", query=sub_query, context=sub_query_raw_context, filter_type="semantic"))
-        sub_query_context = grag_method.context_filter(context_data=sub_query_raw_context, filter_type="semantic")
-        sub_query_context_summary = await timed("CR.semantic_context_refinement", text_summary(sub_query, sub_query_context), "synthesis")
-        sub_query_context_data = text_query_history_str + "\n\n" + sub_query_context_summary
-        sub_query_answer = await timed("QG.semantic_intermediate_answer", answer_generation(sub_query, sub_query_context_data), "synthesis")
-        text_query_history.append((sub_query, sub_query_context_summary, sub_query_answer))
+        for sub_query in sub_queries:
+            text_query_history_str = format_history_context(text_query_history)
+            if "#" in sub_query:
+                completed = await timed(
+                    "QG.semantic_query_grounding",
+                    query_completer(sub_query, semantic_decomposition + "\n\n" + text_query_history_str),
+                    "synthesis",
+                )
+                sub_query = completed or sub_query
 
-    text_query_history_str = format_history_context(text_query_history)
-    logging.info("[LD] Drafting semantic reasoning chain")
-    text_final_answer, text_final_reasoning = await timed("LD.semantic_logic_drafting", answer_generation_deep(question, text_query_history_str), "synthesis")
-
-    logging.info("[EV] Verifying semantic evidence")
-    text_verification_result = await timed(
-        "EV.semantic_evidence_verification",
-        evidence_verification(question, text_query_history_str, text_final_answer),
-        "synthesis",
-    )
-
-    if _looks_negative(text_verification_result):
-        logging.info("[QE] Expanding semantic queries")
-        query_expansion_result = await timed(
-            "QE.semantic_query_expansion",
-            query_expansion(question, text_query_history_str, text_final_answer, text_verification_result),
-            "synthesis",
-        )
-        expanded_queries = parse_expanded_queries(query_expansion_result, max_items=MAX_EXPANDED_QUERIES)
-        text_expanded_queries.extend(expanded_queries)
-
-        for expanded_query in expanded_queries:
-            expanded_query_raw_context = await timed("CR.semantic_expansion_retrieval", grag_method.aquery_context(question=expanded_query), "retrieval")
-            retrieval_evidence.append(_retrieval_record(stage="semantic_expansion", query=expanded_query, context=expanded_query_raw_context, filter_type="semantic"))
-            expanded_query_context = grag_method.context_filter(context_data=expanded_query_raw_context, filter_type="semantic")
-            expanded_summary = await timed("CR.semantic_expansion_refinement", text_summary(expanded_query, expanded_query_context), "synthesis")
-            text_query_history.append((expanded_query, expanded_summary, ""))
+            sub_query_raw_context = await timed("CR.semantic_subquery_retrieval", grag_method.aquery_context(question=sub_query), "retrieval")
+            branch_evidence.append(_retrieval_record(stage="semantic_subquery", query=sub_query, context=sub_query_raw_context, filter_type="semantic"))
+            sub_query_context = grag_method.context_filter(context_data=sub_query_raw_context, filter_type="semantic")
+            sub_query_context_summary = await timed("CR.semantic_context_refinement", text_summary(sub_query, sub_query_context), "synthesis")
+            sub_query_context_data = text_query_history_str + "\n\n" + sub_query_context_summary
+            sub_query_answer = await timed("QG.semantic_intermediate_answer", answer_generation(sub_query, sub_query_context_data), "synthesis")
+            text_query_history.append((sub_query, sub_query_context_summary, sub_query_answer))
 
         text_query_history_str = format_history_context(text_query_history)
+        logging.info("[LD] Drafting semantic reasoning chain")
+        text_final_answer, text_final_reasoning = await timed("LD.semantic_logic_drafting", answer_generation_deep(question, text_query_history_str), "synthesis")
 
-    kg_query_history: list[tuple[str, str, str]] = []
-    kg_expanded_queries: list[str] = []
-    for index, sub_kg_query in enumerate(sub_kg_queries):
-        kg_query_history_str = format_history_context(kg_query_history)
-        if index > 0:
-            completed = await timed(
-                "QG.relational_query_grounding",
-                kg_query_completer(sub_kg_query, relational_decomposition + "\n\n" + kg_query_history_str),
-                "synthesis",
-            )
-            sub_kg_query = completed or sub_kg_query
-
-        sub_kg_query_cleaned = relational_query_to_retrieval_text(sub_kg_query)
-        if not sub_kg_query_cleaned:
-            continue
-        sub_kg_query_raw_context = await timed("CR.relational_subquery_retrieval", grag_method.aquery_context(question=sub_kg_query_cleaned), "retrieval")
-        retrieval_evidence.append(_retrieval_record(stage="relational_subquery", query=sub_kg_query_cleaned, context=sub_kg_query_raw_context, filter_type="relational"))
-        sub_kg_query_context = grag_method.context_filter(context_data=sub_kg_query_raw_context, filter_type="relational")
-        sub_kg_query_summary = await timed("CR.relational_context_refinement", kg_summary(sub_kg_query, sub_kg_query_context), "synthesis")
-        sub_kg_query_context_data = kg_query_history_str + "\n\n" + sub_kg_query_summary
-        sub_kg_query_answer = await timed("QG.relational_intermediate_answer", answer_generation(sub_kg_query, sub_kg_query_context_data), "synthesis")
-        kg_query_history.append((sub_kg_query, sub_kg_query_summary, sub_kg_query_answer))
-
-    kg_query_history_str = format_history_context(kg_query_history)
-    logging.info("[LD] Drafting relational reasoning chain")
-    kg_final_answer, kg_final_reasoning = await timed("LD.relational_logic_drafting", answer_generation_deep(question, kg_query_history_str), "synthesis")
-
-    logging.info("[EV] Verifying relational evidence")
-    kg_verification_result = await timed(
-        "EV.relational_evidence_verification",
-        evidence_verification(question, kg_query_history_str, kg_final_answer),
-        "synthesis",
-    )
-
-    if _looks_negative(kg_verification_result):
-        logging.info("[QE] Expanding relational queries")
-        query_expansion_result = await timed(
-            "QE.relational_query_expansion",
-            query_expansion(question, kg_query_history_str, kg_final_answer, kg_verification_result),
+        logging.info("[EV] Verifying semantic evidence")
+        text_verification_result = await timed(
+            "EV.semantic_evidence_verification",
+            evidence_verification(question, text_query_history_str, text_final_answer),
             "synthesis",
         )
-        expanded_queries = parse_expanded_queries(query_expansion_result, max_items=MAX_EXPANDED_QUERIES)
-        kg_expanded_queries.extend(expanded_queries)
 
-        for expanded_query in expanded_queries:
-            expanded_raw_context = await timed("CR.relational_expansion_retrieval", grag_method.aquery_context(question=expanded_query), "retrieval")
-            retrieval_evidence.append(_retrieval_record(stage="relational_expansion", query=expanded_query, context=expanded_raw_context, filter_type="relational"))
-            expanded_context = grag_method.context_filter(context_data=expanded_raw_context, filter_type="relational")
-            expanded_summary = await timed("CR.relational_expansion_refinement", kg_summary(expanded_query, expanded_context), "synthesis")
-            kg_query_history.append((expanded_query, expanded_summary, ""))
+        if _looks_negative(text_verification_result):
+            logging.info("[QE] Expanding semantic queries")
+            query_expansion_result = await timed(
+                "QE.semantic_query_expansion",
+                query_expansion(question, text_query_history_str, text_final_answer, text_verification_result),
+                "synthesis",
+            )
+            expanded_queries = parse_expanded_queries(query_expansion_result, max_items=MAX_EXPANDED_QUERIES)
+            text_expanded_queries.extend(expanded_queries)
+
+            for expanded_query in expanded_queries:
+                expanded_query_raw_context = await timed("CR.semantic_expansion_retrieval", grag_method.aquery_context(question=expanded_query), "retrieval")
+                branch_evidence.append(_retrieval_record(stage="semantic_expansion", query=expanded_query, context=expanded_query_raw_context, filter_type="semantic"))
+                expanded_query_context = grag_method.context_filter(context_data=expanded_query_raw_context, filter_type="semantic")
+                expanded_summary = await timed("CR.semantic_expansion_refinement", text_summary(expanded_query, expanded_query_context), "synthesis")
+                text_query_history.append((expanded_query, expanded_summary, ""))
+
+            text_query_history_str = format_history_context(text_query_history)
+
+        return {
+            "query_history": text_query_history,
+            "query_history_str": text_query_history_str,
+            "verification": text_verification_result,
+            "expanded_queries": text_expanded_queries,
+            "final_reasoning": text_final_reasoning,
+            "evidence": branch_evidence,
+        }
+
+    async def _relational_branch():
+        branch_evidence: list[dict[str, Any]] = []
+        kg_query_history: list[tuple[str, str, str]] = []
+        kg_expanded_queries: list[str] = []
+
+        for index, sub_kg_query in enumerate(sub_kg_queries):
+            kg_query_history_str = format_history_context(kg_query_history)
+            if index > 0:
+                completed = await timed(
+                    "QG.relational_query_grounding",
+                    kg_query_completer(sub_kg_query, relational_decomposition + "\n\n" + kg_query_history_str),
+                    "synthesis",
+                )
+                sub_kg_query = completed or sub_kg_query
+
+            sub_kg_query_cleaned = relational_query_to_retrieval_text(sub_kg_query)
+            if not sub_kg_query_cleaned:
+                continue
+            sub_kg_query_raw_context = await timed("CR.relational_subquery_retrieval", grag_method.aquery_context(question=sub_kg_query_cleaned), "retrieval")
+            branch_evidence.append(_retrieval_record(stage="relational_subquery", query=sub_kg_query_cleaned, context=sub_kg_query_raw_context, filter_type="relational"))
+            sub_kg_query_context = grag_method.context_filter(context_data=sub_kg_query_raw_context, filter_type="relational")
+            sub_kg_query_summary = await timed("CR.relational_context_refinement", kg_summary(sub_kg_query, sub_kg_query_context), "synthesis")
+            sub_kg_query_context_data = kg_query_history_str + "\n\n" + sub_kg_query_summary
+            sub_kg_query_answer = await timed("QG.relational_intermediate_answer", answer_generation(sub_kg_query, sub_kg_query_context_data), "synthesis")
+            kg_query_history.append((sub_kg_query, sub_kg_query_summary, sub_kg_query_answer))
 
         kg_query_history_str = format_history_context(kg_query_history)
+        logging.info("[LD] Drafting relational reasoning chain")
+        kg_final_answer, kg_final_reasoning = await timed("LD.relational_logic_drafting", answer_generation_deep(question, kg_query_history_str), "synthesis")
+
+        logging.info("[EV] Verifying relational evidence")
+        kg_verification_result = await timed(
+            "EV.relational_evidence_verification",
+            evidence_verification(question, kg_query_history_str, kg_final_answer),
+            "synthesis",
+        )
+
+        if _looks_negative(kg_verification_result):
+            logging.info("[QE] Expanding relational queries")
+            query_expansion_result = await timed(
+                "QE.relational_query_expansion",
+                query_expansion(question, kg_query_history_str, kg_final_answer, kg_verification_result),
+                "synthesis",
+            )
+            expanded_queries = parse_expanded_queries(query_expansion_result, max_items=MAX_EXPANDED_QUERIES)
+            kg_expanded_queries.extend(expanded_queries)
+
+            for expanded_query in expanded_queries:
+                expanded_raw_context = await timed("CR.relational_expansion_retrieval", grag_method.aquery_context(question=expanded_query), "retrieval")
+                branch_evidence.append(_retrieval_record(stage="relational_expansion", query=expanded_query, context=expanded_raw_context, filter_type="relational"))
+                expanded_context = grag_method.context_filter(context_data=expanded_raw_context, filter_type="relational")
+                expanded_summary = await timed("CR.relational_expansion_refinement", kg_summary(expanded_query, expanded_context), "synthesis")
+                kg_query_history.append((expanded_query, expanded_summary, ""))
+
+            kg_query_history_str = format_history_context(kg_query_history)
+
+        return {
+            "query_history": kg_query_history,
+            "query_history_str": kg_query_history_str,
+            "verification": kg_verification_result,
+            "expanded_queries": kg_expanded_queries,
+            "final_reasoning": kg_final_reasoning,
+            "evidence": branch_evidence,
+        }
+
+    semantic_result, relational_result = await asyncio.gather(_semantic_branch(), _relational_branch())
+
+    text_query_history = semantic_result["query_history"]
+    text_query_history_str = semantic_result["query_history_str"]
+    text_verification_result = semantic_result["verification"]
+    text_expanded_queries = semantic_result["expanded_queries"]
+    text_final_reasoning = semantic_result["final_reasoning"]
+    retrieval_evidence.extend(semantic_result["evidence"])
+
+    kg_query_history = relational_result["query_history"]
+    kg_query_history_str = relational_result["query_history_str"]
+    kg_verification_result = relational_result["verification"]
+    kg_expanded_queries = relational_result["expanded_queries"]
+    kg_final_reasoning = relational_result["final_reasoning"]
+    retrieval_evidence.extend(relational_result["evidence"])
 
     combined_history = (
         "Background information:\n"

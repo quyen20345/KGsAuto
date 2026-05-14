@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from services.rag_system.config import RAGConfig
 from services.rag_system.graph.neo4j_context_adapter import (
     Neo4jAdapter,
     deterministic_query_terms,
@@ -45,6 +46,7 @@ def test_extract_keywords_uses_deterministic_fallback_when_llm_fails(monkeypatch
 
 def test_score_entity_prioritizes_exact_alias_over_description():
     adapter = object.__new__(Neo4jAdapter)
+    adapter.config = RAGConfig()
     adapter.description_fallback_min_term_length = 5
     alias_hit = {
         "id": "a",
@@ -62,6 +64,7 @@ def test_score_entity_prioritizes_exact_alias_over_description():
 
 def test_search_entities_batch_calls_substring_fallback_when_fulltext_is_sparse(monkeypatch):
     adapter = object.__new__(Neo4jAdapter)
+    adapter.config = RAGConfig()
     adapter.fulltext_entity_index = "kg_entity_search"
     adapter.fulltext_candidate_limit = 50
     adapter.enable_substring_fallback = True
@@ -94,8 +97,45 @@ def test_search_entities_batch_calls_substring_fallback_when_fulltext_is_sparse(
     assert results[0]["score"] == 95.0
 
 
+def test_get_relationships_batch_does_not_order_by_relationship_weight():
+    adapter = object.__new__(Neo4jAdapter)
+    captured = {}
+
+    class FakeResult:
+        def __iter__(self):
+            return iter([])
+
+    class FakeSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def run(self, query, params):
+            captured["query"] = query
+            captured["params"] = params
+            return FakeResult()
+
+    class FakeDriver:
+        def session(self):
+            return FakeSession()
+
+    adapter.driver = FakeDriver()
+
+    result = adapter._get_relationships_batch(["node_a"], limit_per_entity=3)
+
+    assert result == []
+    assert "r.weight" not in captured["query"]
+    assert "coalesce(r.weight" not in captured["query"]
+    assert "UNWIND $entity_ids AS entity_id" in captured["query"]
+    assert "collect({n:n, r:r, m:m})[..$limit_per_entity]" in captured["query"]
+    assert captured["params"] == {"entity_ids": ["node_a"], "limit_per_entity": 3}
+
+
 def test_aquery_context_uses_batched_graph_methods(monkeypatch):
     adapter = object.__new__(Neo4jAdapter)
+    adapter.config = RAGConfig()
     adapter.top_k = 2
     adapter.neighbor_limit_per_entity = 3
     adapter.enable_relationship_fulltext = True
