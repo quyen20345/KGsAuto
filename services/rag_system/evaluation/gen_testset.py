@@ -39,9 +39,9 @@ from ragas.testset.transforms import (
 from services.config import settings
 
 
-DEFAULT_INPUT_DIR = Path("data/evaluation/clean_docs")
-DEFAULT_GRAPH_PATH = Path("data/evaluation/gpt52_ragas/knowledge_graph_clean.json")
-DEFAULT_OUTPUT_PATH = Path("data/evaluation/testset_clean_150.csv")
+DEFAULT_INPUT_DIR = Path("data/evaluation/corpus/docs")
+DEFAULT_GRAPH_PATH = Path("data/evaluation/ragas_kg/knowledge_graph.json")
+DEFAULT_OUTPUT_PATH = Path("data/evaluation/testset/questions.csv")
 DEFAULT_TESTSET_SIZE = 150
 DEFAULT_GENERATOR_MODEL = settings.evaluation.ragas_llm_model or "cx/gpt-5.2"
 DEFAULT_GENERATOR_BASE_URL = settings.evaluation.ragas_llm_base_url or "http://localhost:20128/v1"

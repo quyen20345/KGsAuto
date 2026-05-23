@@ -11,6 +11,7 @@ from apps.pipeline_api.models import (
     FileInfo,
     UploadResponse,
 )
+from apps.pipeline_api.paths import safe_raw_markdown_path
 
 router = APIRouter(prefix="/api/files", tags=["files"])
 
@@ -96,10 +97,11 @@ async def upload_files(files: list[UploadFile] = File(...)) -> UploadResponse:
     uploaded = []
     skipped = []
     for f in files:
-        if not f.filename or not f.filename.endswith(".md"):
+        try:
+            dest = safe_raw_markdown_path(f.filename or "")
+        except HTTPException:
             skipped.append(f.filename or "unknown")
             continue
-        dest = RAW_DIR / f.filename
         if dest.exists():
             skipped.append(f.filename)
             continue
@@ -111,10 +113,8 @@ async def upload_files(files: list[UploadFile] = File(...)) -> UploadResponse:
 
 @router.delete("/raw/{filename}")
 async def delete_raw_file(filename: str):
-    path = RAW_DIR / filename
+    path = safe_raw_markdown_path(filename)
     if not path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    if not path.is_relative_to(RAW_DIR):
-        raise HTTPException(status_code=400, detail="Invalid path")
     path.unlink()
     return {"deleted": filename}

@@ -1,6 +1,6 @@
 # LLMs Module
 
-Module `llms/` cung cap mot abstraction nho gon de goi nhieu nha cung cap LLM qua cung 1 interface.
+Module `services.llms` cung cap mot abstraction nho gon de goi nhieu nha cung cap LLM qua cung 1 interface.
 
 ## 1) Muc tieu
 
@@ -11,7 +11,7 @@ Module `llms/` cung cap mot abstraction nho gon de goi nhieu nha cung cap LLM qu
 ## 2) Cau truc thu muc
 
 ```text
-llms/
+services/llms/
 |- __init__.py
 |- base.py
 |- factory.py
@@ -29,14 +29,14 @@ llms/
 - `gemini`: Google GenAI SDK
 - `ollama`: Ollama local server (mac dinh `http://localhost:11434`)
 
-Tat ca clients duoc auto-register khi import package `llms` (qua `llms/clients/__init__.py`).
+Tat ca clients duoc auto-register khi import package `services.llms` (qua `services/llms/clients/__init__.py`).
 
 ## 4) API chinh
 
 ### Tao client
 
 ```python
-from llms import get_llm
+from services.llms import get_llm
 
 llm = get_llm("OpenAICompatible", model_name="gpt-5")
 ```
@@ -79,7 +79,7 @@ resp = llm.generate(
 ## 6) Provider-specific examples
 
 ```python
-from llms import get_llm
+from services.llms import get_llm
 
 # OpenAICompatible
 openai_compatible = get_llm("OpenAICompatible", model_name="gpt-5")
@@ -99,19 +99,19 @@ ol = get_llm("ollama", model_name="gemma3", host="http://localhost:11434")
 
 ## 8) Cach mo rong provider moi
 
-1. Tao file moi trong `llms/clients/`, ke thua `BaseLLM`.
+1. Tao file moi trong `services/llms/clients/`, ke thua `BaseLLM`.
 2. Gan decorator `@register_llm("ten_provider")`.
 3. Implement `generate(prompt, system_prompt=None)`.
 4. Tra ve `LLMResponse`.
-5. Import client moi trong `llms/clients/__init__.py` de auto-register.
+5. Import client moi trong `services/llms/clients/__init__.py` de auto-register.
 
 Mau toi thieu:
 
 ```python
 from typing import Optional
-from llms.base import BaseLLM
-from llms.factory import register_llm
-from llms.types import LLMResponse
+from services.llms.base import BaseLLM
+from services.llms.factory import register_llm
+from services.llms.types import LLMResponse
 
 @register_llm("my_provider")
 class MyProviderClient(BaseLLM):
@@ -130,5 +130,7 @@ class MyProviderClient(BaseLLM):
 
 ## 10) Noi dang su dung module nay
 
-- `extractv2/extractv2.py`
-- `demo_phase1.py`
+- `services/extraction`: goi LLM de trich xuat nodes/relationships tu Markdown.
+- `services/entity_resolution`: dung LLM cho cac buoc blocking/so sanh entity khi duoc cau hinh.
+- `services/rag_system`: dung LLM cho tong hop cau tra loi RAG.
+- `apps/chat_api`: su dung gian tiep qua `services/rag_system`.

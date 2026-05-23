@@ -12,13 +12,13 @@ router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
 @router.post("/run")
 async def trigger_run(request: PipelineRunRequest) -> PipelineRunResponse:
-    if runner.is_busy():
-        raise HTTPException(status_code=409, detail="A pipeline run is already in progress")
-
     if request.mode not in ("quick_import", "full_pipeline"):
         raise HTTPException(status_code=400, detail="mode must be 'quick_import' or 'full_pipeline'")
 
     run_id = request.run_id or runner.generate_run_id()
+    if not await runner.reserve_run(run_id):
+        raise HTTPException(status_code=409, detail="A pipeline run is already in progress")
+
     asyncio.create_task(runner.execute_pipeline(run_id, request))
     return PipelineRunResponse(run_id=run_id, status="pending")
 

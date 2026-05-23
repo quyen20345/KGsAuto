@@ -10,13 +10,10 @@ export default function RunDetail() {
   const [run, setRun] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const logEndRef = useRef(null);
   const esRef = useRef(null);
-
-  useEffect(() => {
-    loadRun();
-    return () => { if (esRef.current) esRef.current.close(); };
-  }, [runId]);
+  const pollRef = useRef(null);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,6 +21,7 @@ export default function RunDetail() {
 
   async function loadRun() {
     setLoading(true);
+    setError('');
     try {
       const data = await pipelineApi.getRun(runId);
       setRun(data.run);
@@ -33,9 +31,26 @@ export default function RunDetail() {
         startSSE();
       }
     } catch (e) {
-      console.error('Failed to load run:', e);
+      setError(e.message || 'Failed to load run');
     }
     setLoading(false);
+  }
+
+  function startPolling() {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await pipelineApi.getRun(runId);
+        setRun(data.run);
+        setLogs(data.logs || []);
+        if (data.run.status === 'completed' || data.run.status === 'failed') {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      } catch (e) {
+        setError(e.message || 'Failed to refresh run');
+      }
+    }, 5000);
   }
 
   function startSSE() {
@@ -44,13 +59,29 @@ export default function RunDetail() {
       if (event.type === 'log') {
         setLogs(prev => [...prev, { timestamp: new Date().toISOString(), level: 'info', step: event.step, message: event.message }]);
       } else if (event.type === 'status') {
-        setRun(prev => prev ? { ...prev, status: event.status, progress_pct: event.progress ?? prev.progress_pct } : prev);
+        setRun(prev => prev ? {
+          ...prev,
+          status: event.status ?? prev.status,
+          progress_pct: event.progress_pct ?? event.progress ?? prev.progress_pct,
+          current_step: event.current_step ?? prev.current_step,
+          error_message: event.error_message ?? event.error ?? prev.error_message,
+        } : prev);
         if (event.status === 'completed' || event.status === 'failed') {
           if (esRef.current) esRef.current.close();
+          if (pollRef.current) clearInterval(pollRef.current);
         }
       }
     });
+    esRef.current.onerror = startPolling;
   }
+
+  useEffect(() => {
+    loadRun();
+    return () => {
+      if (esRef.current) esRef.current.close();
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [runId]);
 
   async function handleCancel() {
     try {
@@ -72,6 +103,7 @@ export default function RunDetail() {
   }
 
   if (loading) return <div className="pipeline-loading">Loading...</div>;
+  if (error && !run) return <div className="error-box">{error}</div>;
   if (!run) return <div className="pipeline-loading">Run not found</div>;
 
   const isActive = !['completed', 'failed'].includes(run.status);
@@ -103,6 +135,7 @@ export default function RunDetail() {
         ))}
       </div>
 
+      {error && <div className="error-box">{error}</div>}
       {run.error_message && <div className="error-box">{run.error_message}</div>}
 
       <div className="log-viewer">

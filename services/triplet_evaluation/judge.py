@@ -1,6 +1,7 @@
 """LLM-based triplet verification judge."""
 
 import json
+import re
 from typing import Any
 
 from services.config import LLM_MODEL, LLM_PROVIDER, OPENAI_COMPATIBLE_MODEL
@@ -52,7 +53,7 @@ Return exactly one JSON object with this schema:
 {{
   "label": "supported | contradicted | not_enough_info",
   "confidence": 0.0,
-  "reason": "short explanation",
+  "reason": "short explanation that directly supports the selected label and does not self-correct to another label",
   "evidence_sources": ["source names from the evidence list, or property paths"]
 }}
 """
@@ -98,6 +99,40 @@ def normalize_label(label: str | None) -> str | None:
     return LEGACY_LABEL_MAP.get(str(label))
 
 
+
+def _validate_reason_consistency(label: str, reason: str) -> None:
+    """Reject responses whose final explanation clearly implies another label."""
+    fragment = reason.lower()[-600:]
+    conclusion_prefix = r"(?:therefore|thus|hence|overall|finally|conclusion|re-evaluating|on closer inspection|do đó|vì vậy)"
+    implied_patterns = {
+        "supported": (
+            rf"{conclusion_prefix}[^.\n]{{0,220}}\bsupported\b",
+            r"\bthe triplet is supported\b",
+            r"\bthe relationship is supported\b",
+            r"\bevidence clearly supports\b",
+        ),
+        "contradicted": (
+            rf"{conclusion_prefix}[^.\n]{{0,220}}\bcontradicted\b",
+            r"\bthe triplet is contradicted\b",
+            r"\bthe evidence clearly conflicts\b",
+        ),
+        "not_enough_info": (
+            rf"{conclusion_prefix}[^.\n]{{0,220}}\bnot_enough_info\b",
+            r"\binsufficient evidence\b",
+            r"\bnot enough information\b",
+            r"\bnot enough info\b",
+            r"\bcannot verify\b",
+            r"\btoo weak to verify\b",
+        ),
+    }
+    for implied_label, patterns in implied_patterns.items():
+        if implied_label == label:
+            continue
+        if any(re.search(pattern, fragment) for pattern in patterns):
+            raise ValueError(
+                f"reason appears to imply {implied_label!r}, which conflicts with label {label!r}"
+            )
+
 def _parse_evidence_sources(payload: dict[str, Any]) -> list[str]:
     sources = payload.get("evidence_sources", [])
     if sources is None:
@@ -125,11 +160,13 @@ def parse_judgement(raw_response: str) -> TripletJudgement:
     reason = payload.get("reason")
     if not isinstance(reason, str) or not reason.strip():
         raise ValueError("reason must be a non-empty string")
+    reason = reason.strip()
+    _validate_reason_consistency(label, reason)
 
     return TripletJudgement(
         label=label,
         confidence=confidence,
-        reason=reason.strip(),
+        reason=reason,
         evidence_sources=_parse_evidence_sources(payload),
         raw_response=raw_response,
     )

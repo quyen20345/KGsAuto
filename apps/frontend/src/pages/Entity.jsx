@@ -15,6 +15,10 @@ export default function Entity() {
   });
   const [duplicates, setDuplicates] = useState([]);
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [duplicateSearchQuery, setDuplicateSearchQuery] = useState('');
+  const [duplicateSearchResults, setDuplicateSearchResults] = useState([]);
+  const [duplicateSearchLoading, setDuplicateSearchLoading] = useState(false);
+  const [duplicateSearchError, setDuplicateSearchError] = useState(null);
   const [compareTarget, setCompareTarget] = useState(null);
 
   const loading = entityState.id !== id && !entityState.error;
@@ -45,6 +49,32 @@ export default function Entity() {
         setLoadingDuplicates(false);
       });
   }, [entity]);
+
+  const handleDuplicateSearch = (event) => {
+    event.preventDefault();
+    const query = duplicateSearchQuery.trim();
+    if (!query) {
+      setDuplicateSearchResults([]);
+      setDuplicateSearchError(null);
+      return;
+    }
+
+    setDuplicateSearchLoading(true);
+    setDuplicateSearchError(null);
+    api.searchLexical(query, 10, null)
+      .then((results) => {
+        const filtered = Array.isArray(results)
+          ? results.filter(r => r.id !== entity.id)
+          : [];
+        setDuplicateSearchResults(filtered);
+        setDuplicateSearchLoading(false);
+      })
+      .catch((error) => {
+        setDuplicateSearchResults([]);
+        setDuplicateSearchError(error?.message || 'Search failed.');
+        setDuplicateSearchLoading(false);
+      });
+  };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -111,6 +141,59 @@ export default function Entity() {
       </table>
 
       <div className="statements-header" style={{ marginTop: '40px' }}>Possible Duplicates</div>
+      <form onSubmit={handleDuplicateSearch} style={{ marginTop: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <input
+            className="merge-input"
+            type="text"
+            value={duplicateSearchQuery}
+            onChange={(event) => setDuplicateSearchQuery(event.target.value)}
+            placeholder="Search entities to compare, e.g. UET"
+            style={{ flex: 1 }}
+          />
+          <button className="merge-button" type="submit" disabled={duplicateSearchLoading}>
+            Search
+          </button>
+        </div>
+      </form>
+      {duplicateSearchLoading && <div style={{ padding: '10px', color: '#666' }}>Searching entities...</div>}
+      {duplicateSearchError && <div className="merge-box merge-error">{duplicateSearchError}</div>}
+      {!duplicateSearchLoading && duplicateSearchResults.length > 0 && (
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {duplicateSearchResults.map((dup) => (
+            <li key={dup.id} style={{ marginBottom: '16px', padding: '12px', border: '1px solid var(--border)', borderRadius: '4px', background: '#f8f9fa' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <EntityLink entityId={dup.id}>
+                  <strong>{dup.name || dup.id}</strong>
+                </EntityLink>
+                <span className="badge">{dup.labels?.[0] || 'Unknown'}</span>
+                {typeof dup.score === 'number' && (
+                  <span className="badge" style={{ backgroundColor: '#2f855a', color: '#fff' }}>
+                    {Math.round(dup.score * 100)}% match
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <code className="entity-uri" style={{ fontSize: '0.85rem', flex: 1 }}>{dup.id}</code>
+                <button
+                  className="merge-button"
+                  style={{ padding: '4px 10px', fontSize: '0.85rem' }}
+                  onClick={() => copyToClipboard(dup.id)}
+                >
+                  Copy ID
+                </button>
+                <button
+                  className="merge-button"
+                  style={{ padding: '4px 10px', fontSize: '0.85rem', backgroundColor: '#2563eb' }}
+                  onClick={() => setCompareTarget(dup.id)}
+                >
+                  Compare
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {loadingDuplicates && <div style={{ padding: '10px', color: '#666' }}>Searching for duplicates...</div>}
       {!loadingDuplicates && duplicates.length === 0 && (
         <div style={{ padding: '10px', color: '#666' }}>No potential duplicates found</div>

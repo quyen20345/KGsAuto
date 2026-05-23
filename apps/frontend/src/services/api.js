@@ -6,20 +6,29 @@ const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE_URL || 'http://localhos
 // Pipeline API
 const PIPELINE_API_BASE = import.meta.env.VITE_PIPELINE_API_BASE_URL || 'http://localhost:8001';
 
+async function jsonOrThrow(res, fallback) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data.detail;
+    throw new Error((typeof detail === 'string' ? detail : detail?.detail) || fallback || `Request failed (${res.status})`);
+  }
+  return data;
+}
+
 export const pipelineApi = {
   listRawFiles: async () => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/files/raw`);
-    return res.json();
+    return jsonOrThrow(res, 'Failed to load raw files');
   },
 
   listExtractedFiles: async () => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/files/extracted`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   listResolvedRuns: async () => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/files/resolved`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   uploadFiles: async (formData) => {
@@ -27,14 +36,14 @@ export const pipelineApi = {
       method: 'POST',
       body: formData,
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   deleteRawFile: async (name) => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/files/raw/${encodeURIComponent(name)}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   crawlUrls: async (urls) => {
@@ -43,7 +52,7 @@ export const pipelineApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ urls }),
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   triggerRun: async (config) => {
@@ -52,28 +61,24 @@ export const pipelineApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),
     });
-    if (!res.ok) {
-      const detail = await res.json().catch(() => ({}));
-      throw new Error(detail.detail || `Pipeline trigger failed (${res.status})`);
-    }
-    return res.json();
+    return jsonOrThrow(res, 'Pipeline trigger failed');
   },
 
   listRuns: async () => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/runs`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   getRun: async (id) => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/runs/${encodeURIComponent(id)}`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   cancelRun: async (id) => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/runs/${encodeURIComponent(id)}/cancel`, {
       method: 'POST',
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   streamRunEvents: (id, onEvent) => {
@@ -82,7 +87,6 @@ export const pipelineApi = {
       const data = JSON.parse(e.data);
       if (data.type !== 'ping') onEvent(data);
     };
-    es.onerror = () => es.close();
     return es;
   },
 };
@@ -91,13 +95,13 @@ export const api = {
   // Home page - Random triplets
   getRandomTriplets: async (limit = 8) => {
     const res = await fetch(`${GRAPH_API_BASE}/api/random_triplets?limit=${limit}`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   // Search page - Entity search
   search: async (query) => {
     const res = await fetch(`${GRAPH_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   searchLexical: async (query, topK = 10, labelFilter = null) => {
@@ -161,7 +165,7 @@ export const api = {
   // Entity page - Entity details
   getEntity: async (id) => {
     const res = await fetch(`${GRAPH_API_BASE}/api/entity/${encodeURIComponent(id)}`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   mergeEntities: async ({ canonical_id, merge_ids, canonical_name, canonical_new_id }) => {
@@ -173,7 +177,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   compareEntities: async ({ entity_id_a, entity_id_b }) => {
@@ -206,19 +210,19 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cypher }),
     });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   // Get graph metadata (labels and relationship types)
   getGraphMetadata: async () => {
     const res = await fetch(`${GRAPH_API_BASE}/api/graph/metadata`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   getChatModes: async () => {
     const res = await fetch(`${CHAT_API_BASE}/modes`);
     if (!res.ok) throw new Error(`Failed to load chat modes (${res.status})`);
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   sendChatMessage: async ({ message, mode = 'semantic_search', topK = 5, includeEvidence = true, conversationId = null }) => {
@@ -233,11 +237,7 @@ export const api = {
         conversation_id: conversationId,
       }),
     });
-    if (!res.ok) {
-      const detail = await res.json().catch(() => ({}));
-      throw new Error(detail.detail || `Chat request failed (${res.status})`);
-    }
-    return res.json();
+    return jsonOrThrow(res, 'Chat request failed');
   },
 
   streamChatMessage: async ({ message, mode = 'semantic_search', topK = 5, includeEvidence = true, conversationId = null, signal, onEvent }) => {

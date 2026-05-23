@@ -30,6 +30,8 @@ def test_aggregate_records_uses_valid_denominator_and_predicate_breakdown():
     assert summary["counts"]["contradicted"] == 1
     assert summary["valid_rates"]["supported"] == 1 / 3
     assert summary["micro_supported_rate"] == 1 / 3
+    assert summary["supported_rate_ci95"]["method"] == "wilson"
+    assert 0 <= summary["supported_rate_ci95"]["low"] <= summary["supported_rate_ci95"]["high"] <= 1
     assert summary["by_predicate"]["A"]["valid_total"] == 2
     assert summary["by_predicate"]["B"]["invalid_total"] == 1
 

@@ -18,7 +18,7 @@ Sao chép `.env.example` thành `.env` và điền các biến cần thiết:
 
 ## Chạy nhanh các services
 
-Mở 4 terminal tại thư mục gốc repo.
+Mở 5 terminal tại thư mục gốc repo.
 
 ### Terminal 1 - Hạ tầng Docker
 
@@ -26,7 +26,7 @@ Mở 4 terminal tại thư mục gốc repo.
 docker compose up -d
 ```
 
-Lệnh này khởi động:
+Lệnh này khởi động hạ tầng local:
 
 - Neo4j
 - Qdrant
@@ -38,13 +38,19 @@ Lệnh này khởi động:
 uvicorn apps.graph_api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Terminal 3 - Chat API
+### Terminal 3 - Pipeline API
+
+```bash
+uvicorn apps.pipeline_api.main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+### Terminal 4 - Chat API
 
 ```bash
 uvicorn apps.chat_api.main:app --host 0.0.0.0 --port 8002 --reload
 ```
 
-### Terminal 4 - Frontend
+### Terminal 5 - Frontend
 
 ```bash
 cd apps/frontend && npm install && npm run dev
@@ -54,6 +60,8 @@ cd apps/frontend && npm install && npm run dev
 
 - Frontend: http://localhost:5173
 - Graph API Docs: http://localhost:8000/docs
+- Pipeline API Docs: http://localhost:8001/docs
+- Pipeline API Health: http://localhost:8001/api/health
 - Chat API Docs: http://localhost:8002/docs
 - Chat API Health: http://localhost:8002/health
 - Neo4j Browser: http://localhost:7474
@@ -64,7 +72,7 @@ cd apps/frontend && npm install && npm run dev
 
 ## Dừng services
 
-Frontend/backend/chat API: nhấn `Ctrl + C` ở terminal đang chạy.
+Frontend/backend APIs: nhấn `Ctrl + C` ở terminal đang chạy.
 
 Docker services:
 
@@ -82,6 +90,8 @@ docker compose down
 GET  /health
 GET  /modes
 POST /query
+GET  /v1/models
+POST /v1/chat/completions
 ```
 
 ### Query mẫu
@@ -103,6 +113,32 @@ curl -X POST http://localhost:8002/query \
 - `graph_search`: cần Neo4j running + graph đã import.
 - `naive_grag`: cần Neo4j running + graph đã import.
 - `hybrid`: cần cả Qdrant markdown index và Neo4j graph.
+
+## Pipeline API
+
+`apps/pipeline_api` phục vụ UI `/pipeline/*` để quản lý file và chạy pipeline end-to-end.
+
+### Endpoints chính
+
+```text
+GET    /api/health
+GET    /api/files/raw
+GET    /api/files/extracted
+GET    /api/files/resolved
+POST   /api/files/upload
+DELETE /api/files/raw/{filename}
+POST   /api/crawl
+POST   /api/pipeline/run
+GET    /api/pipeline/runs
+GET    /api/pipeline/runs/{run_id}
+POST   /api/pipeline/runs/{run_id}/cancel
+GET    /api/pipeline/runs/{run_id}/events
+```
+
+### Run modes
+
+- `quick_import`: extraction từ raw Markdown rồi import trực tiếp kết quả extracted vào Neo4j.
+- `full_pipeline`: extraction, entity resolution, rồi import output stage 3 vào Neo4j.
 
 ## Chạy extract knowledge graph
 

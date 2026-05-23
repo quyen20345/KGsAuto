@@ -4,29 +4,36 @@ import { pipelineApi } from '../../services/api';
 import RunTrigger from './RunTrigger';
 
 export default function PipelineDashboard() {
-  const [stats, setStats] = useState({ raw: 0, extracted: 0, runs: [] });
+  const [stats, setStats] = useState({ raw: 0, extracted: 0, completedRuns: 0, runs: [] });
   const [showTrigger, setShowTrigger] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  async function loadStats() {
+  const loadStats = async () => {
     setLoading(true);
+    setError('');
     try {
       const [raw, extracted, runs] = await Promise.all([
         pipelineApi.listRawFiles(),
         pipelineApi.listExtractedFiles(),
         pipelineApi.listRuns(),
       ]);
-      setStats({ raw: raw.length, extracted: extracted.length, runs: runs.slice(0, 5) });
+      setStats({
+        raw: raw.length,
+        extracted: extracted.length,
+        completedRuns: runs.filter(r => r.status === 'completed').length,
+        runs: runs.slice(0, 5),
+      });
     } catch (e) {
-      console.error('Failed to load stats:', e);
+      setError(e.message || 'Failed to load stats');
     }
     setLoading(false);
-  }
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   function statusColor(status) {
     if (status === 'completed') return '#4caf50';
@@ -49,10 +56,12 @@ export default function PipelineDashboard() {
           <div className="stat-label">Extracted</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{stats.runs.length > 0 ? stats.runs.filter(r => r.status === 'completed').length : 0}</div>
+          <div className="stat-value">{stats.completedRuns}</div>
           <div className="stat-label">Completed Runs</div>
         </div>
       </div>
+
+      {error && <div className="error-box">{error}</div>}
 
       <div className="dashboard-actions">
         <button className="btn-primary" onClick={() => setShowTrigger(true)}>Run Pipeline</button>

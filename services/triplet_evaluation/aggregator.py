@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from services.triplet_evaluation.judge import normalize_label
-from services.triplet_evaluation.schemas import INVALID_RESPONSE, VALID_LABELS
+from services.triplet_evaluation.schemas import INVALID_RESPONSE, SUPPORTED, VALID_LABELS
 
 
 SUMMARY_FILENAME = "summary.json"
@@ -67,6 +67,23 @@ def _confidence(judgement: dict[str, Any]) -> float | None:
     return value
 
 
+
+def _wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -> dict[str, float | str]:
+    """Return a two-sided 95% Wilson score interval for a binomial proportion."""
+    if total == 0:
+        return {"low": 0.0, "high": 0.0, "confidence": 0.95, "method": "wilson"}
+    phat = successes / total
+    z2 = z * z
+    denominator = 1 + z2 / total
+    center = (phat + z2 / (2 * total)) / denominator
+    half_width = z * ((phat * (1 - phat) + z2 / (4 * total)) / total) ** 0.5 / denominator
+    return {
+        "low": max(0.0, center - half_width),
+        "high": min(1.0, center + half_width),
+        "confidence": 0.95,
+        "method": "wilson",
+    }
+
 def _breakdown(counts: Counter[str], confidences: dict[str, list[float]]) -> dict[str, Any]:
     counts_dict = _empty_label_counts()
     counts_dict.update(dict(counts))
@@ -79,6 +96,7 @@ def _breakdown(counts: Counter[str], confidences: dict[str, list[float]]) -> dic
         "counts": counts_dict,
         "rates": _rates(counts_dict, total),
         "valid_rates": _rates({label: counts_dict[label] for label in VALID_LABELS}, valid_total),
+        "supported_rate_ci95": _wilson_interval(counts_dict[SUPPORTED], valid_total),
         "mean_confidence": _mean([value for values in confidences.values() for value in values]),
         "mean_confidence_by_label": {
             label: _mean(confidences.get(label, [])) for label in VALID_LABELS

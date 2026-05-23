@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from services.triplet_evaluation.judge import evaluate_triplet, parse_judgement
 
 
@@ -59,3 +61,17 @@ def test_evaluate_triplet_returns_invalid_after_retries():
     assert judgement.valid is False
     assert judgement.label == "invalid_response"
     assert llm.calls == 2
+
+
+def test_parse_judgement_rejects_label_reason_mismatch():
+    raw = json.dumps(
+        {
+            "label": "contradicted",
+            "confidence": 0.9,
+            "reason": "Initial analysis was wrong. On closer inspection, the evidence matches. Therefore, the triplet is supported.",
+            "evidence_sources": [],
+        }
+    )
+
+    with pytest.raises(ValueError, match="reason appears to imply"):
+        parse_judgement(raw)

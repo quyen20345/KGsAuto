@@ -8,19 +8,26 @@ export default function FileBrowser() {
   const [extractedFiles, setExtractedFiles] = useState([]);
   const [resolvedRuns, setResolvedRuns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCrawl, setShowCrawl] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { loadFiles(); }, [tab]);
+  useEffect(() => { loadFiles(); }, []);
 
   async function loadFiles() {
     setLoading(true);
+    setError('');
     try {
-      if (tab === 'raw') setRawFiles(await pipelineApi.listRawFiles());
-      else if (tab === 'extracted') setExtractedFiles(await pipelineApi.listExtractedFiles());
-      else setResolvedRuns(await pipelineApi.listResolvedRuns());
+      const [raw, extracted, resolved] = await Promise.all([
+        pipelineApi.listRawFiles(),
+        pipelineApi.listExtractedFiles(),
+        pipelineApi.listResolvedRuns(),
+      ]);
+      setRawFiles(raw);
+      setExtractedFiles(extracted);
+      setResolvedRuns(resolved);
     } catch (e) {
-      console.error('Failed to load files:', e);
+      setError(e.message || 'Failed to load files');
     }
     setLoading(false);
   }
@@ -73,6 +80,8 @@ export default function FileBrowser() {
       )}
 
       {showCrawl && <CrawlForm onClose={() => setShowCrawl(false)} onDone={() => { setShowCrawl(false); loadFiles(); }} />}
+
+      {error && <div className="error-box">{error}</div>}
 
       {loading ? <div className="pipeline-loading">Loading...</div> : (
         <div className="file-list">

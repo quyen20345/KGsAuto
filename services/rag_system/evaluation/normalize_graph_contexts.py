@@ -72,13 +72,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("data/evaluation/testset150_graph_search.jsonl"),
+        default=Path("data/evaluation/graph_search.jsonl"),
         help="Input JSONL evaluation file.",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/evaluation/testset150_graph_search_clean_contexts.jsonl"),
+        default=Path("data/evaluation/graph_search.normalized.jsonl"),
         help="Output JSONL path.",
     )
     parser.add_argument("--no-csv", action="store_true", help="Do not write CSV sidecar.")

@@ -345,10 +345,11 @@ button, .merge-button {
 
 /* Pipeline Page */
 .pipeline-page { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
-.pipeline-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
-.pipeline-tabs a { text-decoration: none; color: #666; padding: 10px 20px; border-bottom: 2px solid transparent; margin-bottom: -2px; font-size: 0.95rem; }
-.pipeline-tabs a:hover { color: var(--primary); }
-.pipeline-tabs a.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+.pipeline-tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding-bottom: 8px; }
+.pipeline-tabs a { text-decoration: none; color: var(--text); background: white; padding: 10px 18px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-weight: 500; line-height: 1.2; }
+.pipeline-tabs a:hover { color: var(--primary); background: #f8fbff; border-color: var(--primary); }
+.pipeline-tabs a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.pipeline-tabs a.active { color: white; background: var(--primary); border-color: var(--primary); font-weight: 600; }
 .pipeline-loading { text-align: center; padding: 40px; color: #666; }
 
 /* Dashboard */

@@ -5,6 +5,11 @@ from typing import Any
 from services.triplet_evaluation.schemas import EvidenceItem, SampledTriplet
 
 
+MAX_EVIDENCE_ITEMS = 8
+MAX_EVIDENCE_ITEM_CHARS = 600
+MAX_EVIDENCE_TEXT_CHARS = 4000
+
+
 EVIDENCE_FIELDS = (
     "description",
     "text",
@@ -19,14 +24,28 @@ EVIDENCE_FIELDS = (
 )
 
 
+def _truncate_text(text: str, limit: int) -> str:
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
 def _stringify_evidence_value(value: Any) -> str:
     if value is None:
         return ""
     if isinstance(value, str):
-        return value.strip()
+        return _truncate_text(value, MAX_EVIDENCE_TEXT_CHARS)
     if isinstance(value, (list, tuple, set)):
-        return ", ".join(str(item).strip() for item in value if str(item).strip())
-    return str(value).strip()
+        items = [
+            _truncate_text(str(item), MAX_EVIDENCE_ITEM_CHARS)
+            for item in list(value)[:MAX_EVIDENCE_ITEMS]
+            if str(item).strip()
+        ]
+        if len(value) > MAX_EVIDENCE_ITEMS:
+            items.append(f"... ({len(value) - MAX_EVIDENCE_ITEMS} more items omitted)")
+        return _truncate_text(", ".join(items), MAX_EVIDENCE_TEXT_CHARS)
+    return _truncate_text(str(value), MAX_EVIDENCE_TEXT_CHARS)
 
 
 def _items_from_properties(prefix: str, properties: dict[str, Any]) -> list[EvidenceItem]:

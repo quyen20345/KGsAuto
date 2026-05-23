@@ -24,9 +24,9 @@ from services.extraction.prompt import ENTITY_LABELS
 
 
 DEFAULT_INPUT_DIR = Path("data/raw/uet")
-DEFAULT_OUTPUT_DIR = Path("data/evaluation/clean_docs")
-DEFAULT_MANIFEST_PATH = Path("data/evaluation/clean_manifest.csv")
-DEFAULT_SUMMARY_PATH = Path("data/evaluation/clean_summary.json")
+DEFAULT_OUTPUT_DIR = Path("data/evaluation/corpus/docs")
+DEFAULT_MANIFEST_PATH = Path("data/evaluation/corpus/manifest.csv")
+DEFAULT_SUMMARY_PATH = Path("data/evaluation/corpus/summary.json")
 DEFAULT_TARGET_COUNT = 100
 DEFAULT_MIN_CONTENT_CHARS = 500
 DEFAULT_MAX_CONTENT_CHARS = 7000

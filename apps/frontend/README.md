@@ -19,6 +19,13 @@ flowchart LR
         G4[Merge]
     end
 
+    subgraph PipelineAPI["Pipeline API :8001"]
+        P1[File Browser]
+        P2[Crawl]
+        P3[Pipeline Runs]
+        P4[SSE Events]
+    end
+
     subgraph ChatAPI["Chat API :8002"]
         C1[Modes]
         C2[Stream Completions]
@@ -31,8 +38,10 @@ flowchart LR
 
     Pages --> API
     API --> GraphAPI
+    API --> PipelineAPI
     API --> ChatAPI
     GraphAPI --> Neo4j
+    PipelineAPI --> Neo4j
     ChatAPI --> Neo4j
     ChatAPI --> Qdrant
 ```
@@ -62,12 +71,21 @@ src/
 │   ├── Header.jsx              # App header + nav + search
 │   ├── EntityLink.jsx          # Link with hover popover
 │   ├── EntityPopover.jsx       # Portal-based entity preview
+│   ├── CompareModal.jsx        # Entity comparison modal
 │   └── RelationshipTooltip.jsx # Relationship description tooltip
 └── pages/
     ├── Home.jsx                # Random triplets explorer
     ├── Search.jsx              # Lexical/hybrid entity search
     ├── Entity.jsx              # Entity detail + duplicates
     ├── Merge.jsx               # Cypher console + merge tools
+    ├── pipeline/
+    │   ├── index.jsx           # Pipeline route shell
+    │   ├── PipelineDashboard.jsx
+    │   ├── FileBrowser.jsx
+    │   ├── CrawlForm.jsx
+    │   ├── RunTrigger.jsx
+    │   ├── RunHistory.jsx
+    │   └── RunDetail.jsx
     └── chat/
         ├── index.jsx           # Chat orchestrator (state + streaming)
         ├── ChatSidebar.jsx     # Mode/TopK/starters/reset
@@ -91,6 +109,7 @@ src/
 | `/chat` | Chat | RAG chatbot interface |
 | `/entity/:id` | Entity | Entity detail view |
 | `/merge` | Merge | Cypher console + merge tools |
+| `/pipeline/*` | Pipeline | Upload/crawl files, trigger runs, and inspect run logs |
 
 ## Component Hierarchy
 
@@ -102,6 +121,7 @@ flowchart TB
     Search[Search]
     Entity[Entity]
     Merge[Merge]
+    Pipeline[Pipeline]
     Chat[Chat]
 
     App --> Header
@@ -109,11 +129,13 @@ flowchart TB
     App --> Search
     App --> Entity
     App --> Merge
+    App --> Pipeline
     App --> Chat
 
     subgraph SharedComponents["Shared Components"]
         EL[EntityLink]
         EP[EntityPopover]
+        CMOD[CompareModal]
         RT[RelationshipTooltip]
     end
 
@@ -123,6 +145,22 @@ flowchart TB
     Entity --> EL
     Entity --> RT
     EL --> EP
+
+    subgraph PipelineComponents["Pipeline Components"]
+        PD[PipelineDashboard]
+        FB[FileBrowser]
+        CF[CrawlForm]
+        RTG[RunTrigger]
+        RH[RunHistory]
+        RD[RunDetail]
+    end
+
+    Pipeline --> PD
+    PD --> FB
+    PD --> CF
+    PD --> RTG
+    PD --> RH
+    RH --> RD
 
     subgraph ChatComponents["Chat Components"]
         CS[ChatSidebar]
@@ -196,8 +234,25 @@ sequenceDiagram
 | `searchHybrid(query, topK, labelFilter)` | `GET /api/search/hybrid` | Search |
 | `getEntity(id)` | `GET /api/entity/:id` | Entity, EntityPopover |
 | `mergeEntities({ canonical_id, merge_ids })` | `POST /api/entity/merge` | Merge |
+| `compareEntities({ entity_id_a, entity_id_b })` | `POST /api/entity/compare` | CompareModal |
 | `runCypher(cypher)` | `POST /api/query` | Merge |
 | `getGraphMetadata()` | `GET /api/graph/metadata` | Search |
+
+### Pipeline API (`PIPELINE_API_BASE` — default `http://localhost:8001`)
+
+| Method | Endpoint | Used by |
+|--------|----------|---------|
+| `listRawFiles()` | `GET /api/files/raw` | FileBrowser |
+| `listExtractedFiles()` | `GET /api/files/extracted` | FileBrowser |
+| `listResolvedRuns()` | `GET /api/files/resolved` | FileBrowser |
+| `uploadFiles(formData)` | `POST /api/files/upload` | FileBrowser |
+| `deleteRawFile(name)` | `DELETE /api/files/raw/:name` | FileBrowser |
+| `crawlUrls(urls)` | `POST /api/crawl` | CrawlForm |
+| `triggerRun(config)` | `POST /api/pipeline/run` | RunTrigger |
+| `listRuns()` | `GET /api/pipeline/runs` | RunHistory |
+| `getRun(id)` | `GET /api/pipeline/runs/:id` | RunDetail |
+| `cancelRun(id)` | `POST /api/pipeline/runs/:id/cancel` | RunDetail |
+| `streamRunEvents(id, onEvent)` | `GET /api/pipeline/runs/:id/events` | RunDetail |
 
 ### Chat API (`CHAT_API_BASE` — default `http://localhost:8002`)
 
@@ -253,6 +308,7 @@ sequenceDiagram
 |----------|---------|---------|
 | `VITE_GRAPH_API_BASE_URL` | Graph/admin API base | `http://localhost:8000` |
 | `VITE_API_BASE_URL` | Backward-compatible alias | `http://localhost:8000` |
+| `VITE_PIPELINE_API_BASE_URL` | Pipeline API base | `http://localhost:8001` |
 | `VITE_CHAT_API_BASE_URL` | Chat API base | `http://localhost:8002` |
 
 ## Development
@@ -278,6 +334,7 @@ npm run preview
 
 - Node.js 18+
 - Graph API running on `:8000` (for Home, Search, Entity, Merge)
+- Pipeline API running on `:8001` (for Pipeline page)
 - Chat API running on `:8002` (for Chat page)
 - Neo4j populated with graph data
 - Qdrant with indexed markdown chunks (for semantic/hybrid chat modes)
@@ -287,6 +344,7 @@ npm run preview
 | Pattern | Where | Purpose |
 |---------|-------|---------|
 | Manual SSE streaming | `api.js` → Chat | Token-by-token UI updates |
+| EventSource streaming | `api.js` → Pipeline | Live pipeline run status and logs |
 | AbortController | Chat, Search | User-cancelable requests + timeouts |
 | Optimistic placeholder | Chat | Insert assistant bubble before stream starts |
 | Incremental metadata | Chat | Accumulate reasoning steps during stream |

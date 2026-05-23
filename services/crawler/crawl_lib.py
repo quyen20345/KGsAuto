@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -14,11 +16,17 @@ from bs4 import BeautifulSoup
 
 _SESSION_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
 _CRAWL_DELAY = 0.5
+_METADATA_LOCK = threading.Lock()
 
 
 def _safe_filename(name: str) -> str:
     name = re.sub(r'[\\/*?:"<>|]', "", name)
-    return name.strip()[:150]
+    return name.strip()[:120] or "untitled"
+
+
+def _filename_for_url(title: str, url: str) -> str:
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:10]
+    return f"{_safe_filename(title)}_{digest}.md"
 
 
 def _clean_content(html: str) -> str:
@@ -30,13 +38,14 @@ def _get_metadata_from_api(url: str, session: requests.Session, base_url: str):
     from services.crawler.crawlv2 import get_metadata_from_api, format_metadata_section
     # Temporarily patch BASE_URL for the function
     import services.crawler.crawlv2 as mod
-    original = mod.BASE_URL
-    mod.BASE_URL = base_url
-    try:
-        metadata = get_metadata_from_api(url, session)
-        return metadata
-    finally:
-        mod.BASE_URL = original
+    with _METADATA_LOCK:
+        original = mod.BASE_URL
+        mod.BASE_URL = base_url
+        try:
+            metadata = get_metadata_from_api(url, session)
+            return metadata
+        finally:
+            mod.BASE_URL = original
 
 
 def crawl_urls(urls: list[str], output_dir: Path) -> tuple[list[str], list[str]]:
@@ -50,7 +59,6 @@ def crawl_urls(urls: list[str], output_dir: Path) -> tuple[list[str], list[str]]
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    existing_count = len(list(output_dir.glob("*.md")))
 
     session = requests.Session()
     session.headers.update({"User-Agent": _SESSION_USER_AGENT})
@@ -70,18 +78,18 @@ def crawl_urls(urls: list[str], output_dir: Path) -> tuple[list[str], list[str]]
 
             soup = BeautifulSoup(resp.text, "html.parser")
 
-            # Try WordPress API metadata
             import services.crawler.crawlv2 as mod
-            original_base = mod.BASE_URL
-            original_domain = mod.BASE_DOMAIN
-            mod.BASE_URL = base_url
-            mod.BASE_DOMAIN = parsed.netloc
-            try:
-                from services.crawler.crawlv2 import get_metadata_from_api
-                metadata = get_metadata_from_api(url, session)
-            finally:
-                mod.BASE_URL = original_base
-                mod.BASE_DOMAIN = original_domain
+            with _METADATA_LOCK:
+                original_base = mod.BASE_URL
+                original_domain = mod.BASE_DOMAIN
+                mod.BASE_URL = base_url
+                mod.BASE_DOMAIN = parsed.netloc
+                try:
+                    from services.crawler.crawlv2 import get_metadata_from_api
+                    metadata = get_metadata_from_api(url, session)
+                finally:
+                    mod.BASE_URL = original_base
+                    mod.BASE_DOMAIN = original_domain
 
             # Extract title
             if metadata and "title" in metadata:
@@ -106,21 +114,22 @@ def crawl_urls(urls: list[str], output_dir: Path) -> tuple[list[str], list[str]]
 
             markdown_content = clean_content(str(content))
 
-            # Generate filename
-            file_num = existing_count + i + 1
-            safe_name = _safe_filename(title)
-            filename = f"{file_num:03d}_{safe_name}.md"
+            filename = _filename_for_url(title, url)
             filepath = output_dir / filename
 
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(f"# {title}\n\n")
-                f.write("## Metadata\n\n")
-                f.write(f"- **URL**: {url}\n")
-                metadata_section = format_metadata_section(metadata)
-                if metadata_section:
-                    f.write(metadata_section + "\n")
-                f.write("\n## Content\n\n")
-                f.write(markdown_content)
+            try:
+                with open(filepath, "x", encoding="utf-8") as f:
+                    f.write(f"# {title}\n\n")
+                    f.write("## Metadata\n\n")
+                    f.write(f"- **URL**: {url}\n")
+                    metadata_section = format_metadata_section(metadata)
+                    if metadata_section:
+                        f.write(metadata_section + "\n")
+                    f.write("\n## Content\n\n")
+                    f.write(markdown_content)
+            except FileExistsError:
+                errors.append(f"{url}: file already exists ({filename})")
+                continue
 
             files_created.append(filename)
 

@@ -58,29 +58,25 @@ services/rag_system/
     graph_search.py              # multi-step graph reasoning mode
     graph_context.py             # one-pass graph context mode for naive_grag
     common.py                    # shared response/evidence helpers
-  components/
-    synthesis.py                 # LLM answer synthesis for semantic/hybrid
-    llm/graph_search.py          # async GraphSearch helper calls
-    prompts/prompts.py           # GraphSearch prompts
+  synthesis.py                   # LLM answer synthesis for semantic/hybrid
   retrieval/
-    markdown.py                  # Qdrant markdown retrieval
-    indexing.py                  # markdown indexing into Qdrant
     chunking.py                  # markdown chunking strategies
+    indexing.py                  # markdown indexing into Qdrant
+    retriever.py                 # retrieval facade used by modes
+    store.py                     # Qdrant client + embedding upsert/search
   graph/
     neo4j_context_adapter.py     # Neo4j -> GraphSearch context adapter
-  storage/
-    document.py                  # Qdrant client + embedding upsert/search
-    graph.py                     # Neo4j lookup helpers
-  workflows/
     graph_search/
+      components.py              # async GraphSearch helper calls
       pipeline.py                # graph_search and naive_grag workflows
       parsing.py                 # decomposition/expansion parsing helpers
+      prompts.py                 # GraphSearch prompts
       utils.py                   # normalization and formatting helpers
   evaluation/
     runner.py                    # simple JSONL/CSV evaluation runner
     mock_questions.jsonl         # small mock question set
   tests/
-    test_unified_pipeline.py
+    test_pipeline.py
     test_graph_search_neo4j_adapter.py
     ...
 ```
@@ -91,8 +87,8 @@ services/rag_system/
 
 There are two separate retrieval backends:
 
-- **Document retrieval** via `storage/document.py` and `retrieval/markdown.py`
-- **Graph retrieval** via `storage/graph.py` and `graph/neo4j_context_adapter.py`
+- **Document retrieval** via `retrieval/retriever.py` and `retrieval/store.py`
+- **Graph retrieval** via `graph/neo4j_context_adapter.py` and `graph/graph_search/pipeline.py`
 
 ### 2. Two graph-only modes
 
@@ -103,9 +99,9 @@ The codebase intentionally keeps two Neo4j-only paths:
 
 ### 3. Two answer-generation styles
 
-- `semantic_search` uses `components/synthesis.py` over markdown evidence only.
-- `hybrid` uses `components/synthesis.py` over markdown evidence plus deep GraphSearch context/reasoning.
-- `graph_search` and `naive_grag` generate graph-backed answers inside `workflows/graph_search/pipeline.py` through async workflow components.
+- `semantic_search` uses `synthesis.py` over markdown evidence only.
+- `hybrid` uses `synthesis.py` over markdown evidence plus GraphSearch context/reasoning.
+- `graph_search` and `naive_grag` generate graph-backed answers inside `graph/graph_search/pipeline.py` through async workflow components.
 
 ## Architecture
 
@@ -121,43 +117,33 @@ flowchart LR
     subgraph Core
         U[pipeline.py]
         M[modes/*.py]
-        S[components/synthesis.py]
+        S[synthesis.py]
     end
 
     subgraph Retrieval
-        MR[retrieval/markdown.py]
-
+        R[retrieval/retriever.py]
+        Store[retrieval/store.py]
         NA[graph/neo4j_context_adapter.py]
     end
 
-    subgraph Storage
-        DS[storage/document.py]
-        GS[storage/graph.py]
-    end
-
     subgraph Workflow
-        WG[workflows/graph_search/pipeline.py]
-        LC[components/llm/graph_search.py]
+        WG[graph/graph_search/pipeline.py]
+        LC[graph/graph_search/components.py]
     end
 
     CLI --> U
     API --> U
 
     U --> M
-    M --> MR
+    M --> R
     M --> S
     M --> WG
 
-    MR --> DS
-    GR --> GS
-    HR --> MR
-    HR --> GR
+    R --> Store
+    Store --> Q[(Qdrant)]
     WG --> NA
     WG --> LC
-    NA --> GS
-
-    DS --> Q[(Qdrant)]
-    GS --> N[(Neo4j)]
+    NA --> N[(Neo4j)]
 ```
 
 ### Configuration model
@@ -206,9 +192,9 @@ sequenceDiagram
 Relevant files:
 - `services/rag_system/modes/semantic_search.py`
 - `services/rag_system/pipeline.py`
-- `services/rag_system/retrieval/markdown.py`
-- `services/rag_system/storage/document.py`
-- `services/rag_system/components/synthesis.py`
+- `services/rag_system/retrieval/retriever.py`
+- `services/rag_system/retrieval/store.py`
+- `services/rag_system/synthesis.py`
 
 ### `naive_grag`
 
@@ -241,7 +227,7 @@ sequenceDiagram
 Relevant files:
 - `services/rag_system/modes/graph_context.py`
 - `services/rag_system/pipeline.py`
-- `services/rag_system/workflows/graph_search/pipeline.py`
+- `services/rag_system/graph/graph_search/pipeline.py`
 - `services/rag_system/graph/neo4j_context_adapter.py`
 
 ### `graph_search`
@@ -284,9 +270,9 @@ flowchart TB
 Relevant files:
 - `services/rag_system/modes/graph_search.py`
 - `services/rag_system/pipeline.py`
-- `services/rag_system/workflows/graph_search/pipeline.py`
-- `services/rag_system/workflows/graph_search/parsing.py`
-- `services/rag_system/components/llm/graph_search.py`
+- `services/rag_system/graph/graph_search/pipeline.py`
+- `services/rag_system/graph/graph_search/parsing.py`
+- `services/rag_system/graph/graph_search/components.py`
 
 ### `hybrid`
 
@@ -324,8 +310,8 @@ Relevant files:
 - `services/rag_system/modes/graph_search.py`
 - `services/rag_system/pipeline.py`
 - `services/rag_system/graph/neo4j_context_adapter.py`
-- `services/rag_system/workflows/graph_search/pipeline.py`
-- `services/rag_system/components/synthesis.py`
+- `services/rag_system/graph/graph_search/pipeline.py`
+- `services/rag_system/synthesis.py`
 
 ## Data flow for markdown indexing
 
@@ -343,7 +329,7 @@ flowchart LR
 Relevant files:
 - `services/rag_system/retrieval/indexing.py:11`
 - `services/rag_system/retrieval/chunking.py:9`
-- `services/rag_system/storage/document.py:11`
+- `services/rag_system/retrieval/store.py`
 
 ## Data model
 
@@ -524,7 +510,7 @@ Scoring writes a scored JSONL, a scored CSV, and a summary CSV grouped by mode. 
 
 Current tests cover the main public behavior instead of every implementation detail:
 
-- `services/rag_system/tests/test_unified_pipeline.py` checks mode behavior, evidence normalization, async entrypoints, and hybrid deduplication.
+- `services/rag_system/tests/test_pipeline.py` checks mode behavior, evidence normalization, async entrypoints, and hybrid deduplication.
 - `services/rag_system/tests/test_graph_search_neo4j_adapter.py` checks GraphSearch context formatting, context splitting, keyword extraction, fallback behavior, and markdown-chunk resolution.
 - additional tests cover chunking, indexing, storage, parsing, and evaluation modules.
 
@@ -572,6 +558,6 @@ Primary files to read first:
 - `services/rag_system/pipeline.py`
 - `services/rag_system/modes/hybrid.py`
 - `services/rag_system/graph/neo4j_context_adapter.py`
-- `services/rag_system/workflows/graph_search/pipeline.py`
-- `services/rag_system/components/synthesis.py`
+- `services/rag_system/graph/graph_search/pipeline.py`
+- `services/rag_system/synthesis.py`
 - `services/rag_system/cli.py`
