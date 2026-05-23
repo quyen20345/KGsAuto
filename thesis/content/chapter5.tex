@@ -1,92 +1,155 @@
-\chapter{Xử lý trùng lặp và hợp nhất thực thể trong Knowledge Graph}
+\chapter{Xử lý đồng tham chiếu và hợp nhất thực thể trong đồ thị tri thức}
 
-\section{Vấn đề trùng lặp thực thể sau trích xuất}
+\section{Đồng tham chiếu thực thể trong đồ thị tri thức}
 
-Sau giai đoạn trích xuất, Knowledge Graph ban đầu chứa nhiều node khác nhau cùng biểu diễn một thực thể trong thế giới thực. Đây là hệ quả tất yếu khi graph được sinh từ nhiều tài liệu Markdown độc lập bằng LLM. Như đã phân tích ở Chương~4, đầu ra của extraction là các \textit{island graph} -- những subgraph cục bộ mà LLM chỉ nhìn thấy nội dung của một hoặc một vài file gần nhau. Do đó, cùng một thực thể có thể xuất hiện ở nhiều subgraph dưới các dạng khác nhau: tên đầy đủ, tên viết tắt, tên tiếng Anh, tên kèm đơn vị chủ quản, hoặc tên kèm học hàm học vị đối với cá nhân.
+Kết quả của Chương~4 là một đồ thị thô được tạo ra từ nhiều tài liệu và nhiều phân đoạn dữ liệu khác nhau. Do mỗi lần trích xuất chỉ quan sát một phần ngữ cảnh, cùng một đối tượng trong thực tế có thể được biểu diễn thành nhiều nút khác nhau trong đồ thị. Hiện tượng này được gọi là đồng tham chiếu thực thể: nhiều thực thể trong đồ thị có tên gọi, mô tả hoặc quan hệ khác nhau, nhưng thực chất cùng tham chiếu đến một đối tượng ngoài đời thực.
 
-Trùng lặp thực thể ảnh hưởng trực tiếp đến chất lượng hệ thống hỏi đáp. Khi thông tin về một thực thể bị chia thành nhiều node, truy vấn graph chỉ có thể trả về một phần quan hệ liên quan, làm giảm khả năng tổng hợp thông tin. Ngược lại, nếu hợp nhất sai hai thực thể khác nhau, hệ thống có thể tạo ra các quan hệ không đúng trong graph. Vì vậy, Entity Resolution là bước trung gian quan trọng để biến tập island graph thô thành một Knowledge Graph toàn cục nhất quán hơn.
+Ví dụ, trong dữ liệu về Trường Đại học Công nghệ, cùng một trường có thể xuất hiện dưới nhiều cách gọi như Trường Đại học Công nghệ, Trường ĐHCN, Đại học Công nghệ, UET hoặc VNU-UET. Nếu các cách gọi này được trích xuất ở các tài liệu khác nhau, hệ thống có thể tạo ra nhiều nút riêng biệt cho cùng một trường. Tương tự, một cá nhân như GS.TS. Chử Đức Trình có thể xuất hiện dưới dạng tên đầy đủ, tên rút gọn Chử Đức Trình, hoặc theo chức vụ Hiệu trưởng trong một số ngữ cảnh. Nếu không xử lý, các quan hệ liên quan đến cùng một đối tượng sẽ bị phân tán trên nhiều nút khác nhau.
 
-Trong khóa luận này, Entity Resolution được hiểu là quá trình phát hiện các node cùng tham chiếu đến một thực thể thật, tạo \texttt{canonical entity} đại diện cho nhóm đó, và cập nhật lại các relationship để trỏ về canonical entity. Hình~\ref{fig:entity-resolution-example} minh họa trực quan mục tiêu của quá trình này: các node biểu diễn cùng một thực thể trong graph thô được đối soát và hợp nhất thành một thực thể chuẩn, từ đó làm giảm phân mảnh trong Knowledge Graph.
+Các thực thể đồng tham chiếu làm giảm chất lượng của đồ thị tri thức theo nhiều cách. Trước hết, đồ thị bị phân mảnh: thông tin về cùng một đối tượng không nằm ở một nơi mà bị chia nhỏ thành nhiều nút. Khi truy vấn đồ thị, hệ thống có thể chỉ lấy được một phần quan hệ liên quan đến thực thể đó, dẫn đến câu trả lời thiếu thông tin. Thứ hai, các thống kê về số lượng thực thể và quan hệ có thể bị phóng đại do một đối tượng được tính nhiều lần. Thứ ba, trong ứng dụng hỏi đáp, việc truy xuất bằng một tên gọi cụ thể có thể bỏ sót các quan hệ nằm ở biến thể tên gọi khác.
+
+Để có một đồ thị tri thức tốt, bước xử lý đồng tham chiếu thực thể là cần thiết. Mục tiêu của bước này là phát hiện các nút cùng chỉ một đối tượng, chọn một thực thể chuẩn đại diện, hợp nhất các tên gọi thay thế và cập nhật lại các quan hệ để cùng trỏ về thực thể chuẩn. Tuy nhiên, quá trình này cần được thực hiện thận trọng: bỏ sót hợp nhất làm đồ thị tiếp tục phân mảnh, nhưng hợp nhất nhầm hai thực thể khác nhau có thể tạo ra tri thức sai. Vì vậy, khóa luận thiết kế một quy trình hợp nhất thực thể nhiều giai đoạn, được trình bày ở mục tiếp theo.
+
+\section{Quy trình hợp nhất thực thể ba giai đoạn}
+
+Quy trình hợp nhất thực thể trong khóa luận được thiết kế thành ba giai đoạn. Cách tổ chức này giúp tách biệt ba nhiệm vụ khác nhau: chuẩn bị dữ liệu để so sánh, tạo nhóm ứng viên có khả năng đồng tham chiếu, và ra quyết định hợp nhất cuối cùng. Việc tách thành nhiều giai đoạn cũng giúp quy trình dễ kiểm soát hơn, vì mỗi giai đoạn có đầu vào, đầu ra và mục tiêu chất lượng riêng.
+
+Giai đoạn~1 là chuẩn hóa và nhúng thực thể. Ở giai đoạn này, các nút thô sau trích xuất được đưa về một dạng ổn định hơn để có thể so sánh với nhau. Hệ thống chuẩn hóa tên gọi, tên thay thế, nhãn thực thể, mô tả và thông tin nguồn. Đầu ra của giai đoạn này là tập bản ghi thực thể đã được chuẩn bị cho việc đối chiếu, trong đó mỗi thực thể có các thông tin đủ cần thiết để đo mức độ giống nhau với các thực thể khác.
+
+Giai đoạn~2 là tạo nhóm ứng viên đồng tham chiếu. Thay vì so sánh mọi cặp thực thể trong toàn bộ đồ thị, hệ thống chỉ gom các thực thể có khả năng liên quan vào cùng một nhóm ứng viên. Giai đoạn này ưu tiên không bỏ sót các cặp có khả năng đồng tham chiếu, nên mục tiêu chính là tạo ra các cụm ứng viên đủ rộng để bước sau kiểm tra. Kết quả của giai đoạn~2 chưa phải là quyết định hợp nhất cuối cùng, mà là danh sách các nhóm thực thể cần được đánh giá kỹ hơn.
+
+Giai đoạn~3 là quyết định hợp nhất và tạo thực thể chuẩn. Ở giai đoạn này, từng nhóm ứng viên được kiểm tra dựa trên tên gọi, tên thay thế, mô tả, kiểu thực thể, quan hệ xung quanh và thông tin nguồn. Nếu có đủ bằng chứng cho thấy các nút cùng chỉ một đối tượng, hệ thống tạo một thực thể chuẩn, gộp các tên gọi thay thế và cập nhật lại các quan hệ sang thực thể chuẩn đó. Nếu bằng chứng chưa đủ mạnh, các nút được giữ tách biệt để tránh hợp nhất sai.
+
+Ví dụ, sau giai đoạn trích xuất, đồ thị thô có thể chứa ba nút Trường Đại học Công nghệ, Trường ĐHCN và UET. Sau giai đoạn~1, các nút này được chuẩn hóa để so sánh. Sau giai đoạn~2, chúng có thể được đưa vào cùng một cụm ứng viên vì tên gọi và ngữ cảnh có liên quan. Sau giai đoạn~3, nếu bằng chứng đủ rõ, hệ thống hợp nhất chúng thành thực thể chuẩn Trường Đại học Công nghệ, đồng thời lưu Trường ĐHCN và UET như các tên gọi thay thế. Các quan hệ trước đây trỏ đến từng biến thể sẽ được cập nhật để cùng trỏ về thực thể chuẩn. Nhờ vậy, khi truy vấn về Trường Đại học Công nghệ, hệ thống có thể khai thác được nhiều quan hệ hơn từ các tài liệu khác nhau.
+
+Hình~\ref{fig:er-pipeline-overview} minh họa quy trình hợp nhất thực thể ba giai đoạn ở mức tổng quan. Sau giai đoạn~3, các trường hợp mơ hồ hoặc có điểm tin cậy thấp được chuyển sang human fallback để kiểm chứng trước khi tạo đồ thị tri thức cuối. Các phần chi tiết hơn của từng giai đoạn được trình bày trong các mục tiếp theo.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.86\textwidth]{image/static/entity_resolution.png}
-    \caption{Minh họa quá trình đối soát và hợp nhất thực thể trong Knowledge Graph}
-    \label{fig:entity-resolution-example}
-\end{figure}
-
-\section{Tổng quan pipeline Entity Resolution}
-
-Pipeline Entity Resolution được thiết kế theo nguyên tắc tách biệt giữa việc tạo ứng viên trùng lặp và việc ra quyết định hợp nhất. Đây là lựa chọn quan trọng vì hai mục tiêu này có tính chất khác nhau. Giai đoạn tạo ứng viên cần ưu tiên \textit{recall} để hạn chế bỏ sót các thực thể có khả năng đồng tham chiếu, trong khi giai đoạn quyết định merge cần ưu tiên \textit{precision} để tránh hợp nhất sai các thực thể khác nhau.
-
-Hình~\ref{fig:er-pipeline-overview} minh họa pipeline ba giai đoạn của hệ thống ở mức tổng quan. Stage~1 chuẩn hóa các node thô và tạo biểu diễn vector. Stage~2 sinh các cụm ứng viên có khả năng trùng lặp. Stage~3 quyết định nhóm nào thật sự nên được hợp nhất, tạo canonical entity và cập nhật lại graph.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{image/generated/chapter5/er-pipeline-overview.png}
-    \caption{Tổng quan pipeline Entity Resolution ba giai đoạn}
+    \includegraphics[width=\textwidth]{image/generated/chapter5/er-pipeline-overview.png}
+    \caption{Tổng quan quy trình hợp nhất thực thể ba giai đoạn}
     \label{fig:er-pipeline-overview}
 \end{figure}
 
-Cách chia thành ba giai đoạn giúp hệ thống tránh phụ thuộc hoàn toàn vào một lần gọi LLM end-to-end. Các bước tính toán dựa trên chuẩn hóa, embedding và blocking giúp thu hẹp không gian tìm kiếm trước khi LLM được sử dụng cho quyết định ngữ nghĩa khó hơn. Đồng thời, cấu trúc này cho phép quan sát kết quả trung gian của pipeline, hỗ trợ phân tích lỗi và tái lập thực nghiệm mà không biến phần trình bày thành mô tả chi tiết mã nguồn.
+\section{Giai đoạn 1: chuẩn hóa và nhúng}
 
-\section{Chuẩn hóa và biểu diễn thực thể}
+Sau khi Chương~4 tạo ra các mảnh đồ thị thô, mỗi thực thể trong dữ liệu đầu vào của giai đoạn~1 thường gồm định danh cục bộ, nhãn thực thể và tập thuộc tính. Các thuộc tính quan trọng nhất đối với xử lý đồng tham chiếu là \texttt{name}, \texttt{aliases}, \texttt{description}, \texttt{chunk\_id} và thông tin tệp nguồn. Trong đó, \texttt{name} là tên chính của thực thể, \texttt{aliases} chứa các tên gọi thay thế hoặc viết tắt, \texttt{description} cung cấp ngữ cảnh mô tả, còn \texttt{chunk\_id} và tệp nguồn giúp truy vết thực thể về dữ liệu ban đầu.
 
-Mục tiêu của giai đoạn đầu tiên là đưa các node thô về một dạng biểu diễn ổn định để có thể so sánh. Các trường quan trọng của node gồm tên, alias, nhãn thực thể, mô tả và nguồn sinh dữ liệu. Trước khi tạo embedding, hệ thống chuẩn hóa Unicode, loại bỏ khoảng trắng thừa và hợp nhất các alias trùng lặp không phân biệt hoa thường.
+Mục tiêu của chuẩn hóa là đưa các thực thể về một dạng ổn định hơn để có thể so sánh và gom nhóm hiệu quả. Trước hết, hệ thống đọc toàn bộ các thực thể thô và hợp nhất những nút có cùng định danh cục bộ. Khi cùng một định danh xuất hiện ở nhiều tệp, hệ thống gộp nhãn thực thể, gộp danh sách tên gọi thay thế, gộp mô tả và chọn lại tên đại diện phù hợp hơn từ các tên quan sát được. Bước này giúp giảm các trường hợp đồng tham chiếu hiển nhiên trước khi đi vào so sánh ngữ nghĩa.
 
-Sau chuẩn hóa, mỗi thực thể được chuyển thành vector embedding bằng mô hình \texttt{paraphrase-multilingual-mpnet-base-v2}. Đây là mô hình đa ngôn ngữ, phù hợp với dữ liệu tiếng Việt và sinh vector 768 chiều. Trong ngữ cảnh Entity Resolution, embedding không được dùng như bằng chứng duy nhất để merge, mà đóng vai trò là tín hiệu ngữ nghĩa giúp đo độ gần nhau giữa các node và hỗ trợ các bước blocking, clustering và validation phía sau.
+Tiếp theo, các trường văn bản được chuẩn hóa ở mức hình thức. Hệ thống chuẩn hóa Unicode, loại bỏ khoảng trắng thừa, chuyển các tên gọi thay thế về danh sách thống nhất và loại bỏ các tên thay thế lặp lại không phân biệt hoa thường. Ví dụ, với thực thể kiểu người, các học hàm hoặc học vị ở đầu tên như GS.TS., PGS.TS. hoặc TS. được loại bỏ khi tạo chuỗi so sánh, vì các tiền tố này thường không phải là phần cốt lõi để phân biệt danh tính. Chẳng hạn, GS.TS. Chử Đức Trình và Chử Đức Trình cần được đưa về cùng một dạng tên chính khi so sánh; ngược lại, hệ thống không xóa những thông tin có thể làm thay đổi nghĩa hoặc làm mất tín hiệu phân biệt giữa hai thực thể khác nhau.
 
-Một điểm cần nhấn mạnh là chuẩn hóa không nhằm xóa bỏ toàn bộ khác biệt giữa các thực thể. Nếu chuẩn hóa quá mạnh, hệ thống có thể làm mất các tín hiệu phân biệt quan trọng; nếu chuẩn hóa quá yếu, nhiều biến thể bề mặt vẫn bị xem là khác nhau. Vì vậy, giai đoạn này chỉ xử lý những khác biệt có tính hình thức rõ ràng, còn quyết định hợp nhất cuối cùng được để lại cho các bước có thêm ngữ cảnh và cơ chế kiểm soát chất lượng.
+Sau chuẩn hóa, mỗi thực thể được chuyển thành một chuỗi biểu diễn để tạo vector nhúng. Trong cài đặt hiện tại, chuỗi nhúng ưu tiên tên đã chuẩn hóa theo kiểu thực thể, vì tên là tín hiệu ổn định nhất để phát hiện các biến thể cùng chỉ một đối tượng. Các thông tin như tên thay thế, mô tả và nguồn vẫn được giữ trong bản ghi thực thể để phục vụ các giai đoạn sau, đặc biệt là khi kiểm tra lại cụm ứng viên và ra quyết định hợp nhất. Cách thiết kế này giúp giai đoạn nhúng tập trung vào tín hiệu định danh, trong khi các bước sau vẫn có đủ ngữ cảnh để tránh hợp nhất nhầm.
 
-\section{Sinh nhóm ứng viên bằng blocking và clustering}
+Mô hình được sử dụng để tạo vector nhúng là \texttt{paraphrase-multilingual-mpnet-base-v2}. Đây là mô hình đa ngôn ngữ, phù hợp với dữ liệu của khóa luận vì cùng một thực thể có thể xuất hiện bằng tiếng Việt, tiếng Anh hoặc tên viết tắt. Mỗi thực thể được biểu diễn thành vector 768 chiều; các vector này sau đó được lưu vào kho vector để phục vụ đo độ tương đồng ở giai đoạn~2. Cấu hình mặc định của hệ thống sử dụng mô hình trên với số chiều 768 và thiết bị xử lý mặc định là CPU. Việc sử dụng mô hình đa ngôn ngữ giúp hệ thống có thêm khả năng đặt gần nhau các biến thể như Trường Đại học Công nghệ, đại học Công nghệ và University of Engineering and Technology trong không gian biểu diễn ngữ nghĩa.
 
-Nếu so sánh tất cả các cặp thực thể, chi phí tính toán sẽ tăng theo $O(n^2)$ và nhanh chóng trở nên không phù hợp khi số lượng node lớn. Vì vậy, Stage~2 sử dụng blocking để chia các thực thể thành các nhóm có khả năng liên quan, sau đó chỉ phân cụm trong từng block. Mục tiêu của bước này không phải là đưa ra quyết định merge cuối cùng, mà là tạo ra tập ứng viên đủ rộng cho bước xác thực phía sau.
-
-Trong dữ liệu của hệ thống, nhãn thực thể là tín hiệu quan trọng để xác định phạm vi so sánh. Thay vì yêu cầu LLM phân tích từng thực thể riêng lẻ, hệ thống chỉ đưa vào LLM các tổ hợp nhãn duy nhất. Cách làm này giúp giảm đáng kể kích thước đầu vào: từ nhiều nghìn thực thể xuống còn một số lượng nhỏ các tổ hợp nhãn. LLM sau đó đề xuất cách nhóm các loại thực thể có khả năng đồng tham chiếu, chẳng hạn nhóm các nhãn liên quan đến cá nhân vào cùng một block, đồng thời tách các đơn vị tổ chức dễ gây nhầm lẫn với tổ chức cấp trên.
-
-Bên trong mỗi block, hệ thống phân cụm dựa trên độ tương đồng cosine giữa các embedding. Cài đặt hiện tại sử dụng HDBSCAN với \texttt{min\_cluster\_size=2} và \texttt{min\_samples=1}. Trong trường hợp cần dùng chiến lược đơn giản hơn, ngưỡng similarity 0.72 được dùng để tạo các nhóm ứng viên dựa trên thành phần liên thông. Các con số này không được xem là chân lý tuyệt đối, mà là tham số thực nghiệm để cân bằng giữa việc phát hiện đủ ứng viên và tránh tạo cụm quá rộng.
-
-Kết quả của Stage~2 là các cụm ứng viên. Một cụm ứng viên có thể chứa nhiều node thật sự cùng tham chiếu đến một thực thể, nhưng cũng có thể chứa các node chỉ gần nhau về tên hoặc ngữ nghĩa. Vì vậy, mọi cụm từ Stage~2 vẫn cần được kiểm tra lại ở Stage~3 trước khi hợp nhất.
-
-\section{Quyết định hợp nhất bằng LLM}
-
-Stage~3 là bước đưa ra quyết định merge. Khác với Stage~2, bước này được thiết kế theo hướng ưu tiên precision: khi không đủ bằng chứng, hệ thống có xu hướng giữ các node tách biệt thay vì hợp nhất sai. Lý do là lỗi \textit{over-merge} thường nguy hiểm hơn \textit{under-merge}; một node bị trùng nhưng chưa gộp vẫn có thể được sửa ở vòng sau, trong khi một merge sai có thể làm lan truyền tri thức không đúng qua nhiều relationship.
-
-Hệ thống sử dụng cách tiếp cận Two-Pass LLM Resolution. Ở pass thứ nhất, LLM nhận một cụm ứng viên và phân chia thành các nhóm con có khả năng đồng tham chiếu. Ở pass thứ hai, với mỗi nhóm đã được chấp nhận, LLM tổng hợp một canonical entity gồm tên chuẩn, nhãn, alias, mô tả và provenance từ các node thành phần. Việc tách thành hai pass giúp LLM tập trung vào hai nhiệm vụ khác nhau: trước hết là xác định ``ai giống ai'', sau đó mới tổng hợp ``đại diện chuẩn là gì''.
-
-Để hạn chế phụ thuộc tuyệt đối vào LLM, kết quả pass thứ nhất được kiểm tra bằng embedding similarity. Với mỗi nhóm con có từ hai thực thể trở lên, hệ thống tính độ tương đồng trung bình trong nhóm; nếu giá trị này thấp hơn ngưỡng 0.83, nhóm bị xem là chưa đủ tin cậy để merge. Khi LLM không đưa ra được nhóm hợp lệ hoặc kết quả không vượt qua validation, hệ thống chuyển sang quyết định bảo thủ: chỉ merge khi similarity đủ cao, với ngưỡng 0.88, đồng thời có bằng chứng trùng lặp về tên hoặc alias. Cơ chế này giữ lại thông tin về fallback nhưng ở mức nguyên lý: merge chỉ xảy ra khi có nhiều tín hiệu độc lập cùng ủng hộ.
-
-Hình~\ref{fig:er-resolution-concept} minh họa luồng quyết định merge ở Stage~3. Từ một cụm ứng viên, LLM trước hết tách ra các nhóm có khả năng đồng tham chiếu. Mỗi nhóm được kiểm tra bằng nhiều tín hiệu như tên, alias, embedding và provenance. Chỉ các nhóm có bằng chứng đủ mạnh mới được tổng hợp thành canonical entity; các trường hợp yếu được giữ tách biệt để tránh over-merge.
+Hình~\ref{fig:er-stage1-normalization} minh họa quy trình chuẩn hóa và nhúng thực thể ở giai đoạn~1. Đầu ra của giai đoạn này là tập thực thể đã được chuẩn hóa kèm vector nhúng tương ứng. Tập đầu ra này chưa phải là kết quả hợp nhất cuối cùng, mà là nền tảng để giai đoạn~2 gom các thực thể có khả năng đồng tham chiếu thành các cụm ứng viên.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.56\textwidth]{image/generated/chapter5/er-resolution-concept.png}
-    \caption{Luồng quyết định merge ở Stage 3: tách nhóm ứng viên, kiểm tra độ tin cậy và tạo thực thể chuẩn}
+    \includegraphics[width=\textwidth]{image/generated/chapter5/er-stage1-normalization.png}
+    \caption{Quy trình chuẩn hóa và nhúng thực thể ở giai đoạn 1}
+    \label{fig:er-stage1-normalization}
+\end{figure}
+
+
+\section{Giai đoạn 2: gom cụm thực thể đồng tham chiếu}
+
+Sau giai đoạn~1, mỗi thực thể đã có biểu diễn văn bản chuẩn hóa và vector nhúng tương ứng. Giai đoạn~2 đi vào bước chi tiết hơn: từ tập thực thể đã nhúng, hệ thống tạo ra các cụm ứng viên có khả năng đồng tham chiếu để chuyển sang giai đoạn quyết định hợp nhất. Mục tiêu của giai đoạn này không phải là kết luận hai thực thể chắc chắn là một, mà là thu hẹp không gian tìm kiếm và tạo tập ứng viên đủ tốt cho giai đoạn~3.
+
+Nếu so sánh mọi cặp thực thể trong toàn bộ đồ thị, chi phí tính toán sẽ tăng theo $O(n^2)$ và tạo ra rất nhiều cặp không có ý nghĩa. Ví dụ, một thực thể kiểu \texttt{PERSON} gần như không thể đồng tham chiếu với một thực thể kiểu \texttt{COURSE}; một thực thể kiểu \texttt{DOCUMENT} cũng không nên được so sánh trực tiếp với một thực thể kiểu \texttt{LOCATION}. Vì vậy, trước khi phân cụm bằng vector, hệ thống thực hiện một bước phân nhóm thô dựa trên nhãn thực thể. Chỉ những loại thực thể có nguy cơ đồng tham chiếu với nhau mới được đặt vào cùng một khối so sánh.
+
+Trong khóa luận này, khái niệm \textit{block} được hiểu là một khối ứng viên ở mức loại thực thể. Block không phải là cụm hợp nhất cuối cùng, mà chỉ là phạm vi cho phép các thực thể được so sánh với nhau. Ví dụ, các nhãn liên quan đến con người như \texttt{PERSON}, \texttt{LECTURER}, \texttt{RESEARCHER} hoặc \texttt{STAFF} có thể được đặt vào cùng một block vì cùng một người có thể được mô tả bằng nhiều vai trò khác nhau. Ngược lại, các nhãn biểu diễn đơn vị con và tổ chức cấp trên cần được cân nhắc tách riêng để tránh hợp nhất nhầm giữa một khoa, một viện hoặc cả trường đại học.
+
+Để xây dựng các block, hệ thống không đưa toàn bộ thực thể vào mô hình ngôn ngữ lớn. Thay vào đó, hệ thống chỉ trích ra các tổ hợp nhãn duy nhất từ tập thực thể đã nhúng. Ví dụ, hàng nghìn thực thể có thể chỉ tạo ra một số lượng nhỏ tổ hợp nhãn như \texttt{PERSON}, \texttt{PERSON + LECTURER}, \texttt{ORGANIZATION + UNIVERSITY} hoặc \texttt{ORGANIZATIONAL\_UNIT + FACULTY}. Mô hình ngôn ngữ lớn được sử dụng để phân tích các tổ hợp nhãn này và đề xuất cách xếp chúng vào các block sao cho các loại có khả năng đồng tham chiếu nằm cùng khối, còn các loại dễ gây nhầm lẫn được tách ra. Cách làm này tận dụng khả năng hiểu ngữ nghĩa của mô hình ngôn ngữ lớn, đồng thời giảm mạnh kích thước đầu vào vì mô hình chỉ phải suy luận trên tập nhãn, không phải trên toàn bộ thực thể.
+
+Sau khi có các block, hệ thống mới thực hiện phân cụm bên trong từng block. Đây là điểm khác biệt giữa \textit{block} và \textit{cluster}: block là khối so sánh rộng dựa trên nhãn, còn cluster là cụm ứng viên cụ thể gồm các thực thể có vector nhúng gần nhau trong cùng block. Việc phân cụm chỉ diễn ra bên trong từng block giúp giảm số lượng cặp cần so sánh, giảm nhiễu do so sánh sai loại thực thể, và làm nhẹ gánh cho bước hợp nhất ở giai đoạn~3.
+
+Bên trong mỗi block, hệ thống đo độ gần nhau giữa các thực thể bằng độ tương đồng cosine của vector nhúng. Cài đặt hiện tại sử dụng HDBSCAN với \texttt{min\_cluster\_size = 2}, \texttt{min\_samples = 1} và khoảng cách cosine. HDBSCAN phù hợp với bài toán này vì không yêu cầu biết trước số cụm trong mỗi block và có thể đánh dấu các điểm không đủ gần với thực thể nào khác là nhiễu. Trong trường hợp không sử dụng được HDBSCAN, hệ thống có cơ chế dự phòng dựa trên ngưỡng tương đồng cosine: hai thực thể được nối cạnh nếu độ tương đồng đạt ngưỡng, mặc định là 0.72, sau đó các thành phần liên thông có từ hai thực thể trở lên được xem là cụm ứng viên.
+
+Kết quả của giai đoạn~2 là danh sách các cụm ứng viên đồng tham chiếu. Mỗi cụm có một định danh gắn với block nguồn, xác suất hoặc mức tin cậy do thuật toán phân cụm cung cấp, và danh sách thực thể thuộc cụm. Các thực thể không đủ gần với thực thể nào khác được đánh dấu là nhiễu và không bị ép vào cụm. Vì giai đoạn~2 ưu tiên tạo ứng viên theo hướng bao phủ rộng, các cụm này vẫn cần được kiểm tra kỹ ở giai đoạn~3 trước khi hợp nhất thật sự.
+
+Hình~\ref{fig:er-stage2-blocking} minh họa quy trình gom cụm thực thể đồng tham chiếu. Trong hình, phần block thể hiện phạm vi so sánh được tạo từ nhãn thực thể, còn phần cluster thể hiện các cụm ứng viên được tạo ra bằng độ tương đồng vector bên trong từng block.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{image/generated/chapter5/er-stage2-blocking.png}
+    \caption{Quy trình gom cụm thực thể đồng tham chiếu ở giai đoạn 2}
+    \label{fig:er-stage2-blocking}
+\end{figure}
+
+
+\section{Giai đoạn 3: quyết định hợp nhất và tạo thực thể chuẩn}
+
+Giai đoạn~3 nhận đầu vào là các cụm ứng viên được tạo ra ở giai đoạn~2. Mỗi cụm gồm nhiều thực thể có vector gần nhau trong cùng một block, nhưng điều đó chưa đủ để kết luận rằng chúng chắc chắn cùng tham chiếu đến một đối tượng. Vì vậy, ở giai đoạn này, hệ thống kiểm tra từng cụm ứng viên một cách độc lập, thu thập lại tên, tên thay thế, nhãn, mô tả, nguồn dữ liệu và vector nhúng của các thực thể trong cụm. Các điểm nhiễu hoặc các thực thể không thuộc cụm ứng viên không bị ép vào bước hợp nhất.
+
+Mục tiêu của giai đoạn~3 là ra quyết định hợp nhất theo hướng thận trọng. Nếu bằng chứng chưa đủ rõ, hệ thống giữ các nút tách biệt thay vì hợp nhất sai. Lý do là lỗi \textit{hợp nhất quá mức} thường nguy hiểm hơn lỗi \textit{bỏ sót hợp nhất}: một thực thể đồng tham chiếu chưa được gộp vẫn có thể được phát hiện ở vòng xử lý sau, nhưng một lần gộp sai có thể làm quan hệ của hai đối tượng khác nhau bị trộn lẫn và gây sai lệch câu trả lời trong ứng dụng hỏi đáp.
+
+Hệ thống sử dụng cách tiếp cận hai lượt với mô hình ngôn ngữ lớn. Ở lượt thứ nhất, mô hình nhận toàn bộ các thực thể trong một cụm ứng viên và phân chia chúng thành các nhóm con. Mỗi nhóm con chứa các thực thể được dự đoán là đồng tham chiếu với nhau; các thực thể chưa đủ bằng chứng được đưa vào nhóm đơn lẻ. Nhiệm vụ của lượt này là trả lời câu hỏi ``những nút nào có thể cùng chỉ một đối tượng?'', chứ chưa tạo thực thể chuẩn. Khi phân nhóm, mô hình xem xét các tín hiệu như tên chính, tên thay thế, nhãn thực thể, mô tả, nguồn dữ liệu, tên viết tắt tiếng Việt và mối quan hệ giữa tên đầy đủ với tên rút gọn.
+
+Trong Hình~\ref{fig:er-resolution-concept}, trạng thái \textit{strong} trong bước kiểm tra ngưỡng biểu diễn các nhóm có bằng chứng đồng tham chiếu mạnh. Một nhóm được xem là mạnh khi các thực thể có sự khớp hoặc bao hàm giữa tên và tên thay thế, có ngữ cảnh mô tả tương thích, có nguồn dữ liệu không mâu thuẫn và có độ gần nhau đủ lớn trong không gian vector. Trong cài đặt hiện tại, mỗi nhóm con có từ hai thực thể trở lên được kiểm tra thêm bằng độ tương đồng trung bình nội bộ; nếu giá trị này đạt ngưỡng 0.83 trở lên, nhóm được xem là đủ tin cậy để chuyển sang lượt tổng hợp thực thể chuẩn.
+
+Ngược lại, trạng thái \textit{weak} biểu diễn các trường hợp bằng chứng còn yếu hoặc không ổn định. Một cụm có thể rơi vào nhánh này khi tên chỉ giống một phần nhưng không có tên thay thế hỗ trợ, mô tả nguồn không rõ ràng, các thực thể có vai trò hoặc cấp tổ chức dễ gây nhầm lẫn, hoặc độ tương đồng vector thấp hơn ngưỡng kiểm tra. Các trường hợp yếu không được hợp nhất trực tiếp vì rủi ro tạo ra tri thức sai cao hơn lợi ích giảm phân mảnh.
+
+Ở lượt thứ hai, mô hình chỉ xử lý những nhóm con đã vượt qua kiểm tra ở lượt thứ nhất. Nhiệm vụ của lượt này là tổng hợp một thực thể chuẩn đại diện cho cả nhóm. Thực thể chuẩn bao gồm tên chuẩn, nhãn thực thể, danh sách tên thay thế, mô tả, thông tin truy vết về phân đoạn dữ liệu và danh sách các nút đã được hợp nhất. Nguyên tắc quan trọng là không tự tạo thêm tri thức mới ngoài dữ liệu đầu vào: tên chuẩn phải được chọn từ các tên quan sát được hoặc từ biến thể rõ ràng nhất; tên thay thế, mô tả và nguồn dữ liệu được hợp nhất từ các nút thành phần.
+
+Cơ chế \textit{fallback} trong hình là lớp dự phòng bảo thủ khi mô hình ở lượt thứ nhất không tạo được nhóm hợp lệ, trả về toàn bộ thực thể dạng đơn lẻ, hoặc nhóm được đề xuất không vượt qua kiểm tra bằng vector. Trong trường hợp này, hệ thống chỉ hợp nhất nếu đồng thời có hai điều kiện: độ tương đồng vector rất cao, với ngưỡng 0.88, và tồn tại bằng chứng khớp tên hoặc tên thay thế. Nếu không thỏa các điều kiện đó, các thực thể được giữ nguyên như các nút độc lập. Nhờ vậy, fallback không cố gắng gộp nhiều hơn, mà đóng vai trò bảo vệ để tránh hợp nhất sai trong các ca mơ hồ.
+
+Ví dụ, một cụm ứng viên có thể chứa các nút \texttt{node\_truong\_dai\_hoc\_cong\_nghe}, \texttt{node\_truong\_dhcn}, \texttt{node\_uet} và \texttt{node\_dai\_hoc\_quoc\_gia\_ha\_noi}. Ở lượt thứ nhất, hệ thống có thể xếp ba nút đầu vào cùng một nhóm vì Trường Đại học Công nghệ, Trường ĐHCN và UET là các cách gọi khác nhau của cùng một trường; nút Đại học Quốc gia Hà Nội được giữ riêng vì đây là tổ chức cấp trên, không phải cùng một thực thể với trường thành viên. Nhóm ba nút đầu đi theo nhánh \textit{strong} nếu tên, tên thay thế, mô tả và vector đều ủng hộ. Ở lượt thứ hai, hệ thống tạo thực thể chuẩn với tên Trường Đại học Công nghệ, lưu Trường ĐHCN, UET và VNU-UET như các tên thay thế, đồng thời ghi lại các định danh cũ trong trường truy vết.
+
+Kết quả cuối cùng của giai đoạn~3 là danh sách thực thể chuẩn và bảng ánh xạ từ các định danh cũ sang định danh chuẩn. Kết quả này mới là quyết định ở mức thực thể; bản thân đồ thị chưa được cập nhật hoàn toàn. Để các quan hệ trước đây trỏ tới các nút cũ cùng trỏ về thực thể chuẩn, cần có bước cập nhật lại đồ thị và xử lý quan hệ, được trình bày ở mục tiếp theo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{image/generated/chapter5/er-resolution-concept.png}
+    \caption{Luồng quyết định hợp nhất ở giai đoạn 3: mô hình ngôn ngữ lớn tách nhóm ứng viên và tạo thực thể chuẩn, trong khi các kiểm tra ngưỡng giữ vai trò bảo vệ chống hợp nhất sai}
     \label{fig:er-resolution-concept}
 \end{figure}
 
-\section{Tái tạo thực thể chuẩn và cập nhật đồ thị}
 
-Sau khi có quyết định merge, hệ thống tạo canonical entity cho mỗi nhóm thực thể. Tên chuẩn được chọn theo hướng dễ đọc, ổn định và có khả năng đại diện tốt nhất cho nhóm. Các alias, nhãn, mô tả và provenance được hợp nhất từ những node thành phần, với nguyên tắc không tự thêm thông tin ngoài dữ liệu đầu vào. Canonical ID được sinh lại từ canonical name để đảm bảo tính ổn định và dễ truy vết hơn so với việc dùng trực tiếp ID sinh bởi LLM.
+\section{Cập nhật lại đồ thị tri thức và xử lý quan hệ cho các thực thể mới}
 
-Bước tiếp theo là cập nhật graph. Mọi relationship trỏ đến node cũ được ánh xạ về canonical entity tương ứng. Nếu sau ánh xạ xuất hiện self-loop hoặc relationship trùng lặp, hệ thống loại bỏ hoặc gộp chúng để graph đầu ra gọn hơn. Mục tiêu của bước này không chỉ là giảm số lượng node trùng, mà còn đảm bảo rằng các quan hệ trước đây bị phân tán trên nhiều biến thể tên gọi được tập trung về cùng một thực thể chuẩn.
+Đầu ra của giai đoạn~3 gồm các thực thể chuẩn và bảng ánh xạ định danh. Bảng ánh xạ này cho biết mỗi nút cũ trong đồ thị thô cần được chuyển về nút chuẩn nào. Tuy nhiên, nếu chỉ tạo thực thể chuẩn mà không cập nhật lại đồ thị, các quan hệ cũ vẫn tiếp tục trỏ tới những nút đã bị thay thế. Vì vậy, mục tiêu của bước này là biến quyết định hợp nhất thành một đồ thị tri thức mới, trong đó các nút và quan hệ đều sử dụng định danh chuẩn.
 
-Kết quả cuối cùng là một Knowledge Graph đã được hợp nhất ở mức thực thể, sẵn sàng cho bước import vào Neo4j và khai thác trong hệ thống hỏi đáp. So với graph thô sau extraction, graph sau Entity Resolution có cấu trúc nhất quán hơn, giảm phân mảnh và hỗ trợ tốt hơn cho các truy vấn cần tổng hợp thông tin từ nhiều nguồn.
+Trước hết, hệ thống sinh lại định danh chuẩn từ tên chuẩn của thực thể. Cách làm này giúp định danh dễ đọc và ổn định hơn so với việc giữ nguyên định danh cục bộ được sinh ra ở từng lần trích xuất. Sau đó, với mỗi thực thể chuẩn, hệ thống lưu lại các nút nguồn đã được hợp nhất, đồng thời hợp nhất nhãn, tên thay thế, mô tả và thông tin truy vết từ các nút thành phần. Các thông tin này giúp đồ thị đầu ra vừa gọn hơn vừa không làm mất bằng chứng ban đầu.
 
-\section{Human-in-the-loop trong hợp nhất và tối ưu chất lượng graph}
+Khi cập nhật nút, hệ thống duyệt qua các nút trong đồ thị thô và thay thế định danh cũ bằng định danh chuẩn nếu nút đó nằm trong bảng ánh xạ. Nếu nhiều nút cũ cùng ánh xạ tới một thực thể chuẩn, đồ thị đầu ra chỉ giữ một nút đại diện. Ví dụ, các nút Trường Đại học Công nghệ, Trường ĐHCN và UET được thay bằng một nút chuẩn Trường Đại học Công nghệ; các tên gọi còn lại được giữ trong danh sách tên thay thế để phục vụ truy xuất về sau.
 
-Mặc dù pipeline Entity Resolution được thiết kế theo hướng thận trọng, một số quyết định merge vẫn khó xử lý hoàn toàn tự động. Các trường hợp thường gặp gồm tên đơn vị viết tắt, tên người đi kèm chức danh hoặc học hàm, các tổ chức có tên gần giống nhau nhưng khác cấp quản lý, hoặc những thực thể có alias chưa đầy đủ do giai đoạn trích xuất sinh ra. Vì vậy, hệ thống bổ sung cơ chế human-in-the-loop để người quản trị có thể kiểm tra và hiệu chỉnh graph sau khi pipeline tự động đã chạy.
+Bước quan trọng tiếp theo là xử lý lại quan hệ. Với mỗi quan hệ, hệ thống cập nhật cả thực thể nguồn và thực thể đích theo bảng ánh xạ chuẩn. Nếu một quan hệ trước đây nối từ một biến thể tên gọi cũ tới một thực thể khác, sau cập nhật nó sẽ nối từ thực thể chuẩn tới thực thể đó. Nhờ vậy, các quan hệ bị phân tán trên nhiều biến thể tên gọi được tập trung về cùng một nút, giúp truy vấn trên đồ thị đầy đủ hơn.
 
-Workflow human-in-the-loop bắt đầu từ trang chi tiết thực thể. Khi người dùng mở một entity, hệ thống tìm các ứng viên có khả năng trùng lặp dựa trên tên và alias, sau đó hiển thị chúng như các duplicate candidates. Người dùng có thể chọn một ứng viên để so sánh với entity hiện tại. Ở bước so sánh, hệ thống sử dụng LLM để phân tích tên, alias, nhãn thực thể, mô tả và các quan hệ lân cận, từ đó đưa ra checklist, mức độ tin cậy, lập luận và gợi ý có nên merge hay không.
+Sau khi ánh xạ quan hệ, có hai trường hợp cần kiểm soát. Trường hợp thứ nhất là quan hệ tự nối: nếu cả nguồn và đích của một quan hệ sau hợp nhất cùng trỏ về một thực thể chuẩn, quan hệ đó không còn mang thông tin hữu ích và được loại bỏ. Trường hợp thứ hai là quan hệ lặp: nhiều quan hệ khác nhau trong đồ thị thô có thể trở thành cùng một quan hệ sau khi thực thể được hợp nhất. Khi đó, hệ thống gộp các quan hệ có cùng thực thể nguồn, cùng thực thể đích và cùng loại quan hệ, đồng thời hợp nhất thuộc tính và lưu lại các định danh quan hệ ban đầu để truy vết.
 
-Quyết định cuối cùng không được thực hiện tự động bởi LLM. Người dùng xác nhận merge hoặc giữ hai entity tách biệt. Nếu merge, người dùng chọn canonical entity, tên chuẩn và ID chuẩn nếu cần. Sau khi xác nhận, backend hợp nhất thuộc tính, alias và provenance của các node thành phần, đồng thời rewiring các relationship trong Neo4j để các cạnh đi vào hoặc đi ra từ node bị gộp được chuyển về canonical entity. Các relationship trùng lặp hoặc không còn hợp lệ sau rewiring cần được xử lý để graph sau merge vẫn nhất quán.
+Ví dụ, trước hợp nhất có thể tồn tại hai quan hệ: Chử Đức Trình lãnh đạo Trường Đại học Công nghệ và Chử Đức Trình lãnh đạo UET. Sau khi UET được ánh xạ về Trường Đại học Công nghệ, hai quan hệ này trở thành cùng một quan hệ ở đồ thị chuẩn. Hệ thống chỉ giữ một quan hệ đại diện, nhưng vẫn lưu thông tin nguồn từ các quan hệ ban đầu để không mất bằng chứng.
 
-Cơ chế này không thay thế pipeline Entity Resolution offline, mà bổ sung một vòng kiểm soát chất lượng cho các ca khó hoặc các lỗi được phát hiện sau triển khai. Nhờ đó, Knowledge Graph không còn là artifact tĩnh sinh ra một lần, mà có thể được cải thiện dần thông qua phản hồi của con người. Về mặt chất lượng, human-in-the-loop giúp giảm nguy cơ over-merge do quyết định tự động quá mạnh, đồng thời xử lý under-merge còn sót lại khi hai node thật sự cùng thực thể nhưng chưa được pipeline gộp.
+Kết quả của bước cập nhật là một đồ thị tri thức đã được hợp nhất ở mức thực thể và quan hệ. So với đồ thị thô sau trích xuất, đồ thị mới giảm phân mảnh, giảm số quan hệ lặp, giữ được thông tin truy vết và phù hợp hơn cho ứng dụng hỏi đáp cần tổng hợp thông tin từ nhiều tài liệu khác nhau. Tuy nhiên, vẫn có những ca khó cần được kiểm tra bổ sung, đặc biệt khi tên viết tắt, chức danh hoặc cấp tổ chức có thể gây nhầm lẫn. Vì vậy, mục tiếp theo trình bày cơ chế human fallback như một lớp kiểm duyệt trên giao diện cho các trường hợp bị bỏ sót hoặc cần con người xác nhận.
 
-\section{Kiểm soát chất lượng và tóm tắt chương}
 
-Entity Resolution luôn phải cân bằng giữa hai loại lỗi. \textit{Under-merge} xảy ra khi hai node cùng thực thể nhưng không được gộp, khiến graph vẫn bị phân mảnh. \textit{Over-merge} xảy ra khi hai thực thể khác nhau bị gộp nhầm, làm sai lệch tri thức. Pipeline trong chương này được thiết kế để tạo ứng viên theo hướng rộng ở Stage~2, nhưng ra quyết định merge theo hướng thận trọng ở Stage~3. Sự kết hợp giữa nhãn thực thể, embedding similarity, LLM reasoning và kiểm tra bằng ngưỡng giúp giảm nguy cơ over-merge mà vẫn xử lý được nhiều biến thể tên gọi phổ biến trong dữ liệu tiếng Việt.
+\section{Human fallback trong kiểm duyệt thực thể đồng tham chiếu}
 
-Các trường hợp khó trong Entity Resolution tiếng Việt bao gồm: tên tổ chức có biến thể dài/ngắn như ``Khoa Công nghệ Thông tin'' và ``Khoa CNTT''; tên người đi kèm chức danh hoặc học vị; các đơn vị có tên gần giống nhưng thuộc cấp hoặc ngữ cảnh khác nhau; và alias không chính xác do LLM extraction sinh ra. Những trường hợp này cho thấy Entity Resolution không thể chỉ dựa vào so khớp chuỗi, mà cần kết hợp nhiều tín hiệu và vẫn phải chấp nhận rằng một số quyết định cần được kiểm tra trong thực nghiệm.
+Human fallback là lớp xử lý bổ sung cho các trường hợp hệ thống tự động chưa hợp nhất được hoặc người dùng phát hiện nghi vấn trong quá trình khai thác đồ thị. Khác với ba giai đoạn xử lý trước đó, phần này chủ yếu hoạt động trên giao diện. Mục tiêu không phải là thay thế quyết định của người dùng, mà là cung cấp đủ thông tin để người dùng kiểm duyệt và xác nhận việc hợp nhất hai thực thể.
 
-Tóm lại, chương này trình bày Entity Resolution như bước làm sạch và hợp nhất graph sau trích xuất. Pipeline gồm ba giai đoạn: chuẩn hóa và biểu diễn thực thể, sinh cụm ứng viên bằng blocking và clustering, sau đó quyết định hợp nhất bằng Two-Pass LLM Resolution kết hợp kiểm soát bảo thủ. Kết quả của chương này là một graph ít phân mảnh hơn, đóng vai trò đầu vào quan trọng cho lưu trữ Neo4j, truy vấn graph và các phương thức hỏi đáp ở Chương~6.
+Trong quá trình sử dụng, người dùng có thể bắt gặp một cặp thực thể có dấu hiệu đồng tham chiếu. Trường hợp khác, khi đang xem một thực thể cụ thể, người dùng nghi ngờ thực thể hiện tại có thể cùng chỉ một đối tượng với một thực thể khác nhưng hệ thống chưa gợi ý sẵn. Khi đó, người dùng có thể sử dụng chức năng tìm kiếm để tìm thực thể nghi ngờ, chọn hai thực thể cần đối chiếu và mở giao diện so sánh.
+
+Sau khi người dùng chọn hai thực thể, hệ thống sử dụng mô hình ngôn ngữ lớn để đọc các thông tin liên quan đến cả hai đối tượng, bao gồm tên, tên thay thế, nhãn, mô tả và các quan hệ lân cận. Từ các thông tin này, mô hình đưa ra nhận xét về mức độ tương đồng, các bằng chứng ủng hộ hợp nhất, các điểm cần thận trọng và gợi ý có nên hợp nhất hay không. Tuy nhiên, gợi ý này chỉ đóng vai trò hỗ trợ phân tích; quyết định cuối cùng vẫn thuộc về người dùng.
+
+Hình~\ref{fig:entity-compare-fallback} minh họa giao diện cơ bản của cơ chế human fallback. Phần bên trái là trang chi tiết thực thể, nơi người dùng có thể quan sát thông tin của thực thể hiện tại và các ứng viên có khả năng đồng tham chiếu. Phần bên phải là cửa sổ đối chiếu hai thực thể, trong đó hệ thống trình bày nhận xét hỗ trợ để người dùng quyết định hợp nhất hoặc giữ tách biệt.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.58\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{image/human_fallback/entity_view_before_compare.png}
+        \\(a) Trang chi tiết thực thể và ứng viên đồng tham chiếu
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.36\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{image/human_fallback/compare.png}
+        \\(b) Cửa sổ đối chiếu hỗ trợ ra quyết định
+    \end{minipage}
+    \caption{Giao diện human fallback hỗ trợ người dùng kiểm duyệt cặp thực thể nghi ngờ đồng tham chiếu}
+    \label{fig:entity-compare-fallback}
+\end{figure}
+
+Ví dụ trong Hình~\ref{fig:entity-compare-fallback} là hai thực thể ``Ban đào tạo, ĐHQGHN'' và ``Ban đào tạo, Đại học Quốc gia Hà Nội''. Hai cách gọi này cùng tham chiếu đến một đối tượng, nhưng có thể bị bỏ sót ở bước xử lý tự động trước đó do khác biệt về cách viết tắt và cách ghi tên đơn vị chủ quản. Khi người dùng phát hiện hoặc tìm kiếm được cặp này trên giao diện, mô hình ngôn ngữ lớn đọc thông tin của hai thực thể và đưa ra gợi ý rằng chúng có khả năng đồng tham chiếu. Sau đó, người dùng xác nhận hợp nhất để hệ thống tạo thực thể chuẩn và cập nhật lại các quan hệ liên quan.
+
+Cơ chế human fallback giúp đồ thị tri thức có khả năng được cải thiện trong quá trình sử dụng thay vì chỉ phụ thuộc vào một lần xử lý ngoại tuyến. Các ca bị bỏ sót có thể được phát hiện dần bởi người dùng, trong khi rủi ro hợp nhất sai vẫn được kiểm soát vì quyết định cuối cùng cần có xác nhận của con người.

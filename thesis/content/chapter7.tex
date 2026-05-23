@@ -1,329 +1,203 @@
 \chapter{Thực nghiệm và đánh giá}
 
-Chương này đánh giá hệ thống KGsAuto theo hai nhóm chính. \textit{Pipeline Evaluation} tập trung vào khả năng xây dựng và làm sạch Knowledge Graph, gồm thống kê vận hành của extraction, Entity Resolution, rewiring, đánh giá factuality trên mẫu triplet và cơ chế human-in-the-loop để kiểm soát chất lượng graph. \textit{RAG Evaluation} tập trung vào chất lượng hỏi đáp, so sánh bốn chế độ truy xuất Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG bằng các metric RAGAS cùng với độ trễ xử lý.
+Chương này trình bày thực nghiệm theo hai lớp. Lớp thứ nhất đánh giá chất lượng đồ thị tri thức được xây dựng từ dữ liệu công khai của Trường Đại học Công nghệ. Lớp thứ hai đánh giá ứng dụng hỏi đáp để xem việc sử dụng đồ thị tri thức có cải thiện câu trả lời so với kiến trúc truy vấn văn bản hay không. Phần hỏi đáp trong chương này chỉ đóng vai trò lớp ứng dụng để kiểm tra giá trị sử dụng của đồ thị, không phải đóng góp thuật toán chính của khóa luận.
+
+Cách tổ chức đánh giá đi theo dòng dữ liệu của toàn bộ khóa luận: từ dữ liệu thô ban đầu, qua kết quả trích xuất tri thức, qua đồ thị sau xử lý đồng tham chiếu và hợp nhất thực thể, đến kết quả cuối cùng được dùng trong ứng dụng hỏi đáp. Nhờ vậy, phần đánh giá không chỉ báo cáo điểm số cuối cùng, mà còn làm rõ nguồn dữ liệu nào được đánh giá và các kết quả thực nghiệm nên được hiểu trong phạm vi nào.
+
+\section{Mô tả dữ liệu}
+
+Dữ liệu đầu vào của khóa luận gồm các tài liệu công khai được thu thập từ các trang thông tin của Trường Đại học Công nghệ. Sau bước thu thập và xử lý ban đầu, mỗi tài liệu được lưu dưới dạng văn bản có cấu trúc tương đối ổn định để phục vụ các bước trích xuất phía sau. Từ các tài liệu này, hệ thống trích xuất các thực thể và quan hệ để tạo ra các mảnh đồ thị cục bộ. Các mảnh đồ thị này tiếp tục được xử lý đồng tham chiếu và hợp nhất thực thể để tạo thành đồ thị tri thức cuối cùng.
+
+Trong thực nghiệm, dòng dữ liệu gồm năm mốc chính. Tập đầu vào có 1003 tài liệu văn bản đã xử lý. Từ tập này, bước trích xuất tạo 1003 mảnh đồ thị cục bộ, gồm 12081 lượt nút và 12321 lượt quan hệ; sau khi gom theo định danh trong các mảnh, có 6276 định danh nút duy nhất. Bước đồng tham chiếu và hợp nhất thực thể xử lý 5551 thực thể được chuẩn hóa và nhúng, tạo 3154 quyết định thực thể chuẩn và 3426 ánh xạ từ định danh cũ sang định danh chuẩn.
+
+Sau khi cập nhật lại quan hệ, đồ thị cuối cùng gồm 5278 thực thể duy nhất và 12250 quan hệ; trong đó 11 quan hệ lặp được gộp từ 10 nhóm quan hệ. Đồ thị này được dùng làm nguồn tri thức có cấu trúc cho đánh giá chất lượng quan hệ và cho các kiến trúc hỏi đáp được mô tả trong chương này. Riêng lớp đánh giá hỏi đáp sử dụng 100 tài liệu đánh giá và 146 câu hỏi hợp lệ.
+
+Bảng~\ref{tab:data_summary} tóm tắt các thống kê chính của dữ liệu và kết quả trung gian trong thực nghiệm.
 
 \begin{table}[h]
 \centering
-\caption{Hai nhóm đánh giá chính trong khóa luận}
-\label{tab:evaluation_groups}
-\begin{tabularx}{\textwidth}{|p{0.22\textwidth}|p{0.25\textwidth}|p{0.22\textwidth}|X|}
+\caption{Tóm tắt dữ liệu thực nghiệm}
+\label{tab:data_summary}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{|p{0.46\textwidth}|X|}
 \hline
-\textbf{Nhóm đánh giá} & \textbf{Mục tiêu} & \textbf{Đối tượng} & \textbf{Chỉ số/quan sát} \\
+\textbf{Thành phần} & \textbf{Quy mô} \\
 \hline
-Pipeline Evaluation & Kiểm tra khả năng tạo, làm sạch và kiểm soát chất lượng Knowledge Graph & Extraction, Entity Resolution, rewiring, triplet factuality, human-in-the-loop merge & Số file xử lý, node/relationship, canonical entity, tỷ lệ giảm thực thể, relationship sau rewiring, tỷ lệ triplet được hỗ trợ bởi bằng chứng \\
+Tài liệu đầu vào & 1003 tài liệu đã xử lý \\
 \hline
-RAG Evaluation & Kiểm tra chất lượng hỏi đáp dựa trên bằng chứng văn bản và graph & Semantic Search, Naive Graph RAG, Graph Search, Hybrid RAG & Faithfulness, context precision, context recall, latency \\
+Đồ thị thô sau trích xuất & 12081 lượt nút; 12321 lượt quan hệ \\
+\hline
+Dữ liệu xử lý đồng tham chiếu & 5551 thực thể đã chuẩn hóa và nhúng \\
+\hline
+Đồ thị tri thức cuối & 5278 thực thể duy nhất; 12250 quan hệ \\
+\hline
+Bộ đánh giá hỏi đáp & 100 tài liệu đánh giá; 146 câu hỏi hợp lệ \\
 \hline
 \end{tabularx}
 \end{table}
 
 \section{Môi trường thực nghiệm}
 
-Phần thực nghiệm được thực hiện trên môi trường phát triển cục bộ của hệ thống KGsAuto. Các thành phần hạ tầng như Neo4j, Qdrant và Ollama được khởi động qua Docker Compose, trong khi backend, RAG API và các script đánh giá được chạy trực tiếp từ mã nguồn.
-
-Hệ thống sử dụng Python 3.12 trong môi trường Conda \texttt{py312}. Neo4j lưu trữ và truy vấn Knowledge Graph sau Entity Resolution; Qdrant lưu trữ vector của các đoạn Markdown phục vụ Semantic Search. Backend và RAG API được xây dựng bằng FastAPI/Uvicorn; frontend sử dụng React/Vite.
-
-Các mô hình ngôn ngữ lớn được gọi thông qua lớp provider dùng chung của hệ thống. Runtime RAG sử dụng provider OpenAI-compatible với model \texttt{cx/gpt-5.3-codex}. Quá trình sinh tập đánh giá bằng RAGAS sử dụng model \texttt{cx/gpt-5.2}. Mô hình embedding cho truy xuất văn bản là \texttt{paraphrase-multilingual-mpnet-base-v2}; riêng quá trình xây dựng knowledge graph của RAGAS sử dụng embedding model \texttt{nvidia/llama-3.2-nemoretriever-300m-embed-v1}.
-
-Bảng~\ref{tab:experiment_environment} tóm tắt các thành phần phần mềm trong môi trường thực nghiệm.
+Các thực nghiệm được thực hiện trên một máy tính cá nhân. Bảng~\ref{tab:experiment_environment} tóm tắt các thành phần chính của môi trường chạy và cấu hình đánh giá. Các bước gọi mô hình ngôn ngữ lớn được thực hiện thông qua giao diện tương thích OpenAI, nên độ trễ phản hồi có thể thay đổi theo dịch vụ mô hình tại thời điểm chạy.
 
 \begin{table}[h]
 \centering
-\caption{Môi trường phần mềm sử dụng trong thực nghiệm}
+\caption{Tóm tắt môi trường và cấu hình thực nghiệm}
 \label{tab:experiment_environment}
-\begin{tabularx}{\textwidth}{|p{0.34\textwidth}|X|}
+\begin{tabularx}{\textwidth}{|p{0.27\textwidth}|X|}
 \hline
-\textbf{Thành phần} & \textbf{Cấu hình sử dụng} \\
+\textbf{Nhóm thành phần} & \textbf{Cấu hình sử dụng} \\
 \hline
-Hệ điều hành & Linux \\
+Phần cứng & AMD Ryzen 7 6800H, 8 nhân vật lý, 16 luồng xử lý; 14 GiB bộ nhớ khả dụng; NVIDIA GeForce RTX 3050 Laptop GPU, 4 GiB bộ nhớ \\
 \hline
-Python & Python 3.12, Conda environment \texttt{py312} \\
+Hệ điều hành & Linux, nhân hệ điều hành 6.17.0-23-generic, kiến trúc x86\_64 \\
 \hline
-Backend API & FastAPI/Uvicorn \\
+Nền tảng chạy & Python 3.13.11; Docker 29.5.0 \\
 \hline
-Frontend & React/Vite \\
+Lưu trữ đồ thị & Neo4j 2026.01.4, chạy bằng Docker, dùng để lưu trữ thực thể, quan hệ và thuộc tính truy vết của đồ thị tri thức \\
 \hline
-Graph database & Neo4j \\
+Lưu trữ vector & Qdrant 1.15.0, chạy bằng Docker, dùng để lưu trữ vector của đoạn văn bản và biểu diễn thực thể phục vụ truy vấn ngữ nghĩa \\
 \hline
-Vector database & Qdrant \\
+Mô hình nhúng chính & \texttt{paraphrase-multilingual-mpnet-base-v2}; vector 768 chiều; thiết bị chạy mặc định là CPU \\
 \hline
-LLM runtime cho RAG & OpenAI-compatible, \texttt{cx/gpt-5.3-codex} \\
+Tổ chức đoạn văn bản & Tách theo mục; độ dài tối đa 200 token; phần chồng lặp 10 token giữa các đoạn liên tiếp \\
 \hline
-LLM sinh testset RAGAS & OpenAI-compatible, \texttt{cx/gpt-5.2} \\
+Mô hình sinh và chấm & Mô hình ngôn ngữ lớn được gọi qua giao diện tương thích OpenAI; cấu hình thực nghiệm sử dụng \texttt{cx/gpt-5.2} cho hỏi đáp và đánh giá tự động \\
 \hline
-Embedding cho RAG runtime & \texttt{paraphrase-multilingual-mpnet-base-v2} \\
-\hline
-Embedding cho RAGAS graph & \texttt{nvidia/llama-3.2-nemoretriever-300m-embed-v1} \\
+Cấu hình RAGAS & Mô hình nhúng \texttt{nvidia/llama-3.2-nemoretriever-300m-embed-v1}; số luồng chấm tối đa là 2 để giảm lỗi giới hạn tốc độ \\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Dữ liệu thực nghiệm}
+Cấu hình này được dùng cho các bước xử lý dữ liệu, lưu trữ đồ thị, truy xuất vector và đánh giá hỏi đáp; các tên phần mềm được giữ lại nhằm đảm bảo khả năng tái lập thực nghiệm.
 
-Dữ liệu đầu vào của hệ thống là tập tài liệu Markdown về Trường Đại học Công nghệ, được lưu trong thư mục \texttt{data/raw/uet}. Các tài liệu này bao phủ nhiều nhóm nội dung: cơ cấu tổ chức, đơn vị trực thuộc, chương trình đào tạo, tuyển sinh, học bổng, sự kiện, hợp tác và các thông báo học vụ. Tập dữ liệu này được sử dụng cho cả pipeline trích xuất Knowledge Graph và tạo tập đánh giá cho hệ thống hỏi đáp.
+\input{content/chapter6}
 
-Trong lần thực nghiệm hiện tại, \texttt{data/raw/uet} gồm 1003 file Markdown với tổng dung lượng nội dung khoảng 4.46 triệu ký tự. Ngoài ra, để phục vụ đánh giá RAG, 100 tài liệu sạch được chọn lọc từ tập thô thông qua script \texttt{services/rag\_system/evaluation/prepare\_test\_docs.py}, làm đầu vào cho quá trình sinh testset bằng RAGAS.
+\section{Phương pháp đánh giá đồ thị tri thức}
 
-Bảng~\ref{tab:raw_uet_dataset_statistics} tóm tắt các thống kê của dữ liệu thô.
+Đánh giá đồ thị tri thức trong khóa luận tập trung vào độ đúng theo bằng chứng của từng quan hệ. Mỗi quan hệ trong đồ thị được xem như một phát biểu có cấu trúc gồm chủ thể, loại quan hệ và đối tượng. Phát biểu này chỉ được xem là đáng tin cậy khi có bằng chứng trong dữ liệu nguồn hoặc trong thuộc tính truy vết của đồ thị hỗ trợ cho nó.
+
+Phần đánh giá được tổ chức thành một quy trình đánh giá tự động có sử dụng mô hình ngôn ngữ lớn làm bộ chấm. Quy trình này gồm bốn bước chính. Bước thứ nhất là lấy mẫu quan hệ từ đồ thị bằng cách chọn ngẫu nhiên các cạnh trong cơ sở dữ liệu đồ thị. Bước thứ hai là xây dựng đầu vào cho bộ chấm, trong đó mỗi mẫu gồm thông tin chủ thể, quan hệ, đối tượng, thuộc tính liên quan và các bằng chứng cục bộ như mô tả, nguồn, mã phân đoạn dữ liệu hoặc các trường truy vết khác. Bước thứ ba là yêu cầu mô hình ngôn ngữ lớn đánh giá quan hệ dựa duy nhất trên bằng chứng được cung cấp. Bước cuối cùng là kiểm tra định dạng phản hồi, ghi kết quả từng mẫu và tổng hợp các tỷ lệ đánh giá.
+
+Mỗi quan hệ được gán một trong ba nhãn. Nhãn \textit{Evidence-supported} được dùng khi bằng chứng hỗ trợ rõ quan hệ. Nhãn \textit{Evidence-contradicted} được dùng khi bằng chứng mâu thuẫn với quan hệ. Nhãn \textit{Insufficient evidence} được dùng khi bằng chứng còn thiếu, mơ hồ hoặc không đủ để xác nhận hay bác bỏ quan hệ. Khi không chắc chắn, bộ chấm được yêu cầu chọn \textit{Insufficient evidence} thay vì suy đoán dựa trên tri thức bên ngoài.
+
+Chỉ số chính của phần này là \textit{evidence-supported rate}, tức tỷ lệ quan hệ được gán nhãn \textit{Evidence-supported} trên toàn bộ mẫu hợp lệ. Hai nhãn còn lại giúp phân biệt hai loại vấn đề khác nhau: \textit{Evidence-contradicted} là tín hiệu mạnh về khả năng có quan hệ sai, còn \textit{Insufficient evidence} thường cho thấy bằng chứng truy vết chưa đủ trực tiếp hoặc quan hệ cần thêm ngữ cảnh rộng hơn.
+
+Để kiểm tra độ ổn định của kết quả, khóa luận thực hiện ba lượt lấy mẫu ngẫu nhiên với cỡ mẫu 100, 200 và 500 quan hệ. Các lượt này sử dụng cùng một quy trình chấm, nhưng khác số lượng mẫu. Lượt 500 mẫu được dùng làm kết quả chính vì có cỡ mẫu lớn hơn, trong khi hai lượt 100 và 200 mẫu được dùng để đối chiếu xem kết quả có ổn định qua các lần lấy mẫu hay không.
+
+\section{Bộ câu hỏi đánh giá ứng dụng hỏi đáp}
+
+Bộ câu hỏi đánh giá ứng dụng hỏi đáp được xây dựng bằng RAGAS từ tập tài liệu đánh giá. Trước hết, hệ thống chọn 100 tài liệu từ 1003 tài liệu ban đầu. Bước chuẩn bị tài liệu loại bỏ metadata kỹ thuật khỏi nội dung Markdown, chuẩn hóa văn bản, tách các tài liệu quá dài thành các phần nhỏ hơn và chọn mẫu theo các nhóm chủ đề dựa trên ontology, chẳng hạn cấu trúc tổ chức, chương trình đào tạo, nhân sự, văn bản/quy định, hỗ trợ sinh viên, nghiên cứu, hợp tác và địa điểm. Cách chọn này giúp tập đánh giá không chỉ tập trung vào một loại nội dung quá hẹp và cũng tránh các tài liệu quá ngắn hoặc quá dài.
+
+Sau khi có tập tài liệu đánh giá, RAGAS xây dựng một đồ thị nội bộ phục vụ sinh câu hỏi. Đồ thị này khác với đồ thị tri thức chính của khóa luận: nó chỉ được tạo ra để mô hình hóa quan hệ giữa các tài liệu và các đoạn văn bản trong tập đánh giá, không thay thế đồ thị tri thức được xây dựng ở các chương trước. Trong đồ thị nội bộ này, mỗi tài liệu ban đầu là một nút document; sau đó RAGAS trích tiêu đề phụ, tách tài liệu thành các chunk, tạo tóm tắt, trích cụm từ khóa và sinh embedding cho các nút. Các cạnh \texttt{child} biểu diễn quan hệ giữa tài liệu và chunk, các cạnh \texttt{next} biểu diễn thứ tự liên tiếp giữa các chunk, còn cạnh tương đồng cosine nối những nút có embedding gần nhau. Trong cài đặt của khóa luận, ngưỡng tương đồng cosine được đặt là 0.85.
+
+Để hỗ trợ sinh câu hỏi multi-hop, đồ thị nội bộ được bổ sung một bước tương thích trước khi gọi bộ sinh câu hỏi. Các cụm từ khóa của nút được dùng làm chủ đề khi cần sinh câu hỏi trừu tượng; điểm tương đồng cosine được dùng cho truy vấn theo mức tương đồng tóm tắt; và các cặp nút tương đồng có cụm từ khóa giao nhau được bổ sung cạnh chồng lặp cụm từ khóa. Nhờ đó, RAGAS có thể lấy mẫu các đường đi ngắn trên đồ thị để tạo câu hỏi cần kết nối thông tin từ nhiều đoạn, thay vì chỉ sinh các câu hỏi độc lập từ từng đoạn riêng lẻ.
+
+Từ đồ thị nội bộ này, RAGAS sinh câu hỏi theo ba synthesizer. \textit{Single-hop specific} tạo câu hỏi có thể trả lời bằng một đoạn tài liệu và thường bám vào cụm từ khóa cụ thể. \textit{Multi-hop abstract} tạo câu hỏi cần tổng hợp thông tin giữa các đoạn có chủ đề tương đồng. \textit{Multi-hop specific} tạo câu hỏi dựa trên các đoạn có cụm từ khóa chồng lặp, nên câu hỏi thường yêu cầu nối một hoặc vài quan hệ cụ thể giữa các nội dung liên quan. Trong cài đặt thực nghiệm, phân bố mục tiêu gồm 50\% câu hỏi single-hop specific, 25\% multi-hop abstract và 25\% multi-hop specific.
+
+Bộ sinh câu hỏi được cấu hình với hai persona: một persona đại diện cho sinh viên Trường Đại học Công nghệ và một persona đại diện cho chuyên gia kiểm định tri thức. Mục tiêu là tạo các câu hỏi tiếng Việt tự nhiên nhưng vẫn bám vào nội dung tài liệu, bao gồm các chủ đề như đơn vị, chương trình đào tạo, học bổng, công tác sinh viên, nhân sự, nghiên cứu và hợp tác. Với kích thước mục tiêu là 150 câu hỏi, RAGAS trả về 146 câu hỏi hợp lệ sau bước sinh và lọc nội bộ. Bảng~\ref{tab:ragas_testset_stats} tóm tắt các số liệu chính của tập câu hỏi này.
 
 \begin{table}[h]
 \centering
-\caption{Thống kê dữ liệu thô UET sử dụng trong thực nghiệm}
-\label{tab:raw_uet_dataset_statistics}
-\begin{tabularx}{\textwidth}{|p{0.44\textwidth}|X|}
+\caption{Thống kê bộ câu hỏi đánh giá sinh bằng RAGAS}
+\label{tab:ragas_testset_stats}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{|p{0.42\textwidth}|X|}
 \hline
-\textbf{Chỉ số} & \textbf{Giá trị} \\
+\textbf{Hạng mục} & \textbf{Số liệu} \\
 \hline
-Nguồn dữ liệu thô & \texttt{data/raw/uet} \\
+Nguồn tài liệu ban đầu & 1003 tài liệu Markdown đã xử lý \\
 \hline
-Định dạng dữ liệu & Markdown \\
+Tài liệu dùng để sinh câu hỏi & 100 tài liệu được chọn từ 1251 ứng viên sau tiền xử lý \\
 \hline
-Số file Markdown & 1003 \\
+Đồ thị nội bộ RAGAS & 594 nút, gồm 100 document và 494 chunk \\
 \hline
-Tổng số ký tự & Khoảng 4.46 triệu ký tự \\
+Quan hệ trong đồ thị nội bộ & 1585 cạnh lưu trên đĩa, gồm \texttt{child}, \texttt{next} và cạnh tương đồng cosine \\
 \hline
-Nhóm nội dung chính & Tổ chức, đào tạo, tuyển sinh, học bổng, sự kiện, hợp tác, thông báo học vụ \\
+Cạnh bổ sung cho multi-hop & 332 cạnh chồng lặp cụm từ khóa được thêm trước khi sinh câu hỏi \\
 \hline
-Tài liệu sạch cho RAGAS & 100 file (chọn lọc từ tập thô, cân bằng theo ontology) \\
+Cấu hình sinh câu hỏi & Mục tiêu 150 câu hỏi, 2 persona và 3 synthesizer \\
+\hline
+Tập câu hỏi hợp lệ & 146 câu hỏi; 145 câu có dấu hiệu tiếng Việt có dấu \\
+\hline
+Single-hop specific & 75 câu hỏi (51.4\%) \\
+\hline
+Multi-hop specific & 38 câu hỏi (26.0\%) \\
+\hline
+Multi-hop abstract & 33 câu hỏi (22.6\%) \\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Pipeline Evaluation: đánh giá pipeline xây dựng Knowledge Graph}
+Mỗi câu hỏi được dùng để đánh giá bốn kiến trúc truy vấn đã trình bày ở mục kiến trúc hỏi đáp phục vụ đánh giá ứng dụng: truy vấn văn bản, truy vấn đồ thị trực tiếp, truy vấn đồ thị sâu và truy vấn kết hợp. Với mỗi kiến trúc, hệ thống lưu câu trả lời sinh ra, ngữ cảnh truy xuất, thời gian phản hồi và điểm đánh giá RAGAS theo từng câu hỏi. Các chỉ số được báo cáo gồm faithfulness, answer correctness, answer relevancy và độ trễ phản hồi.
 
-Phần này trình bày các số liệu đánh giá pipeline xây dựng Knowledge Graph ở hai mức. Mức thứ nhất là thống kê vận hành của các giai đoạn extraction, Entity Resolution và rewiring, cho biết pipeline có tạo được các artifact cần thiết cho graph hay không. Mức thứ hai là đánh giá factuality trên một mẫu triplet được trích từ graph, nhằm kiểm tra một phần khả năng các quan hệ trong graph được hỗ trợ bởi bằng chứng văn bản. Các đánh giá này chưa thay thế cho precision/recall đầy đủ trên toàn bộ extraction và Entity Resolution, vì hiện chưa có gold dataset thủ công cho miền dữ liệu UET.
+\section{Kết quả đánh giá đồ thị tri thức}
 
-\subsection{Thống kê giai đoạn trích xuất}
-
-Quá trình trích xuất sử dụng LLM với prompt có ràng buộc schema để sinh graph fragment từ từng tài liệu Markdown. Các file được nhóm theo độ tương đồng về tên để chia sẻ ngữ cảnh cục bộ, giúp giảm phân mảnh ngay từ bước trích xuất.
-
-Bảng~\ref{tab:extraction_statistics} tóm tắt các chỉ số vận hành của lần chạy trích xuất. Các số liệu này phản ánh artifact của lần chạy hiện tại; các bảng sau ở giai đoạn Entity Resolution sử dụng tập KG JSON tổng hợp làm đầu vào nên có phạm vi lớn hơn so với batch extraction mới được xử lý trong lần chạy này.
+Bảng~\ref{tab:triplet_evaluation_summary} trình bày kết quả đánh giá quan hệ trong đồ thị qua ba lượt lấy mẫu ngẫu nhiên.
 
 \begin{table}[h]
 \centering
-\caption{Thống kê giai đoạn trích xuất Knowledge Graph}
-\label{tab:extraction_statistics}
-\begin{tabularx}{\textwidth}{|p{0.45\textwidth}|X|}
+\caption{Evidence-based correctness evaluation in the knowledge graph}
+\label{tab:triplet_evaluation_summary}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{|p{0.18\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|X|}
 \hline
-\textbf{Chỉ số} & \textbf{Giá trị} \\
+\textbf{Sample size} & \makecell[l]{\textbf{Evidence-}\\\textbf{supported}} & \makecell[l]{\textbf{Evidence-}\\\textbf{contradicted}} & \makecell[l]{\textbf{Insufficient}\\\textbf{evidence}} \\
 \hline
-Tổng số file Markdown đầu vào & 1003 \\
+100 & 95 (95.0\%) & 0 (0.0\%) & 5 (5.0\%) \\
 \hline
-Số file trích xuất thành công & 47 (956 bỏ qua do đã có output từ lần chạy trước) \\
+200 & 188 (94.0\%) & 1 (0.5\%) & 11 (5.5\%) \\
 \hline
-Tổng số node được trích xuất & 514 \\
-\hline
-Tổng số relationship được trích xuất & 524 \\
-\hline
-Số node trung bình mỗi file & 10.94 \\
-\hline
-Số relationship trung bình mỗi file & 11.15 \\
-\hline
-Tổng token LLM đã sử dụng & 514,110 \\
-\hline
-Tổng thời gian xử lý & Khoảng 76.7 phút \\
+500 & 467 (93.4\%) & 6 (1.2\%) & 27 (5.4\%) \\
 \hline
 \end{tabularx}
 \end{table}
 
-\subsection{Thống kê giai đoạn Entity Resolution}
+Kết quả cho thấy tỷ lệ quan hệ được bằng chứng hỗ trợ khá ổn định qua các lần lấy mẫu. Evidence-supported rate đạt 95.0\% ở lượt 100 mẫu, 94.0\% ở lượt 200 mẫu và 93.4\% ở lượt 500 mẫu. Chênh lệch giữa các lượt không lớn, cho thấy kết quả đánh giá không phụ thuộc quá mạnh vào một lần lấy mẫu nhỏ. Lượt 500 mẫu có khoảng tin cậy Wilson 95\% cho evidence-supported rate là 90.9\% đến 95.3\%, nên được dùng làm kết quả chính khi nhận xét chất lượng đồ thị.
 
-Entity Resolution được thực hiện qua ba giai đoạn: (1) chuẩn hóa và tạo embedding cho thực thể, (2) phân cụm ứng viên bằng blocking và HDBSCAN, (3) quyết định hợp nhất bằng LLM và cập nhật graph.
+Tỷ lệ \textit{Evidence-contradicted} ở cả ba lượt đều thấp, từ 0.0\% đến 1.2\%. Điều này cho thấy số quan hệ có dấu hiệu mâu thuẫn trực tiếp với bằng chứng là nhỏ trong tập mẫu. Nhóm \textit{Insufficient evidence} dao động quanh 5\%, nghĩa là một phần quan hệ chưa có bằng chứng đủ trực tiếp trong ngữ cảnh được cung cấp cho bộ chấm. Nhóm này không nên được hiểu ngay là sai, mà phản ánh các trường hợp cần cải thiện truy vết nguồn, mô tả quan hệ hoặc phạm vi bằng chứng được đưa vào đánh giá.
 
-Stage~1 nhận đầu vào là 1004 file KG JSON từ giai đoạn trích xuất, tạo ra 5551 bản ghi thực thể với embedding 768 chiều từ mô hình \texttt{paraphrase-multilingual-mpnet-base-v2}.
+Ở lượt 500 mẫu, độ tin cậy trung bình do bộ chấm trả về là 0.846. Evidence-supported rate vi mô đạt 0.934 và evidence-supported rate trung bình theo từng loại quan hệ đạt 0.933, hai giá trị này gần nhau. Điều đó cho thấy kết quả tổng hợp không chỉ đến từ một vài loại quan hệ xuất hiện nhiều, dù việc phân tích sâu từng loại quan hệ vẫn cần thêm mẫu ở các nhóm quan hệ hiếm.
 
-Stage~2 sử dụng blocking dựa trên loại thực thể, sau đó phân cụm trong từng block bằng HDBSCAN với tham số \texttt{min\_cluster\_size=2} và \texttt{min\_samples=1}. Kết quả tạo ra 1134 cụm và 2125 điểm nhiễu (không thuộc cụm nào). Silhouette score đạt 0.288, phản ánh mức độ tách biệt trung bình của các cụm. Cần lưu ý rằng Stage~2 chỉ có nhiệm vụ tạo ứng viên theo hướng recall, không trực tiếp quyết định merge.
+Các trường hợp bị gán nhãn \textit{Evidence-contradicted} thường liên quan đến nhầm lẫn thực thể, nhầm mốc thời gian hoặc nhầm đơn vị tổ chức. Các trường hợp \textit{Insufficient evidence} thường xuất hiện khi bằng chứng cục bộ chỉ nêu gián tiếp quan hệ, hoặc khi quan hệ cần thêm thông tin từ văn bản gốc rộng hơn. Vì vậy, kết quả đánh giá đồ thị chỉ ra hai hướng cải thiện chính: tăng độ trực tiếp của bằng chứng được lưu kèm quan hệ và tiếp tục giảm các lỗi đồng tham chiếu thực thể còn sót lại.
 
-Stage~3 thực hiện phân tích từng cụm ứng viên, quyết định hợp nhất bằng LLM và cập nhật graph. Số lượng thực thể giảm từ 5551 xuống còn 3154 canonical entity (tỷ lệ giảm 43.2\%). Số relationship giảm nhẹ từ 12291 xuống 12250, với 11 relationship trùng lặp được loại bỏ trong quá trình rewiring.
+\section{Kết quả đánh giá ứng dụng hỏi đáp sử dụng đồ thị tri thức}
 
-Bảng~\ref{tab:er_statistics} tổng hợp các chỉ số chính của pipeline Entity Resolution.
+Bảng~\ref{tab:rag_evaluation_metrics} trình bày kết quả đánh giá bốn kiến trúc truy vấn trên cùng tập 146 câu hỏi. Kiến trúc truy vấn văn bản là mốc so sánh không sử dụng đồ thị tri thức. Ba kiến trúc còn lại sử dụng truy vấn đồ thị ở các mức độ khác nhau.
 
 \begin{table}[h]
 \centering
-\caption{Thống kê pipeline Entity Resolution}
-\label{tab:er_statistics}
-\begin{tabularx}{\textwidth}{|p{0.45\textwidth}|X|}
+\caption{Kết quả đánh giá hỏi đáp theo từng search mode (N = 146, giá trị là trung bình $\pm$ độ lệch chuẩn)}
+\label{tab:rag_evaluation_metrics}
+\begin{tabularx}{\textwidth}{|p{0.22\textwidth}|X|X|X|X|}
 \hline
-\textbf{Chỉ số} & \textbf{Giá trị} \\
+\textbf{Search mode} & \textbf{Faithfulness} & \textbf{Answer correctness} & \textbf{Answer relevancy} & \textbf{Latency} \\
 \hline
-Số thực thể đầu vào (Stage~1) & 5551 \\
+Semantic search (RAG) & $0.789 \pm 0.157$ & $0.647 \pm 0.235$ & $0.600 \pm 0.123$ & $8.8 \pm 5.7$s \\
 \hline
-Kích thước embedding & 768 \\
+Naive graph search & $0.770 \pm 0.147$ & $0.627 \pm 0.342$ & $0.580 \pm 0.204$ & $50.5 \pm 26.8$s \\
 \hline
-Số cụm (Stage~2) & 1134 \\
+Deep graph search & $0.880 \pm 0.225$ & $0.750 \pm 0.203$ & $0.650 \pm 0.192$ & $221.1 \pm 48.7$s \\
 \hline
-Số điểm nhiễu (Stage~2) & 2125 \\
-\hline
-Silhouette score & 0.288 \\
-\hline
-Số canonical entity (Stage~3) & 3154 \\
-\hline
-Tỷ lệ giảm thực thể & 43.2\% \\
-\hline
-Relationship trước rewiring & 12291 \\
-\hline
-Relationship sau rewiring & 12250 \\
-\hline
-Số relationship trùng lặp được loại bỏ & 11 \\
+Hybrid search & $0.870 \pm 0.222$ & $0.730 \pm 0.320$ & $0.670 \pm 0.198$ & $240.9 \pm 82.3$s \\
 \hline
 \end{tabularx}
 \end{table}
 
-Bảng~\ref{tab:er_block_distribution} trình bày phân bố thực thể theo các khối (block) được sử dụng trong Stage~2. Mỗi khối nhóm các thực thể có loại tương đồng để phân cụm riêng biệt.
+Kết quả cho thấy việc sử dụng đồ thị tri thức đem lại cải thiện rõ khi hệ thống dùng được các quan hệ trong đồ thị một cách có định hướng. So với kiến trúc truy vấn văn bản, kiến trúc truy vấn đồ thị sâu tăng faithfulness từ 0.789 lên 0.880, tương ứng cải thiện khoảng 11.5\%. Answer correctness tăng từ 0.647 lên 0.750, tương ứng cải thiện khoảng 15.9\%. Answer relevancy cũng tăng từ 0.600 lên 0.650, tương ứng khoảng 8.3\%.
 
-\begin{table}[h]
-\centering
-\caption{Phân bố thực thể theo khối trong Entity Resolution}
-\label{tab:er_block_distribution}
-\begin{tabularx}{\textwidth}{|p{0.52\textwidth}|X|}
-\hline
-\textbf{Khối (Block)} & \textbf{Số thực thể} \\
-\hline
-Tài liệu, ấn phẩm, chương trình, sự kiện & 1315 \\
-\hline
-Con người (PERSON) & 1017 \\
-\hline
-Nền tảng số, hệ thống (SYSTEM, WEBSITE) & 678 \\
-\hline
-Sự kiện, chương trình (EVENT, PROGRAM) & 592 \\
-\hline
-Đơn vị tổ chức (FACULTY, DEPARTMENT, INSTITUTE, LAB, \ldots) & 528 \\
-\hline
-Khóa học, chương trình đào tạo, lĩnh vực nghiên cứu & 402 \\
-\hline
-Địa điểm, cơ sở vật chất (LOCATION, BUILDING, ROOM) & 364 \\
-\hline
-Lĩnh vực nghiên cứu (RESEARCH\_AREA) & 183 \\
-\hline
-Trường đại học (UNIVERSITY) & 172 \\
-\hline
-Học bổng, đối tác (SCHOLARSHIP, PARTNERSHIP) & 135 \\
-\hline
-Dự án nghiên cứu, ấn phẩm (RESEARCH\_PROJECT, PUBLICATION) & 103 \\
-\hline
-Đối tác (PARTNERSHIP) & 62 \\
-\hline
-\textbf{Tổng} & \textbf{5551} \\
-\hline
-\end{tabularx}
-\end{table}
+Kiến trúc truy vấn kết hợp có faithfulness đạt 0.870 và answer correctness đạt 0.730, lần lượt cải thiện khoảng 10.2\% và 12.8\% so với kiến trúc truy vấn văn bản. Kiến trúc này đạt answer relevancy cao nhất, tăng từ 0.600 lên 0.670, tương ứng cải thiện khoảng 11.7\%. Kết quả này cho thấy khi kết hợp văn bản gốc với quan hệ đã được tổ chức trong đồ thị, câu trả lời có xu hướng trực tiếp hơn với câu hỏi, đồng thời vẫn giữ mức bám bằng chứng cao.
 
-Pipeline trích xuất và Entity Resolution đã tạo ra các artifact cần thiết cho việc xây dựng Knowledge Graph: các graph fragment có provenance từ extraction, các canonical entity và bản đồ ánh xạ từ ER, cùng graph đã được rewiring sẵn sàng cho import vào Neo4j. Các số liệu trên phản ánh quy mô và kết quả vận hành của pipeline trong lần thực nghiệm hiện tại.
+Kiến trúc truy vấn đồ thị trực tiếp không cải thiện so với kiến trúc truy vấn văn bản trên ba chỉ số chất lượng chính. Faithfulness giảm khoảng 2.5\%, answer correctness giảm khoảng 3.1\% và answer relevancy giảm khoảng 3.4\%. Điều này cho thấy chỉ đưa thêm lân cận đồ thị vào ngữ cảnh không tự động làm câu trả lời tốt hơn. Nếu truy xuất đồ thị chưa chọn đúng thực thể, hoặc lấy quá rộng các quan hệ lân cận, ngữ cảnh có thể trở nên nhiễu và làm giảm chất lượng sinh câu trả lời.
 
-\subsection{Đánh giá factuality của triplet trong Knowledge Graph}
+Về độ trễ, kiến trúc truy vấn văn bản là kiến trúc nhanh nhất với trung bình 8.8 giây. Kiến trúc truy vấn đồ thị trực tiếp chậm hơn khoảng 5.7 lần. Kiến trúc truy vấn đồ thị sâu và kiến trúc truy vấn kết hợp chậm hơn khoảng 25.1 lần và 27.3 lần do cần thêm các bước phân tích câu hỏi, truy vấn đồ thị, xử lý bằng chứng và tổng hợp câu trả lời. Vì vậy, lợi ích về chất lượng của các kiến trúc dùng đồ thị cần được cân nhắc cùng chi phí vận hành.
 
-Bên cạnh thống kê vận hành, khóa luận đánh giá một phần chất lượng tri thức trong graph thông qua kiểm tra factuality trên mẫu triplet. Mỗi triplet gồm chủ thể, quan hệ và đối tượng được đối chiếu với bằng chứng văn bản liên quan. Kết quả được phân thành ba nhãn: \textit{supported} nếu bằng chứng ủng hộ quan hệ, \textit{contradicted} nếu bằng chứng mâu thuẫn với quan hệ, và \textit{not enough information} nếu không đủ bằng chứng để kết luận.
+\section{Nhận xét}
 
-Trong lần đánh giá với 100 triplet được lấy mẫu ngẫu nhiên, 86 triplet được gán nhãn \textit{supported}, 8 triplet bị gán nhãn \textit{contradicted} và 6 triplet thuộc nhóm \textit{not enough information}. Tỷ lệ supported vi mô đạt 0.86, tỷ lệ supported trung bình theo predicate đạt khoảng 0.847, và độ tin cậy trung bình của đánh giá là 0.928. Bảng~\ref{tab:triplet_factuality_evaluation} tóm tắt kết quả này.
+Kết quả thực nghiệm cho thấy đồ thị tri thức được xây dựng có mức độ đúng theo bằng chứng tương đối cao. Ba lượt lấy mẫu ngẫu nhiên cho kết quả evidence-supported rate gần nhau, từ 93.4\% đến 95.0\%. Điều này củng cố nhận định rằng quy trình trích xuất, xử lý đồng tham chiếu và cập nhật quan hệ đã tạo ra một nguồn tri thức có thể kiểm chứng, dù vẫn còn một tỷ lệ nhỏ quan hệ mâu thuẫn hoặc chưa đủ bằng chứng.
 
-\begin{table}[h]
-\centering
-\caption{Kết quả đánh giá factuality trên 100 triplet được lấy mẫu}
-\label{tab:triplet_factuality_evaluation}
-\begin{tabularx}{\textwidth}{|p{0.46\textwidth}|X|}
-\hline
-\textbf{Chỉ số} & \textbf{Giá trị} \\
-\hline
-Số triplet được đánh giá & 100 \\
-\hline
-Supported & 86 \\
-\hline
-Contradicted & 8 \\
-\hline
-Not enough information & 6 \\
-\hline
-Tỷ lệ supported vi mô & 0.86 \\
-\hline
-Tỷ lệ supported trung bình theo predicate & 0.847 \\
-\hline
-Độ tin cậy trung bình & 0.928 \\
-\hline
-\end{tabularx}
-\end{table}
+Ở lớp hỏi đáp, đồ thị tri thức có giá trị rõ nhất khi được sử dụng trong các kiến trúc truy vấn có khả năng chọn lọc và suy luận trên quan hệ. Kiến trúc truy vấn đồ thị sâu đạt điểm bám bằng chứng và điểm đúng câu trả lời cao nhất, trong khi kiến trúc truy vấn kết hợp đạt điểm liên quan câu trả lời cao nhất. Điều này phù hợp với vai trò của đồ thị tri thức trong khóa luận: đồ thị không thay thế hoàn toàn văn bản gốc, mà bổ sung một lớp quan hệ có cấu trúc để định hướng truy xuất và hỗ trợ kiểm chứng câu trả lời.
 
-Kết quả này cho thấy phần lớn các quan hệ được lấy mẫu có thể được hỗ trợ bởi bằng chứng văn bản. Tuy nhiên, đây vẫn là đánh giá theo mẫu và ở mức factual support của triplet, không phải đánh giá đầy đủ về recall của extraction hay độ chính xác của Entity Resolution trên toàn bộ graph. Các triplet bị mâu thuẫn hoặc thiếu bằng chứng là tín hiệu quan trọng để quay lại kiểm tra prompt trích xuất, provenance và các quyết định merge.
+Tuy nhiên, kết quả cũng cho thấy không phải mọi cách sử dụng đồ thị đều có lợi. Kiến trúc truy vấn đồ thị trực tiếp có điểm thấp hơn kiến trúc truy vấn văn bản, cho thấy đồ thị chỉ phát huy tác dụng khi hệ thống liên kết đúng thực thể, chọn đúng quan hệ và kiểm soát được độ nhiễu của ngữ cảnh. Đây là lý do các bước làm sạch đồ thị, hợp nhất thực thể và thiết kế chiến lược truy xuất có vai trò quan trọng không kém bản thân việc có đồ thị.
 
-\subsection{Human-in-the-loop trong kiểm soát chất lượng graph}
-
-Pipeline tự động có thể giảm đáng kể phân mảnh thực thể, nhưng vẫn tồn tại các trường hợp khó như tên đơn vị viết tắt, tên người đi kèm học hàm học vị, hoặc hai thực thể có tên gần giống nhưng thuộc ngữ cảnh khác nhau. Vì vậy, hệ thống bổ sung cơ chế human-in-the-loop để người quản trị kiểm tra và tối ưu graph sau khi pipeline tự động đã chạy.
-
-Trong workflow này, giao diện entity hiển thị các ứng viên có khả năng trùng lặp. Người dùng có thể yêu cầu hệ thống so sánh hai entity bằng LLM, xem checklist và lập luận so sánh, sau đó quyết định merge hoặc giữ tách biệt. Nếu xác nhận merge, người dùng chọn canonical entity, tên chuẩn hoặc ID chuẩn; backend sau đó hợp nhất thuộc tính và rewiring các relationship trong Neo4j. Cơ chế này không thay thế Entity Resolution offline, mà đóng vai trò vòng kiểm soát chất lượng bổ sung cho các quyết định không chắc chắn và cho phép cải thiện graph dần sau triển khai.
-
-Trong phạm vi thực nghiệm hiện tại, human-in-the-loop được xem là cơ chế kiểm soát chất lượng triển khai, chưa được đo bằng một metric định lượng riêng như số lỗi sửa được hoặc tác động trước/sau lên RAGAS. Việc lượng hóa tác động này được thảo luận như hướng mở rộng ở Chương~8.
-
-\section{RAG Evaluation: phương pháp đánh giá hệ thống hỏi đáp}
-
-RAG Evaluation đánh giá hệ thống hỏi đáp dựa trên Knowledge Graph thông qua khung RAGAS (Retrieval-Augmented Generation Assessment)~\cite{es2023ragas}. Khác với Pipeline Evaluation, vốn tập trung vào artifact graph và factuality của các quan hệ được lấy mẫu, phần này đánh giá trực tiếp chất lượng câu trả lời và chất lượng ngữ cảnh truy xuất của các chế độ hỏi đáp. Vì các chế độ graph-based RAG sử dụng graph sau extraction và Entity Resolution làm nguồn bằng chứng, kết quả RAG cũng phản ánh gián tiếp chất lượng của pipeline xây dựng graph, entity linking và graph retrieval.
-
-\subsection{Tạo tập câu hỏi đánh giá}
-
-Để tạo tập câu hỏi đánh giá, hệ thống không sử dụng trực tiếp tập Markdown thô trong \texttt{data/raw/uet}. Dữ liệu thô chứa metadata kỹ thuật và có nhiều tài liệu dài, có thể khiến RAGAS sinh câu hỏi lệch sang các trường như URL hoặc thời gian xuất bản thay vì tập trung vào nội dung tri thức. Do đó, một pipeline chuẩn bị dữ liệu riêng được sử dụng: dữ liệu từ \texttt{data/raw/uet} được làm sạch, loại metadata, chọn lọc theo ontology và chia nhỏ tài liệu dài. Kết quả là 100 tài liệu sạch được lưu tại \texttt{data/evaluation/ragas/clean\_docs}, cân bằng giữa các nhóm nội dung như tổ chức, đào tạo, con người, văn bản chính sách, hỗ trợ sinh viên, nghiên cứu, đối tác, địa điểm và sự kiện.
-
-Từ 100 tài liệu sạch này, RAGAS xây dựng một knowledge graph nội bộ để sinh câu hỏi. Pipeline xử lý qua sáu bước: trích xuất tiêu đề, chia tài liệu theo tiêu đề, sinh tóm tắt, trích xuất keyphrase, tính embedding và xây dựng cạnh tương đồng cosine (ngưỡng 0.85). Kết quả là một graph với 594 node và 1585 relationship, được bổ sung thêm 332 quan hệ keyphrase-overlap để hỗ trợ sinh câu hỏi multi-hop.
-
-Từ graph này, RAGAS sinh hai tập câu hỏi với hai persona: ``Sinh viên UET'' (câu hỏi tự nhiên) và ``Chuyên gia tri thức UET'' (câu hỏi chính xác). Phân phối câu hỏi gồm 50\% single-hop cụ thể, 25\% multi-hop trừu tượng và 25\% multi-hop cụ thể. Kết quả thu được tập pilot 30 câu hỏi và tập mở rộng 146 câu hỏi (từ yêu cầu 150, một số bị lọc nội bộ). Tỷ lệ câu hỏi tiếng Việt đạt 96.7\% ở tập pilot và 97.3\% ở tập mở rộng.
-
-\subsection{Các tiêu chí đánh giá}
-
-Hệ thống hỏi đáp được đánh giá theo bốn chế độ truy xuất: Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG. Mỗi chế độ được chấm điểm trên tập pilot 30 câu hỏi bằng ba metric chính của RAGAS:
-
-\begin{itemize}
-    \item \textbf{Faithfulness}: mức độ các khẳng định trong câu trả lời có căn cứ từ ngữ cảnh được truy xuất hay không. Metric này không yêu cầu reference answer.
-    \item \textbf{Context Precision}: tỷ lệ ngữ cảnh truy xuất thực sự liên quan đến câu hỏi. Metric này so sánh context được truy xuất với reference answer.
-    \item \textbf{Context Recall}: mức độ ngữ cảnh truy xuất bao phủ được thông tin cần thiết trong reference answer.
-\end{itemize}
-
-Ngoài ra, latency (thời gian xử lý trung bình mỗi câu hỏi) được ghi nhận để đánh giá chi phí vận hành của từng chế độ. Các kết quả được chấm tự động bằng RAGAS, sử dụng LLM \texttt{cx/gpt-5.2} làm evaluator.
-
-\section{Kết quả RAG Evaluation}
-
-Bảng~\ref{tab:rag_evaluation_results} trình bày kết quả trung bình của bốn chế độ trên tập pilot 30 câu hỏi. Mỗi chế độ đều chạy thành công 30/30 mẫu.
-
-\begin{table}[h]
-\centering
-\caption{Kết quả đánh giá hỏi đáp trên tập pilot 30 câu hỏi}
-\label{tab:rag_evaluation_results}
-\begin{tabularx}{\textwidth}{|p{0.21\textwidth}|p{0.14\textwidth}|p{0.16\textwidth}|p{0.18\textwidth}|X|}
-\hline
-\textbf{Chế độ} & \textbf{Latency TB} & \textbf{Faithfulness} & \textbf{Context precision} & \textbf{Context recall} \\
-\hline
-Semantic Search & 6.54s & 0.619 & 0.562 & 0.530 \\
-\hline
-Naive Graph RAG & 16.12s & 0.623 & 0.533 & 0.274 \\
-\hline
-Graph Search & 130.73s & 0.629 & 0.528 & 0.274 \\
-\hline
-Hybrid RAG & 131.18s & 0.730 & 0.578 & 0.623 \\
-\hline
-\end{tabularx}
-\end{table}
-
-Kết quả cho thấy Hybrid RAG đạt chất lượng tốt nhất trên cả ba metric. Faithfulness đạt 0.730, cao hơn các chế độ đơn lẻ, cho thấy việc kết hợp bằng chứng văn bản và graph giúp câu trả lời bám sát ngữ cảnh truy xuất hơn. Context recall của Hybrid RAG đạt 0.623, cao hơn đáng kể so với Semantic Search (0.530) và các chế độ graph đơn lẻ (0.274). Điều này phản ánh lợi ích của việc kết hợp hai nguồn bằng chứng: văn bản từ Qdrant cung cấp nội dung mô tả, còn graph từ Neo4j cung cấp quan hệ có cấu trúc, giúp tăng độ bao phủ ngữ cảnh.
-
-Tuy nhiên, Hybrid RAG cũng có độ trễ cao nhất, trung bình 131.18 giây mỗi câu hỏi, gấp khoảng 20 lần so với Semantic Search. Độ trễ này đến từ việc phải thực hiện đồng thời hai luồng truy xuất, trong đó Graph Search đã tiêu tốn phần lớn thời gian do cần nhiều bước sinh truy vấn Cypher, thực thi và reasoning.
-
-Semantic Search là baseline có hiệu năng tốt nhất về thời gian, với latency trung bình chỉ 6.54 giây mỗi câu. Mặc dù chất lượng thấp hơn Hybrid RAG, chế độ này vẫn đạt context recall 0.530 và faithfulness 0.619, cho thấy truy xuất văn bản thuần túy là một baseline mạnh trong bối cảnh dữ liệu Markdown có nhiều thông tin mô tả trực tiếp.
-
-Hai chế độ dựa trên graph là Naive Graph RAG và Graph Search có context recall thấp nhất, cùng đạt khoảng 0.274. Điều này cho thấy chất lượng của các chế độ graph hiện tại bị giới hạn bởi khả năng truy xuất đủ bằng chứng từ graph, chứ không chỉ bởi bước sinh câu trả lời. Naive Graph RAG có latency thấp hơn đáng kể so với Graph Search (16.12s so với 130.73s) nhưng chất lượng gần tương đương, cho thấy truy xuất graph trực tiếp có thể là lựa chọn cân bằng hơn khi cần độ trễ thấp. Graph Search có faithfulness nhỉnh hơn Naive Graph RAG nhưng độ trễ cao hơn rất nhiều, do phải thực hiện nhiều bước phân rã câu hỏi, sinh Cypher, truy xuất và tổng hợp bằng LLM.
-
-\section{Phân tích kết quả và thảo luận}
-
-Kết quả thực nghiệm cho thấy pipeline của hệ thống có thể tạo ra các artifact cần thiết cho việc xây dựng và khai thác Knowledge Graph. Giai đoạn trích xuất tạo graph fragment từ dữ liệu văn bản với đầy đủ provenance. Giai đoạn Entity Resolution giảm 43.2\% số lượng thực thể trùng lặp và cập nhật lại quan hệ. Đánh giá factuality trên mẫu triplet cho thấy 86\% triplet được kiểm tra có bằng chứng hỗ trợ, đồng thời chỉ ra các trường hợp mâu thuẫn hoặc thiếu bằng chứng cần được rà soát lại. Bên cạnh pipeline tự động, cơ chế human-in-the-loop cung cấp vòng kiểm soát chất lượng để xử lý các trường hợp merge khó hoặc không chắc chắn. Giai đoạn hỏi đáp cung cấp bốn chế độ truy xuất cho phép so sánh các mức khai thác bằng chứng khác nhau.
-
-Từ kết quả RAGAS, có thể rút ra một số nhận định về vai trò của Knowledge Graph trong hỏi đáp:
-
-\textbf{Thứ nhất}, Knowledge Graph đơn lẻ chưa đủ để cạnh tranh với semantic search trên tập dữ liệu hiện tại. Cả Naive Graph RAG và Graph Search đều có context recall thấp (0.274), cho thấy khả năng truy xuất bằng chứng từ graph còn hạn chế. Nguyên nhân có thể đến từ chất lượng graph (extraction bỏ sót quan hệ, ER merge sai), hoặc từ khả năng ánh xạ câu hỏi tự nhiên sang truy vấn graph chưa hiệu quả.
-
-\textbf{Thứ hai}, giá trị của Knowledge Graph thể hiện rõ nhất khi được kết hợp với văn bản gốc. Hybrid RAG đạt kết quả tốt nhất trên mọi metric, đặc biệt context recall tăng từ 0.530 (Semantic Search) lên 0.623. Điều này cho thấy graph bổ sung thông tin quan hệ mà văn bản không biểu diễn tường minh, trong khi văn bản bù đắp cho những phần graph chưa bao phủ.
-
-\textbf{Thứ ba}, tồn tại trade-off rõ ràng giữa chất lượng và chi phí. Semantic Search là lựa chọn phù hợp khi ưu tiên tốc độ, còn Hybrid RAG phù hợp khi ưu tiên độ bao phủ bằng chứng. Naive Graph RAG là điểm cân bằng thú vị: latency chỉ 16.12s nhưng vẫn tận dụng được quan hệ graph, dù context recall chưa cao.
-
-Cần thận trọng khi diễn giải các kết quả này. Tập pilot 30 câu hỏi đã cho phép so sánh bốn chế độ RAG, nhưng vẫn chưa đủ lớn để đại diện cho toàn bộ miền dữ liệu UET. Tập mở rộng 146 câu hỏi đã được sinh ra để phục vụ đánh giá tiếp theo, song việc chấm điểm toàn bộ tập này có chi phí lớn do Graph Search và Hybrid RAG cần nhiều lượt gọi LLM.
-
-Một điểm quan trọng khác là chất lượng hỏi đáp phụ thuộc vào toàn bộ pipeline. Nếu extraction bỏ sót thực thể hoặc Entity Resolution merge sai, Graph Search và Hybrid RAG có thể truy xuất thiếu hoặc sai bằng chứng. Ngược lại, khi graph được làm sạch tốt và truy xuất đúng ngữ cảnh, Hybrid RAG có khả năng kết hợp thông tin quan hệ với bằng chứng văn bản, từ đó cải thiện độ bao phủ ngữ cảnh so với chỉ dùng semantic retrieval.
-
-Trong các bước tiếp theo, cần tập trung vào phân tích các mẫu có context recall thấp hoặc context precision bằng 0 để xác định lỗi đến từ thành phần nào trong pipeline. Đây là cơ sở để cải thiện graph retrieval trước khi mở rộng đánh giá trên tập 146 câu hỏi.
-
-\section{Tóm tắt chương}
-
-Chương này trình bày môi trường thực nghiệm, dữ liệu sử dụng và hai nhóm đánh giá chính của hệ thống KGsAuto. Ở Pipeline Evaluation, pipeline trích xuất đã xử lý 1003 tài liệu Markdown, tạo ra 514 node và 524 relationship trong batch hiện tại; pipeline Entity Resolution giảm số lượng thực thể từ 5551 xuống 3154 (43.2\%), với 12250 relationship sau rewiring; đánh giá factuality trên 100 triplet cho thấy 86 triplet được hỗ trợ bởi bằng chứng văn bản. Cơ chế human-in-the-loop được sử dụng như vòng kiểm soát chất lượng để hỗ trợ kiểm tra và merge các thực thể khó sau pipeline tự động. Ở RAG Evaluation, đánh giá RAGAS trên tập pilot 30 câu hỏi cho thấy Hybrid RAG đạt chất lượng tốt nhất (faithfulness 0.730, context recall 0.623), trong khi Semantic Search là baseline nhanh nhất (6.54s/câu). Các kết quả này cho thấy Knowledge Graph phát huy giá trị rõ nhất khi được kết hợp với bằng chứng văn bản, đồng thời đặt ra hướng cải thiện khả năng truy xuất graph và đánh giá tác động của HITL trong các thực nghiệm tiếp theo.
+Hạn chế chính của phần thực nghiệm là bộ câu hỏi được sinh tự động bằng RAGAS và đánh giá cũng dựa trên bộ chấm tự động. Vì vậy, kết quả nên được hiểu là xu hướng thực nghiệm trong cùng một giao thức, chưa thay thế cho đánh giá thủ công độc lập. Ngoài ra, các kiến trúc truy vấn đồ thị sâu và truy vấn kết hợp có độ trễ cao, nên các hướng cải thiện tiếp theo cần tập trung vào tối ưu liên kết thực thể, thu hẹp phạm vi truy xuất đồ thị và giảm số lượt gọi mô hình ngôn ngữ lớn trong quá trình trả lời.

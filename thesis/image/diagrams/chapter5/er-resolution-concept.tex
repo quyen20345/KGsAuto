@@ -1,0 +1,122 @@
+\documentclass[tikz, border=8pt]{standalone}
+\usepackage{tikz}
+\usepackage[utf8]{vietnam}
+\usetikzlibrary{arrows.meta, positioning, calc}
+
+% Professional, low-saturation palette, aligned with Figure 4.1
+\definecolor{clrData}{RGB}{229,241,255}
+\definecolor{clrContext}{RGB}{236,253,245}
+\definecolor{clrPrompt}{RGB}{245,246,248}
+\definecolor{clrExtract}{RGB}{244,240,255}
+\definecolor{clrOutput}{RGB}{255,247,237}
+\definecolor{clrControl}{RGB}{245,246,248}
+\definecolor{clrFeedback}{RGB}{255,248,225}
+
+\definecolor{bdrData}{RGB}{59,130,246}
+\definecolor{bdrContext}{RGB}{16,185,129}
+\definecolor{bdrPrompt}{RGB}{100,116,139}
+\definecolor{bdrExtract}{RGB}{124,58,237}
+\definecolor{bdrOutput}{RGB}{234,88,12}
+\definecolor{bdrControl}{RGB}{100,116,139}
+\definecolor{bdrFeedback}{RGB}{217,119,6}
+
+\tikzset{
+  stage/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=3.35cm, minimum height=5.34cm,
+    text width=2.78cm,
+    font=\sffamily, align=center,
+    inner sep=6pt, text depth=0.2ex,
+    line width=0.55pt
+  },
+  data/.style={stage, fill=clrData, draw=bdrData},
+  context/.style={stage, fill=clrContext, draw=bdrContext},
+  prompt/.style={stage, fill=clrPrompt, draw=bdrPrompt},
+  extract/.style={stage, fill=clrExtract, draw=bdrExtract},
+  output/.style={stage, fill=clrOutput, draw=bdrOutput},
+  control/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=10.70cm, minimum height=1.05cm,
+    text width=10.10cm,
+    font=\scriptsize\sffamily, align=center,
+    inner sep=6pt, fill=clrControl, draw=bdrControl,
+    dashed, line width=0.5pt
+  },
+  feedback/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=7.40cm, minimum height=0.96cm,
+    text width=6.90cm,
+    font=\scriptsize\sffamily, align=center,
+    inner sep=5pt, fill=clrFeedback, draw=bdrFeedback,
+    line width=0.5pt
+  },
+  arr/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.62pt, gray!75},
+  support/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.52pt, dashed, gray!68},
+  loop/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.55pt, dashed, bdrFeedback!85}
+}
+
+\newcommand{\stagetitle}[1]{{\bfseries\small #1}\\[6pt]}
+\newcommand{\stageitem}[1]{{\scriptsize #1}\\[3pt]}
+\begin{document}
+\begin{tikzpicture}[node distance=0.62cm and 0.56cm]
+\node[data] (IN) {
+    \stagetitle{Cụm ứng viên}
+    \stageitem{Nhiều thực thể gần nhau}
+    \stageitem{Tên, alias}
+    \stageitem{Mô tả, nguồn}
+    \stageitem{Vector similarity}
+    {\scriptsize Đầu vào giai đoạn 3}
+  };
+
+  \node[context, right=of IN] (PASS1) {
+    \stagetitle{LLM pass 1}
+    \stageitem{Tách nhóm con}
+    \stageitem{Xét tên và alias}
+    \stageitem{Xét mô tả}
+    \stageitem{Xét nguồn dữ liệu}
+    {\scriptsize Nhóm có thể merge}
+  };
+
+  \node[prompt, right=of PASS1] (CHECK) {
+    \stagetitle{Kiểm tra nhóm con}
+    \stageitem{Độ nhất quán nội bộ}
+    \stageitem{Bằng chứng đủ mạnh}
+    \stageitem{Nhóm đơn giữ nguyên}
+    \stageitem{Không chắc thì dự phòng}
+    {\scriptsize Hợp lệ hoặc yếu}
+  };
+
+  \node[extract, right=of CHECK] (PASS2) {
+    \stagetitle{LLM pass 2}
+    \stageitem{Tổng hợp thực thể chuẩn}
+    \stageitem{Chọn tên đại diện}
+    \stageitem{Gộp tên và mô tả}
+    \stageitem{Ghi nguồn hợp nhất}
+    {\scriptsize Thực thể chuẩn}
+  };
+
+  \node[output, right=of PASS2] (OUT) {
+    \stagetitle{Cập nhật đồ thị}
+    \stageitem{Tạo định danh chuẩn}
+    \stageitem{Ánh xạ định danh cũ}
+    \stageitem{Ghi quyết định hợp nhất}
+    \stageitem{Viết lại quan hệ}
+    {\scriptsize Đồ thị sau xử lý}
+  };
+
+  \node[control] (RULE) at ($(PASS1.north)!0.55!(PASS2.north)+(0,1.05cm)$) {
+    {\bfseries Quyết định hợp nhất có kiểm soát}\\[-1pt]
+    {Mô hình đề xuất nhóm và thực thể chuẩn, còn kiểm tra ngữ nghĩa bảo vệ khỏi hợp nhất sai}
+  };
+
+  \draw[arr] (IN) -- (PASS1);
+  \draw[arr] (PASS1) -- (CHECK);
+  \draw[arr] (CHECK) -- (PASS2);
+  \draw[arr] (PASS2) -- (OUT);
+
+  \draw[support] (RULE.south west) -- (PASS1.north);
+  \draw[support] (RULE.south) -- (CHECK.north);
+  \draw[support] (RULE.south east) -- (PASS2.north);
+
+\end{tikzpicture}
+\end{document}

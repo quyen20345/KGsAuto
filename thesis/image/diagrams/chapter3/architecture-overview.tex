@@ -1,0 +1,73 @@
+\documentclass[tikz, border=8pt]{standalone}
+\usepackage{tikz}
+\usepackage[utf8]{vietnam}
+\usetikzlibrary{arrows.meta, positioning}
+
+% Professional, low-saturation palette, aligned with other TikZ figures
+\definecolor{clrData}{RGB}{229,241,255}
+\definecolor{clrExtract}{RGB}{244,240,255}
+\definecolor{clrResolve}{RGB}{236,253,245}
+\definecolor{clrHuman}{RGB}{255,248,225}
+\definecolor{clrOutput}{RGB}{255,247,237}
+
+\definecolor{bdrData}{RGB}{59,130,246}
+\definecolor{bdrExtract}{RGB}{124,58,237}
+\definecolor{bdrResolve}{RGB}{16,185,129}
+\definecolor{bdrHuman}{RGB}{217,119,6}
+\definecolor{bdrOutput}{RGB}{234,88,12}
+
+\tikzset{
+  stage/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=3.35cm, minimum height=3.28cm,
+    text width=2.78cm,
+    font=\sffamily, align=center,
+    inner sep=7pt, text depth=0.2ex,
+    line width=0.55pt
+  },
+  data/.style={stage, fill=clrData, draw=bdrData},
+  extract/.style={stage, fill=clrExtract, draw=bdrExtract},
+  resolve/.style={stage, fill=clrResolve, draw=bdrResolve},
+  human/.style={stage, fill=clrHuman, draw=bdrHuman},
+  output/.style={stage, fill=clrOutput, draw=bdrOutput},
+  arr/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.62pt, gray!75}
+}
+
+\newcommand{\blocktitle}[1]{{\bfseries\small #1}\\[7pt]}
+\newcommand{\blockdesc}[1]{{\scriptsize #1}}
+
+\begin{document}
+\begin{tikzpicture}[node distance=0.62cm and 0.56cm]
+
+  \node[data] (DATA) {
+    \blocktitle{Markdown đầu vào}
+    \blockdesc{Tệp văn bản\\và metadata nguồn}
+  };
+
+  \node[extract, right=of DATA] (EXTRACT) {
+    \blocktitle{Trích xuất tri thức}
+    \blockdesc{Tạo thực thể, quan hệ\\và thông tin nguồn}
+  };
+
+  \node[resolve, right=of EXTRACT] (RESOLVE) {
+    \blocktitle{Hợp nhất thực thể}
+    \blockdesc{Gộp các biến thể tên\\và cập nhật quan hệ}
+  };
+
+  \node[human, right=of RESOLVE] (HUMAN) {
+    \blocktitle{Human fallback}
+    \blockdesc{Kiểm chứng các trường hợp\\mơ hồ hoặc rủi ro cao}
+  };
+
+  \node[output, right=of HUMAN] (KG) {
+    \blocktitle{Đồ thị tri thức}
+    \blockdesc{Nguồn tri thức có cấu trúc\\và truy vết được}
+  };
+
+  \draw[arr] (DATA) -- (EXTRACT);
+  \draw[arr] (EXTRACT) -- (RESOLVE);
+  \draw[arr] (RESOLVE) -- (HUMAN);
+  \draw[arr] (HUMAN) -- (KG);
+
+\end{tikzpicture}
+\end{document}

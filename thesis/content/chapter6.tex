@@ -1,126 +1,139 @@
-\chapter{Ứng dụng Knowledge Graph trong hệ thống hỏi đáp}
+\section{Kiến trúc hỏi đáp phục vụ đánh giá ứng dụng}
 
-\section{Thiết kế hệ thống hỏi đáp đa chế độ}
+\subsection{Tổng quan kiến trúc phục vụ cho ứng dụng hỏi đáp}
 
-Sau khi graph đã được trích xuất, hợp nhất thực thể và nhập vào Neo4j, Knowledge Graph trở thành một nguồn bằng chứng có cấu trúc cho hệ thống hỏi đáp. Tuy nhiên, graph không thay thế hoàn toàn văn bản gốc. Trong miền dữ liệu Đại học Công nghệ, nhiều câu trả lời cần cả hai loại bằng chứng: văn bản gốc cung cấp nội dung mô tả chi tiết, trong khi graph biểu diễn rõ thực thể, quan hệ và khả năng truy vấn theo cấu trúc.
+Sau khi đồ thị tri thức đã được xây dựng và xử lý đồng tham chiếu thực thể, khóa luận sử dụng đồ thị này như một nguồn bằng chứng có cấu trúc cho ứng dụng hỏi đáp. Mục tiêu của phần này không phải là đề xuất một thuật toán hỏi đáp mới, mà là mô tả các kiến trúc truy vấn được sử dụng để kiểm tra đồ thị tri thức hỗ trợ quá trình trả lời câu hỏi như thế nào.
 
-Vì vậy, hệ thống KGsAuto được thiết kế theo hướng hỏi đáp đa chế độ thay vì chỉ sử dụng một chiến lược truy xuất duy nhất. Bốn chế độ Semantic Search, Naive Graph RAG, Graph Search và Hybrid RAG tạo thành một phổ thiết kế từ đơn giản đến phức tạp. Semantic Search đóng vai trò baseline dựa trên văn bản. Naive Graph RAG kiểm tra khả năng khai thác graph bằng truy xuất trực tiếp. Graph Search mở rộng khả năng truy vấn graph thông qua sinh truy vấn Cypher và reasoning nhiều bước. Hybrid RAG kết hợp hai nguồn bằng chứng để tận dụng ưu điểm của cả văn bản và graph.
+Kiến trúc cơ sở của các ứng dụng hỏi đáp dựa trên dữ liệu riêng thường là truy xuất trước, sinh câu trả lời sau. Trong hướng tiếp cận này, hệ thống không để mô hình ngôn ngữ trả lời trực tiếp từ tri thức đã học sẵn, mà trước hết tìm các bằng chứng liên quan trong nguồn dữ liệu rồi dùng các bằng chứng đó làm căn cứ để tạo câu trả lời. Đây là tinh thần chính của truy xuất tăng cường sinh (Retrieval-Augmented Generation, RAG)~\cite{lewis2020retrieval}. Các khảo sát gần đây cũng xem truy xuất ngữ nghĩa (semantic search) là một thành phần nền tảng trong các hệ thống hỏi đáp dùng dữ liệu ngoài, vì nó giúp đưa bằng chứng phù hợp vào ngữ cảnh sinh câu trả lời~\cite{gao2023retrieval}.
 
-Hình~\ref{fig:rag-modes-overview} minh họa vai trò của các chế độ này trong hệ thống. Người dùng đặt câu hỏi tự nhiên; pipeline hỏi đáp chọn chế độ truy xuất tương ứng; bằng chứng được lấy từ Qdrant, Neo4j hoặc cả hai; cuối cùng LLM tổng hợp câu trả lời dựa trên các bằng chứng đã truy xuất. Việc tách thành nhiều chế độ không chỉ phục vụ triển khai ứng dụng, mà còn tạo một khung so sánh thực nghiệm để đánh giá đóng góp của từng nguồn bằng chứng.
+Từ kiến trúc cơ sở đó, khóa luận tổ chức bốn kiến trúc truy vấn để so sánh các cách sử dụng bằng chứng. Kiến trúc truy vấn văn bản dựa trên semantic search là kiến trúc cơ bản nhất, chỉ sử dụng các đoạn văn bản gần nghĩa với câu hỏi. Kiến trúc truy vấn đồ thị trực tiếp (Naive graph search) sử dụng truy vấn đồ thị ở mức lân cận, bằng cách lấy các thực thể và quan hệ gần với tín hiệu trong câu hỏi. Kiến trúc truy vấn đồ thị sâu (deep graph search) truy vấn cấu trúc đồ thị ở nhiều bước hơn, trong đó câu hỏi có thể được phân tích thành các câu hỏi con, truy xuất theo quan hệ và kiểm tra bằng chứng trước khi tổng hợp câu trả lời. Hai kiến trúc dùng đồ thị này thuộc hướng truy xuất tăng cường bằng đồ thị tri thức (GraphRAG), đồng thời gần với các cách tổ chức tìm kiếm trên đồ thị như GraphSearch, trong đó đồ thị được dùng để tổ chức và mở rộng bằng chứng cho quá trình trả lời~\cite{edge2024local,yang2025graphsearch}. Cuối cùng, kiến trúc truy vấn kết hợp (hybrid search) sử dụng đồng thời bằng chứng văn bản và bằng chứng đồ thị nhằm tận dụng ưu điểm của cả hai nguồn.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{image/generated/chapter6/rag-modes-overview.png}
-    \caption{Tổng quan các chế độ hỏi đáp trong KGsAuto}
-    \label{fig:rag-modes-overview}
-\end{figure}
+Các kiến trúc này tạo thành một phổ so sánh: từ semantic search, đến Naive graph search, deep graph search và hybrid search giữa văn bản với đồ thị. Nhờ vậy, các mục đánh giá phía sau có thể xem xét cụ thể đồ thị tri thức cải thiện lớp hỏi đáp ở khía cạnh nào, thay vì chỉ so sánh một hệ thống duy nhất.
 
-Một nguyên tắc chung của các chế độ là câu trả lời phải được sinh từ ngữ cảnh truy xuất, không chỉ từ tri thức tham số của LLM. Do đó, hệ thống lưu lại các dạng evidence như markdown chunk, graph fact, relationship, reasoning step hoặc citation. Những bằng chứng này giúp người dùng kiểm tra nguồn gốc câu trả lời và giúp quá trình đánh giá ở Chương~7 phân tích lỗi theo từng thành phần.
+Một nguyên tắc chung của cả bốn kiến trúc là câu trả lời phải được sinh dựa trên bằng chứng truy xuất được. Bằng chứng có thể là đoạn văn bản, thực thể, quan hệ hoặc chuỗi lập luận trên đồ thị. Việc lưu lại các bằng chứng này giúp người dùng kiểm tra nguồn gốc câu trả lời và giúp quá trình đánh giá ở các mục sau phân tích lỗi theo từng kiến trúc truy vấn.
 
-\section{Semantic Search trên dữ liệu văn bản}
+\subsection{Semantic search cho ứng dụng hỏi đáp đơn thuần}
 
-Semantic Search là chế độ truy xuất văn bản thuần túy. Câu hỏi của người dùng được chuyển thành embedding, sau đó hệ thống tìm các markdown chunk gần nhất trong Qdrant. Các chunk được truy xuất đóng vai trò ngữ cảnh cho LLM sinh câu trả lời cuối cùng.
+Kiến trúc truy vấn văn bản là cấu hình RAG chỉ sử dụng nguồn bằng chứng văn bản. Khi nhận câu hỏi, hệ thống biểu diễn câu hỏi theo không gian ngữ nghĩa và dùng semantic search để tìm các đoạn tài liệu có nội dung gần nhất trong cơ sở dữ liệu vector. Các đoạn được truy xuất sau đó được đưa vào ngữ cảnh để mô hình ngôn ngữ tạo câu trả lời.
 
-Chế độ này phù hợp với các câu hỏi mà thông tin cần trả lời được nêu trực tiếp trong một hoặc một vài đoạn văn bản, ví dụ câu hỏi về một thông báo, một chương trình đào tạo hoặc một mô tả cụ thể. Ưu điểm chính của Semantic Search là đơn giản, ổn định và có độ trễ thấp hơn các chế độ sử dụng graph reasoning nhiều bước.
+Kiến trúc này phù hợp với các câu hỏi mà câu trả lời nằm trực tiếp trong một hoặc một vài đoạn văn bản, chẳng hạn thời gian của một thông báo, nội dung của một chương trình đào tạo, địa chỉ liên hệ của một phòng ban hoặc mô tả của một sự kiện. Ưu điểm của kiến trúc truy vấn văn bản là đơn giản, ổn định và có độ trễ thấp hơn các kiến trúc phải truy vấn qua quan hệ trong đồ thị.
 
-Hình~\ref{fig:semantic-search-flow} minh họa luồng xử lý tổng quát của chế độ này. Hạn chế của Semantic Search nằm ở việc đơn vị truy xuất là chunk văn bản. Khi câu hỏi yêu cầu liên kết nhiều thực thể, truy vấn theo quan hệ hoặc tổng hợp thông tin nằm rải rác ở nhiều tài liệu, truy xuất theo tương đồng ngữ nghĩa có thể bỏ sót bằng chứng cần thiết. Vì vậy, Semantic Search được dùng như một baseline mạnh nhưng chưa đủ để khai thác hết vai trò của Knowledge Graph.
+Luồng xử lý của kiến trúc này gồm ba bước chính. Câu hỏi được đưa vào tầng truy xuất văn bản để tìm các đoạn gần nghĩa nhất trong cơ sở dữ liệu vector. Các đoạn liên quan được ghép thành ngữ cảnh bằng chứng. Cuối cùng, mô hình ngôn ngữ sinh câu trả lời dựa trên ngữ cảnh này. Do không sử dụng đồ thị tri thức, kiến trúc truy vấn văn bản được dùng làm mốc so sánh để xem việc bổ sung quan hệ có cấu trúc có tạo ra cải thiện hay không.
 
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.98\textwidth]{image/generated/chapter6/semantic-search-flow.png}
-    \caption{Luồng xử lý Semantic Search trên markdown chunk}
-    \label{fig:semantic-search-flow}
-\end{figure}
-
-\section{Naive Graph RAG}
-
-Naive Graph RAG là chế độ khai thác graph theo cách trực tiếp. Thay vì sinh các truy vấn phức tạp, hệ thống xác định các tín hiệu thực thể hoặc từ khóa liên quan đến câu hỏi, truy xuất node và các relationship lân cận trong Neo4j, sau đó chuyển graph context thành văn bản có cấu trúc cho LLM tổng hợp câu trả lời.
-
-Chế độ này giữ vai trò baseline dựa trên graph. Nó cho phép đánh giá liệu chỉ cần đưa graph context đơn giản vào prompt có cải thiện được câu trả lời so với văn bản thuần túy hay không. So với Semantic Search, Naive Graph RAG có khả năng biểu diễn quan hệ giữa thực thể rõ hơn. So với Graph Search, nó ít tốn chi phí hơn và dễ quan sát hơn vì không phụ thuộc vào quá trình sinh truy vấn Cypher nhiều bước.
-
-Hình~\ref{fig:naive-graph-rag-flow} minh họa luồng xử lý của chế độ này. Giới hạn của Naive Graph RAG là độ sâu truy xuất còn hạn chế. Nếu câu hỏi cần đi qua nhiều bước quan hệ hoặc cần lọc kết quả theo điều kiện cụ thể, graph context ban đầu có thể chưa đủ. Khi đó, LLM chỉ có thể tổng hợp từ phần graph đã được cung cấp, thay vì chủ động mở rộng truy vấn theo cấu trúc graph.
-
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.98\textwidth]{image/generated/chapter6/naive-graph-rag-flow.png}
-    \caption{Luồng xử lý Naive Graph RAG trên Knowledge Graph}
-    \label{fig:naive-graph-rag-flow}
-\end{figure}
-
-\section{Graph Search trên Knowledge Graph}
-
-Graph Search là chế độ khai thác sâu hơn cấu trúc của Knowledge Graph. Thay vì chỉ truy xuất một lần, pipeline tổ chức quá trình suy luận thành ba giai đoạn: chuẩn bị ngữ cảnh khởi tạo, hai nhánh suy luận song song trên cùng ngữ cảnh và một bước tổng hợp cuối. Ở giai đoạn chuẩn bị, hệ thống truy xuất ngữ cảnh ban đầu từ Neo4j và Qdrant cho câu hỏi gốc, sau đó sinh hai tóm tắt: một ở góc nhìn văn bản và một ở góc nhìn graph. Hai tóm tắt này làm điểm xuất phát cho hai nhánh suy luận.
-
-Trong hai nhánh, nhánh semantic tập trung khai thác bằng chứng văn bản, còn nhánh relational tập trung vào quan hệ có cấu trúc trong graph. Mỗi nhánh chia câu hỏi thành chuỗi sub-query: với mỗi sub-query, hệ thống thực hiện grounding để chuẩn hóa câu hỏi con, truy xuất ngữ cảnh từ Neo4j và Qdrant dựa trên keyword, lọc ngữ cảnh theo nhánh, tóm tắt lại và sinh một câu trả lời trung gian. Sau khi duyệt hết các sub-query, một bước Logic Drafter tổng hợp câu trả lời mức nhánh kèm reasoning chain. Evidence Verifier đánh giá xem bằng chứng đã đủ hay chưa; nếu chưa, Query Expander đề xuất các truy vấn bổ sung để thu thập thêm ngữ cảnh, sau đó nhánh tiếp tục xử lý như các sub-query thông thường. Cuối cùng, Final Synthesiser nhận lịch sử của cả hai nhánh cùng hai tóm tắt khởi tạo để tạo câu trả lời hoàn chỉnh kèm reasoning và evidence.
-
-Cách tiếp cận này phù hợp với các câu hỏi có tính quan hệ, chẳng hạn một đơn vị trực thuộc tổ chức nào, một cá nhân giữ vai trò gì, sự kiện nào liên quan đến đơn vị nào, hoặc một chương trình đào tạo liên kết với khoa nào. So với truy xuất lân cận đơn giản, Graph Search có khả năng biểu diễn câu hỏi dưới dạng chuỗi sub-query được kiểm chứng và thu thập bằng chứng theo nhiều bước quan hệ.
-
-Điểm mạnh của Graph Search là khả năng truy vết. Kết quả trả về không chỉ gồm câu trả lời cuối cùng, mà còn có thể bao gồm graph fact, truy vấn hoặc reasoning step trung gian. Điều này giúp phân tích vì sao hệ thống đưa ra câu trả lời và liệu bằng chứng có phù hợp với câu hỏi hay không.
-
-Hình~\ref{fig:graph-search-flow} minh họa luồng xử lý của chế độ này. Tuy nhiên, chất lượng Graph Search phụ thuộc đồng thời vào chất lượng graph và độ chính xác của truy vấn được sinh. Nếu giai đoạn extraction bỏ sót quan hệ, Entity Resolution hợp nhất sai, hoặc LLM sinh Cypher chưa phù hợp, hệ thống có thể truy xuất thiếu hoặc sai bằng chứng. Đây là lý do Graph Search cần được đánh giá tách biệt với các chế độ khác thay vì giả định rằng graph luôn cải thiện kết quả.
+\begin{tcolorbox}[
+    enhanced,
+    breakable,
+    title={Ví dụ minh họa -- Semantic search},
+    fonttitle=\bfseries,
+    colback=blue!2,
+    colframe=darkblue!70,
+    boxrule=0.5pt,
+    arc=1.5mm,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt
+]
+\small
+\textbf{Câu hỏi:} Chương trình học bổng thạc sĩ ở Trường Đại học Korea, Hàn Quốc năm 2025 dành cho sinh viên ĐHQGHN ai tài trợ?\\
+\textbf{Câu trả lời:} Chương trình học bổng này do Quỹ Pony Chung (PCF), Hàn Quốc tài trợ.\\
+\textbf{Bằng chứng truy xuất:} hệ thống lấy 5 đoạn Markdown, trong đó đoạn xếp hạng cao nhất thuộc tài liệu về chương trình học bổng thạc sĩ tại Trường Đại học Korea năm 2025. Không có bằng chứng đồ thị được sử dụng trong chế độ này.\\
+\end{tcolorbox}
 
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth,height=0.56\textheight,keepaspectratio]{image/generated/chapter6/graph-search-flow.png}
-    \caption{Graph Search workflow: context preparation, semantic branch, relational branch và final synthesis}
-    \label{fig:graph-search-flow}
-\end{figure}
+Hạn chế chính của kiến trúc truy vấn văn bản là đơn vị truy xuất vẫn là đoạn văn bản. Khi câu hỏi cần hiểu quan hệ giữa nhiều đối tượng, cần đi qua nhiều bước liên kết, hoặc cần tổng hợp thông tin nằm rải rác ở nhiều bài viết, truy xuất theo mức độ gần nghĩa có thể bỏ sót bằng chứng quan trọng. Đây là động cơ để bổ sung các kiến trúc truy vấn đồ thị ở các mục tiếp theo.
 
-\section{Hybrid RAG kết hợp bằng chứng văn bản và graph}
+\subsection{Naive graph search cho ứng dụng hỏi đáp}
 
-Hybrid RAG là chế độ kết hợp hai luồng truy xuất: semantic evidence từ Qdrant và graph evidence từ Neo4j. Mục tiêu của chế độ này là giảm phụ thuộc vào một nguồn bằng chứng duy nhất. Văn bản gốc giúp giữ lại ngữ cảnh diễn giải đầy đủ, trong khi graph giúp làm rõ thực thể, quan hệ và các liên kết có cấu trúc.
+Kiến trúc truy vấn đồ thị trực tiếp là cấu hình GraphRAG theo hướng Naive graph search, sử dụng đồ thị tri thức ở mức lân cận. Thay vì phân tích câu hỏi thành nhiều bước phức tạp, hệ thống tìm các thực thể hoặc tín hiệu truy vấn có liên quan đến câu hỏi, sau đó lấy các nút và quan hệ lân cận trong cơ sở dữ liệu đồ thị. Các quan hệ này được chuyển thành ngữ cảnh có cấu trúc để mô hình ngôn ngữ tổng hợp câu trả lời.
 
-Trong hệ thống KGsAuto, Hybrid RAG sử dụng chiến lược late fusion. Hai luồng truy xuất được thực hiện độc lập: Semantic Search lấy các markdown chunk liên quan, còn Graph Search thu thập graph context và reasoning step. Sau đó, LLM nhận cả hai loại bằng chứng để sinh một câu trả lời thống nhất. Hình~\ref{fig:hybrid-rag-fusion} minh họa ý tưởng này.
+Kiến trúc này giữ vai trò mốc so sánh đơn giản cho nhóm phương pháp dùng đồ thị. Nó trả lời câu hỏi: nếu chỉ đưa các quan hệ gần với thực thể được nhắc đến trong câu hỏi vào ngữ cảnh, chất lượng câu trả lời có tốt hơn so với truy vấn văn bản đơn thuần hay không. So với kiến trúc truy vấn văn bản, truy vấn đồ thị trực tiếp có ưu điểm là biểu diễn rõ quan hệ giữa các thực thể. So với kiến trúc truy vấn đồ thị sâu, nó ít tốn chi phí hơn vì không cần phân rã câu hỏi hoặc truy xuất nhiều bước.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.98\textwidth]{image/generated/chapter6/hybrid-rag-fusion.png}
-    \caption{Chiến lược late fusion trong Hybrid RAG}
-    \label{fig:hybrid-rag-fusion}
-\end{figure}
+Luồng xử lý của kiến trúc truy vấn đồ thị trực tiếp bắt đầu bằng việc xác định thực thể hoặc tín hiệu truy vấn có liên quan đến câu hỏi. Từ các thực thể này, hệ thống lấy các quan hệ lân cận trong đồ thị, chuyển chúng thành bằng chứng dạng văn bản có cấu trúc và đưa vào bước sinh câu trả lời. Cách làm này giúp kiểm tra lợi ích tối thiểu của đồ thị tri thức khi hệ thống chỉ sử dụng vùng lân cận gần nhất của thực thể được hỏi.
 
-Hybrid RAG đặc biệt phù hợp với các câu hỏi cần cả mô tả và quan hệ. Ví dụ, khi người dùng hỏi về một đơn vị, graph có thể xác định quan hệ trực thuộc, chương trình hoặc sự kiện liên quan; trong khi văn bản gốc cung cấp phần mô tả chi tiết và ngữ cảnh diễn giải. Nhờ đó, hệ thống có cơ hội tăng độ bao phủ ngữ cảnh so với chỉ dùng một nguồn bằng chứng.
+\begin{tcolorbox}[
+    enhanced,
+    breakable,
+    title={Ví dụ minh họa -- Naive graph search},
+    fonttitle=\bfseries,
+    colback=green!2,
+    colframe=darkblue!70,
+    boxrule=0.5pt,
+    arc=1.5mm,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt
+]
+\small
+\textbf{Câu hỏi:} Open Workshop của chương trình Internship 2022 tại Ericsson Vietnam diễn ra khi nào và tổ chức ở đâu?\\
+\textbf{Câu trả lời:} Open Workshop diễn ra lúc 7:30 PM, thứ Sáu ngày 18/03/2022 và được tổ chức trực tuyến qua Microsoft Teams.\\
+\textbf{Bằng chứng graph:} truy vấn đồ thị trả về nút \textit{Open Workshop} và các quan hệ lân cận như \textit{Open Workshop} $\rightarrow$ \textit{Microsoft Teams} với loại quan hệ \texttt{HELD\_VIA}, cùng quan hệ \textit{Open Workshop} $\rightarrow$ \textit{Internship 2022 Program} với loại quan hệ \texttt{SHARES\_DETAILS\_ABOUT}. Các quan hệ này giúp hệ thống lấy trực tiếp thông tin sự kiện, hình thức tổ chức và chương trình liên quan từ đồ thị.\\
+\end{tcolorbox}
 
-Đổi lại, Hybrid RAG có chi phí cao hơn. Hệ thống phải truy xuất hai nguồn dữ liệu, kiểm soát độ dài context, giảm trùng lặp bằng chứng và tránh để thông tin nhiễu ảnh hưởng đến synthesis. Vì vậy, Hybrid RAG được kỳ vọng có chất lượng cao hơn trong các câu hỏi cần tổng hợp, nhưng cũng có độ trễ lớn hơn. Trade-off này được kiểm chứng trong phần thực nghiệm.
 
-\section{Khung so sánh và kỳ vọng đánh giá}
+Giới hạn của kiến trúc truy vấn đồ thị trực tiếp là phạm vi truy xuất còn nông. Nếu câu hỏi cần đi qua nhiều bước quan hệ, cần lọc theo điều kiện cụ thể, hoặc cần nối thông tin từ nhiều thực thể xa nhau trong đồ thị, phần lân cận ban đầu có thể chưa đủ. Ngoài ra, nếu bước nhận diện thực thể từ câu hỏi chưa chính xác, hệ thống có thể đưa vào ngữ cảnh các quan hệ nhiễu và làm giảm chất lượng câu trả lời.
 
-Bốn chế độ hỏi đáp được thiết kế để so sánh các mức khai thác bằng chứng khác nhau. Bảng~\ref{tab:rag_modes_design} tóm tắt nguồn dữ liệu, chiến lược truy xuất và vai trò đánh giá của từng chế độ.
+\subsection{Deep graph search cho ứng dụng hỏi đáp}
 
-\begin{table}[H]
-\centering
-\caption{Vai trò thiết kế của các chế độ hỏi đáp}
-\label{tab:rag_modes_design}
-\begin{tabularx}{\textwidth}{|p{0.22\textwidth}|p{0.18\textwidth}|p{0.29\textwidth}|X|}
-\hline
-\textbf{Chế độ} & \textbf{Nguồn bằng chứng} & \textbf{Chiến lược truy xuất} & \textbf{Vai trò trong đánh giá} \\
-\hline
-Semantic Search & Qdrant & Tìm markdown chunk theo tương đồng embedding & Baseline văn bản, nhanh và ổn định \\
-\hline
-Naive Graph RAG & Neo4j & Tra cứu node và relationship liên quan một cách trực tiếp & Baseline graph đơn giản \\
-\hline
-Graph Search & Neo4j & LLM phân rã sub-query và reasoning trên graph fact & Đánh giá khả năng khai thác quan hệ có cấu trúc \\
-\hline
-Hybrid RAG & Qdrant và Neo4j & Kết hợp semantic evidence và graph evidence bằng late fusion & Đánh giá lợi ích của việc kết hợp văn bản và graph \\
-\hline
-\end{tabularx}
-\end{table}
+Kiến trúc truy vấn đồ thị sâu là cấu hình GraphRAG theo hướng deep graph search, mở rộng việc truy vấn đồ thị ở mức nhiều bước hơn. Thay vì chỉ lấy các quan hệ lân cận một lần, hệ thống tổ chức quá trình trả lời thành nhiều bước: phân tích câu hỏi, xác định thực thể liên quan, truy xuất quan hệ trong đồ thị, kiểm tra bằng chứng và tổng hợp câu trả lời. Kiến trúc này được lấy cảm hứng từ các nghiên cứu GraphRAG, trong đó đồ thị tri thức được dùng để hỗ trợ truy xuất theo quan hệ và tổng hợp thông tin trên nhiều thực thể~\cite{edge2024local}; đồng thời gần với GraphSearch, một hướng tổ chức tìm kiếm nhiều bước trên đồ thị cho bài toán hỏi đáp~\cite{yang2025graphsearch}.
 
-Từ thiết kế này, có thể đặt ra một số kỳ vọng trước khi thực nghiệm. Semantic Search thường có độ trễ thấp và là baseline mạnh khi thông tin nằm trực tiếp trong văn bản. Các chế độ graph có khả năng truy vết quan hệ rõ hơn, nhưng phụ thuộc mạnh vào chất lượng graph và truy vấn. Hybrid RAG có tiềm năng đạt độ bao phủ ngữ cảnh tốt hơn vì kết hợp hai nguồn bằng chứng, nhưng chi phí truy xuất và synthesis cao hơn.
+Trong phạm vi khóa luận, kiến trúc truy vấn đồ thị sâu được sử dụng như một cấu hình thực nghiệm để khảo sát khả năng dùng đồ thị tri thức đã xây dựng, không phải là một đóng góp thuật toán mới. Điểm khác biệt chính so với kiến trúc truy vấn đồ thị trực tiếp là hệ thống không dừng ở lân cận trực tiếp của một thực thể. Câu hỏi có thể được chia thành các câu hỏi con; mỗi câu hỏi con dẫn đến một lượt truy xuất đồ thị hoặc truy xuất văn bản bổ sung; kết quả trung gian được kiểm tra trước khi tổng hợp thành câu trả lời cuối cùng.
 
-Các kỳ vọng này dẫn đến những tiêu chí đánh giá ở Chương~7, gồm faithfulness, context precision, context recall, latency và khả năng truy vết bằng chứng. Việc đánh giá không chỉ nhằm tìm chế độ có điểm số cao nhất, mà còn nhằm hiểu loại câu hỏi nào phù hợp với từng chiến lược truy xuất và lỗi phát sinh từ thành phần nào trong pipeline.
+Cách tiếp cận này phù hợp với các câu hỏi có tính quan hệ, ví dụ một đơn vị trực thuộc tổ chức nào, một cá nhân giữ vai trò gì trong đơn vị nào, một chương trình đào tạo liên quan đến khoa nào, hoặc một sự kiện gắn với những tổ chức nào. Với các câu hỏi như vậy, đồ thị tri thức cung cấp đường liên kết giữa các đối tượng, giúp hệ thống không chỉ tìm các đoạn văn bản gần nghĩa mà còn có thể lần theo các quan hệ đã được tổ chức.
 
-\section{API và giao diện khai thác}
+Luồng xử lý của kiến trúc truy vấn đồ thị sâu bắt đầu từ việc phân tích câu hỏi và xác định các thực thể trung tâm. Sau đó, hệ thống có thể mở rộng truy vấn qua nhiều bước quan hệ, kiểm tra bằng chứng trung gian và tổng hợp kết quả trước khi tạo câu trả lời cuối cùng. Bên cạnh câu trả lời, kiến trúc này có thể lưu lại các bằng chứng như thực thể, quan hệ, bước truy xuất và lập luận trung gian. Đây là điểm quan trọng đối với khóa luận vì mục tiêu của đồ thị tri thức không chỉ là trả lời, mà còn là hỗ trợ kiểm chứng câu trả lời.
 
-Tầng ứng dụng của KGsAuto cung cấp API hỏi đáp để nhận câu hỏi, chọn chế độ truy xuất và trả về câu trả lời cùng bằng chứng. Các chế độ truy xuất cũng được chuẩn hóa để có thể gọi thống nhất từ frontend hoặc các giao diện tương thích OpenAI. Cách thiết kế này giúp việc so sánh các chế độ trở nên thuận tiện: cùng một câu hỏi có thể được chạy qua Semantic Search, Naive Graph RAG, Graph Search hoặc Hybrid RAG.
+\begin{tcolorbox}[
+    enhanced,
+    breakable,
+    title={Ví dụ minh họa -- Deep graph search},
+    fonttitle=\bfseries,
+    colback=yellow!5,
+    colframe=darkblue!70,
+    boxrule=0.5pt,
+    arc=1.5mm,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt
+]
+\small
+\textbf{Câu hỏi:} Sinh viên đăng ký cuộc thi ``Học sinh, sinh viên với ý tưởng khởi nghiệp'' tại UET cần nộp kèm những gì, có bắt buộc gửi bản thuyết minh dự án không?\\
+\textbf{Câu trả lời:} Sinh viên cần nộp hai sản phẩm: bản thuyết minh dự án theo mẫu phụ lục 01 và video clip thuyết minh dự án theo mẫu phụ lục 02. Bản thuyết minh dự án là thành phần bắt buộc.\\
+\textbf{Bằng chứng graph:} chế độ này truy xuất 8 bằng chứng graph và tạo \texttt{kg\_summary} gồm quan hệ \textit{Cuộc thi ``Học sinh, sinh viên với ý tưởng khởi nghiệp''} $\rightarrow$ \texttt{ANNOUNCES} $\rightarrow$ \textit{Tham gia cuộc thi ``Học sinh, sinh viên với ý tưởng khởi nghiệp''}. Từ nút thông báo này, thuộc tính nội dung nêu rõ hai sản phẩm phải gửi kèm: bản thuyết minh dự án theo phụ lục 01 và video clip thuyết minh dự án theo phụ lục 02. Khác với Naive graph search, phần trả lời được tạo sau bước tóm tắt bằng chứng graph và kiểm tra lập luận trung gian.\\
+\end{tcolorbox}
 
-Frontend không phải trọng tâm đóng góp thuật toán của khóa luận, nhưng đóng vai trò quan trọng trong việc quan sát hệ thống. Người dùng có thể đặt câu hỏi, xem câu trả lời, kiểm tra evidence, đồng thời sử dụng các chức năng graph API để tìm kiếm thực thể, xem quan hệ hoặc hỗ trợ chỉnh sửa khi phát hiện lỗi. Nhờ đó, hệ thống không chỉ là một pipeline offline mà có thể được khai thác và kiểm tra như một ứng dụng hỏi đáp dựa trên graph.
 
-Bên cạnh giao diện hỏi đáp, tầng frontend và Graph API còn hiện thực hóa cơ chế human-in-the-loop đã trình bày ở Chương~5. Trên trang chi tiết thực thể, hệ thống hiển thị thông tin entity, các quan hệ liên quan và các ứng viên có khả năng trùng lặp. Khi người dùng chọn so sánh hai thực thể, frontend gọi endpoint \texttt{/api/entity/compare} để nhận phân tích từ LLM về tên, alias, nhãn, quan hệ lân cận, mức độ tin cậy và khuyến nghị merge. Nếu người dùng xác nhận merge, quyết định được gửi tới endpoint \texttt{/api/entity/merge}; backend sau đó hợp nhất thuộc tính và rewiring các relationship trong Neo4j về canonical entity. Cách tổ chức này biến giao diện khai thác thành một vòng kiểm soát chất lượng graph, trong đó LLM hỗ trợ phân tích nhưng quyết định cập nhật graph vẫn do con người xác nhận.
+Tuy nhiên, kiến trúc truy vấn đồ thị sâu cũng có chi phí cao hơn. Chất lượng của kiến trúc này phụ thuộc vào chất lượng đồ thị, khả năng nhận diện đúng thực thể trong câu hỏi, cách mở rộng truy vấn và khả năng kiểm soát độ nhiễu của bằng chứng. Nếu đồ thị thiếu quan hệ, hợp nhất nhầm thực thể hoặc truy xuất sai nhánh quan hệ, hệ thống vẫn có thể trả lời thiếu hoặc sai.
 
-\section{Tóm tắt chương}
+\subsection{Hybrid search cho ứng dụng hỏi đáp}
 
-Chương này trình bày cách Knowledge Graph được khai thác trong hệ thống hỏi đáp của KGsAuto. Thay vì sử dụng một chiến lược truy xuất duy nhất, hệ thống cung cấp bốn chế độ tạo thành một phổ thiết kế: Semantic Search dựa trên văn bản, Naive Graph RAG dựa trên graph trực tiếp, Graph Search dựa trên truy vấn graph có reasoning, và Hybrid RAG kết hợp cả hai nguồn bằng chứng. Cách tổ chức này vừa phục vụ ứng dụng hỏi đáp, vừa tạo cơ sở cho đánh giá thực nghiệm ở chương tiếp theo.
+Kiến trúc truy vấn kết hợp là cấu hình hybrid search sử dụng đồng thời bằng chứng văn bản và bằng chứng đồ thị. Động cơ của kiến trúc này là mỗi nguồn bằng chứng có một điểm mạnh khác nhau. Văn bản gốc thường chứa phần mô tả đầy đủ, diễn giải chi tiết và ngữ cảnh tự nhiên. Đồ thị tri thức biểu diễn rõ thực thể, quan hệ và đường liên kết giữa các đối tượng. Khi câu hỏi cần cả mô tả lẫn quan hệ, việc kết hợp hai nguồn có thể giúp câu trả lời đầy đủ và dễ kiểm chứng hơn.
+
+Trong cài đặt của khóa luận, kiến trúc truy vấn kết hợp sử dụng chiến lược kết hợp muộn. Hai luồng truy xuất được thực hiện riêng: một luồng lấy các đoạn văn bản liên quan từ cơ sở dữ liệu vector, một luồng lấy bằng chứng từ cơ sở dữ liệu đồ thị. Sau đó, các bằng chứng được hợp nhất, loại bỏ trùng lặp và đưa vào cùng một bước tổng hợp để tạo câu trả lời cuối cùng. Cách tổ chức này cho phép văn bản gốc cung cấp ngữ cảnh mô tả, trong khi đồ thị bổ sung quan hệ giữa các đối tượng.
+
+\begin{tcolorbox}[
+    enhanced,
+    breakable,
+    title={Ví dụ minh họa -- Hybrid search},
+    fonttitle=\bfseries,
+    colback=red!2,
+    colframe=darkblue!70,
+    boxrule=0.5pt,
+    arc=1.5mm,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt
+]
+\small
+\textbf{Câu hỏi:} Trong chương trình học bổng thạc sĩ tại Trường Đại học Korea do Quỹ Pony Chung tài trợ, khoản hỗ trợ 1,200,000 KRW mỗi tháng gồm những khoản nào?\\
+\textbf{Câu trả lời:} Khoản hỗ trợ này gồm tiền ở ký túc xá tại Trường Đại học Korea, Hàn Quốc và tiền sinh hoạt phí.\\
+\textbf{Bằng chứng kết hợp:} hệ thống truy xuất 5 đoạn Markdown và 8 bằng chứng graph. Phần văn bản nêu trực tiếp mô tả của khoản hỗ trợ; phần đồ thị bổ sung các quan hệ như \textit{Chương trình học bổng thạc sĩ tại Trường Đại học Korea năm 2025} $\rightarrow$ \textit{được hỗ trợ} $\rightarrow$ \textit{1,200,000 KRW mỗi tháng}, đồng thời có hai quan hệ \textit{bao gồm} tới \textit{tiền ở ký túc xá tại Trường Đại học Korea, Hàn Quốc} và \textit{tiền sinh hoạt phí}. Câu trả lời cuối cùng được tổng hợp khi hai nguồn bằng chứng cùng xác nhận cấu phần của khoản hỗ trợ.\\
+\end{tcolorbox}
+
+
+Kiến trúc truy vấn kết hợp đặc biệt phù hợp với các câu hỏi cần tổng hợp. Ví dụ, khi người dùng hỏi về một đơn vị trong trường, văn bản gốc có thể cung cấp phần mô tả chức năng, còn đồ thị có thể cung cấp quan hệ trực thuộc, cán bộ liên quan, chương trình đào tạo hoặc sự kiện gắn với đơn vị đó. Khi hai nguồn bằng chứng bổ sung cho nhau, hệ thống có nhiều cơ hội tạo câu trả lời trực tiếp hơn và bám bằng chứng hơn.
+
+Đổi lại, kiến trúc truy vấn kết hợp có chi phí vận hành cao hơn. Hệ thống phải truy xuất hai nguồn dữ liệu, loại bỏ bằng chứng trùng lặp, kiểm soát độ dài ngữ cảnh và tránh để thông tin nhiễu ảnh hưởng đến câu trả lời. Vì vậy, kiến trúc này được xem là cấu hình kiểm tra lợi ích của việc kết hợp văn bản với đồ thị, còn mức cải thiện cụ thể được trình bày trong mục kết quả đánh giá ứng dụng hỏi đáp.

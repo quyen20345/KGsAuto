@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+  }
+
+  .page {
+    width: 100%;
+    background: #fff;
+    padding: 36px 40px;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Banner */
+  .banner {
+    background: #1a1a2e;
+    color: #fff;
+    border-radius: 8px;
+    padding: 22px 30px;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  .banner strong { font-weight: 700; font-size: 18.5px; }
+
+  /* 2-col middle */
+  .middle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+
+  .panel {
+    border-radius: 8px;
+    padding: 22px 26px;
+  }
+
+  .panel-entity-rules  { background: #f7f5ff; border: 1.5px solid #d4ccf5; }
+  .panel-entity-labels { background: #f0f7ff; border: 1.5px solid #c2d9f5; }
+  .panel-rel-rules     { background: #fff5f0; border: 1.5px solid #f5d9c2; }
+  .panel-rel-names     { background: #f0fff4; border: 1.5px solid #b8eacc; }
+  .panel-output        { background: #fafff5; border: 1.5px solid #b8eacc; }
+  .panel-input         { background: #fffbf0; border: 1.5px solid #f0d9a0; }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    color: #222;
+    border-bottom: 1.5px solid rgba(0,0,0,0.09);
+    padding-bottom: 10px;
+  }
+
+  .panel ul { list-style: none; }
+  .panel ul li {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #2a2a2a;
+    padding-left: 18px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+  .panel ul li::before { content: '–'; position: absolute; left: 0; color: #bbb; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: rgba(0,0,0,0.07);
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: #3a3a8c;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 10px; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+  }
+  .tag-entity { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+  .tag-rel    { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  .note { font-size: 13px; color: #bbb; margin-top: 10px; font-style: italic; }
+
+  /* Bottom row */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 2.4fr 1fr;
+    gap: 16px;
+  }
+
+  .code-block {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.75;
+    background: #1e2a1e;
+    color: #a8e6a3;
+    padding: 18px 22px;
+    border-radius: 6px;
+    white-space: pre;
+    overflow-x: auto;
+    width: 100%;
+  }
+  .code-block .k { color: #7dd3fc; }
+  .code-block .s { color: #fcd34d; }
+  .code-block .p { color: #e2e8f0; }
+
+  .panel-input .code-block { background: #2a2010; color: #fcd34d; }
+  .panel-input .code-block .ph { color: #f97316; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Banner -->
+  <div class="banner">
+    <strong>You are a Knowledge Graph extraction system.</strong>&nbsp; Extract entities and relationships from the provided text following the rules below.
+  </div>
+
+  <!-- Middle -->
+  <div class="middle-row">
+    <div class="col">
+      <div class="panel panel-entity-rules">
+        <div class="panel-title">Entity Rules</div>
+        <ul>
+          <li>Assign exactly one label per entity from the predefined label set.</li>
+          <li>Use the most specific label available.</li>
+          <li>id format: <code>node_[canonical_name]</code> (lowercase_with_underscores).</li>
+          <li>name must be the canonical, stable, official name found in the text.</li>
+          <li>Do not create entities for generic/unresolved references (e.g., "the school", "the department"). If a generic mention resolves to a known entity, add it to <code>aliases</code> instead.</li>
+          <li>aliases: abbreviations, acronyms, or co-referential mentions.</li>
+        </ul>
+      </div>
+      <div class="panel panel-rel-rules">
+        <div class="panel-title">Relationship Rules</div>
+        <ul>
+          <li>Relationship types are free-form: short, reusable, <code>UPPER_SNAKE_CASE</code>.</li>
+          <li>Prefer reusable relation names from the suggested list; freely generate additional types as needed.</li>
+          <li>Create a relationship only if explicitly supported by the text.</li>
+          <li>id format: <code>rel_[source_id]_[target_id]_[type]</code>.</li>
+          <li>description must state the precise semantic link with supporting text evidence.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel panel-entity-labels">
+        <div class="panel-title">Entity Labels</div>
+        <div class="tags">
+          <span class="tag tag-entity">UNIVERSITY</span>
+          <span class="tag tag-entity">FACULTY</span>
+          <span class="tag tag-entity">DEPARTMENT</span>
+          <span class="tag tag-entity">INSTITUTE</span>
+          <span class="tag tag-entity">PERSON</span>
+          <span class="tag tag-entity">COURSE</span>
+          <span class="tag tag-entity">PROGRAM</span>
+          <span class="tag tag-entity">PUBLICATION</span>
+          <span class="tag tag-entity">DOCUMENT</span>
+          <span class="tag tag-entity">EVENT</span>
+          <span class="tag tag-entity">LOCATION</span>
+          <span class="tag tag-entity">BUILDING</span>
+        </div>
+        <div class="note">* * * &nbsp; Fixed label set — predefined per domain</div>
+      </div>
+      <div class="panel panel-rel-names">
+        <div class="panel-title">Preferred Relation Names</div>
+        <div class="tags">
+          <span class="tag tag-rel">PART_OF</span>
+          <span class="tag tag-rel">LOCATED_IN</span>
+          <span class="tag tag-rel">OFFERS</span>
+          <span class="tag tag-rel">PROVIDES</span>
+          <span class="tag tag-rel">ORGANIZES</span>
+          <span class="tag tag-rel">MANAGES</span>
+          <span class="tag tag-rel">APPLIES_TO</span>
+          <span class="tag tag-rel">ASSOCIATED_WITH</span>
+          <span class="tag tag-rel">HAS_CONTACT_POINT</span>
+        </div>
+        <div class="note">* * * &nbsp; Open-ended — additional types freely allowed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-row">
+    <div class="panel panel-output">
+      <div class="panel-title">Output — Return valid JSON only</div>
+      <div class="code-block"><span class="p">{</span>
+  <span class="k">"nodes"</span><span class="p">: [</span>
+    <span class="p">{</span>
+      <span class="k">"id"</span><span class="p">:</span>          <span class="s">"node_[canonical_name]"</span><span class="p">,</span>
+      <span class="k">"labels"</span><span class="p">:</span>      <span class="s">["&lt;ENTITY_LABEL&gt;"]</span><span class="p">,</span>
+      <span class="k">"properties"</span><span class="p">:</span>  <span class="p">{</span> <span class="k">"name"</span><span class="p">:</span> <span class="s">"..."</span><span class="p">,</span> <span class="k">"aliases"</span><span class="p">:</span> <span class="s">[...]</span><span class="p">,</span> <span class="k">"description"</span><span class="p">:</span> <span class="s">"..."</span> <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="k">"relationships"</span><span class="p">: [</span>
+    <span class="p">{</span>
+      <span class="k">"id"</span><span class="p">:</span>          <span class="s">"rel_[source]_[target]_[type]"</span><span class="p">,</span>
+      <span class="k">"type"</span><span class="p">:</span>        <span class="s">"UPPER_SNAKE_CASE"</span><span class="p">,</span>
+      <span class="k">"source"</span><span class="p">:</span>      <span class="s">"node_..."</span><span class="p">,</span>
+      <span class="k">"target"</span><span class="p">:</span>      <span class="s">"node_..."</span><span class="p">,</span>
+      <span class="k">"properties"</span><span class="p">:</span>  <span class="p">{</span> <span class="k">"description"</span><span class="p">:</span> <span class="s">"..."</span> <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span></div>
+    </div>
+
+    <div class="panel panel-input">
+      <div class="panel-title">Input Text</div>
+      <div class="code-block">---BEGIN TEXT---
+
+
+  <span class="ph">{text}</span>
+
+
+---END TEXT---</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

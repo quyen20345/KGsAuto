@@ -1,0 +1,133 @@
+\documentclass[tikz, border=8pt]{standalone}
+\usepackage{tikz}
+\usepackage[utf8]{vietnam}
+\usetikzlibrary{arrows.meta, positioning, calc}
+
+% Professional, low-saturation palette, aligned with Figure 3.1
+\definecolor{clrData}{RGB}{229,241,255}
+\definecolor{clrContext}{RGB}{236,253,245}
+\definecolor{clrPrompt}{RGB}{245,246,248}
+\definecolor{clrExtract}{RGB}{244,240,255}
+\definecolor{clrOutput}{RGB}{255,247,237}
+\definecolor{clrControl}{RGB}{245,246,248}
+\definecolor{clrFeedback}{RGB}{255,248,225}
+
+\definecolor{bdrData}{RGB}{59,130,246}
+\definecolor{bdrContext}{RGB}{16,185,129}
+\definecolor{bdrPrompt}{RGB}{100,116,139}
+\definecolor{bdrExtract}{RGB}{124,58,237}
+\definecolor{bdrOutput}{RGB}{234,88,12}
+\definecolor{bdrControl}{RGB}{100,116,139}
+\definecolor{bdrFeedback}{RGB}{217,119,6}
+
+\tikzset{
+  stage/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=3.35cm, minimum height=5.34cm,
+    text width=2.78cm,
+    font=\sffamily, align=center,
+    inner sep=6pt, text depth=0.2ex,
+    line width=0.55pt
+  },
+  data/.style={stage, fill=clrData, draw=bdrData},
+  context/.style={stage, fill=clrContext, draw=bdrContext},
+  prompt/.style={stage, fill=clrPrompt, draw=bdrPrompt},
+  extract/.style={stage, fill=clrExtract, draw=bdrExtract},
+  output/.style={stage, fill=clrOutput, draw=bdrOutput},
+  control/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=10.70cm, minimum height=1.05cm,
+    text width=10.10cm,
+    font=\scriptsize\sffamily, align=center,
+    inner sep=6pt, fill=clrControl, draw=bdrControl,
+    dashed, line width=0.5pt
+  },
+  feedback/.style={
+    rectangle, rounded corners=4pt,
+    minimum width=7.40cm, minimum height=0.96cm,
+    text width=6.90cm,
+    font=\scriptsize\sffamily, align=center,
+    inner sep=5pt, fill=clrFeedback, draw=bdrFeedback,
+    line width=0.5pt
+  },
+  arr/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.62pt, gray!75},
+  support/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.52pt, dashed, gray!68},
+  loop/.style={-{Stealth[length=4pt, width=3pt]}, line width=0.55pt, dashed, bdrFeedback!85}
+}
+
+\newcommand{\stagetitle}[1]{{\bfseries\small #1}\\[6pt]}
+\newcommand{\stageitem}[1]{{\scriptsize #1}\\[3pt]}
+
+\begin{document}
+\begin{tikzpicture}[node distance=0.62cm and 0.56cm]
+
+  \node[data] (DATA) {
+    \stagetitle{Markdown đầu vào}
+    \stageitem{Tệp nội dung sạch}
+    \stageitem{Định danh đoạn}
+    \stageitem{Đường dẫn nguồn}
+    \stageitem{Thông tin xử lý}
+    {\scriptsize Đơn vị trích xuất}
+  };
+
+  \node[context, right=of DATA] (GROUP) {
+    \stagetitle{Gom nhóm tài liệu}
+    \stageitem{Dựa trên tên tệp}
+    \stageitem{Độ giống từ khóa}
+    \stageitem{Ngữ cảnh cục bộ}
+    \stageitem{Tóm tắt lũy tiến}
+    {\scriptsize Cụm tài liệu liên quan}
+  };
+
+  \node[prompt, right=of GROUP] (PROMPT) {
+    \stagetitle{Prompt theo schema}
+    \stageitem{Loại thực thể}
+    \stageitem{Quy tắc quan hệ}
+    \stageitem{Ngữ cảnh hỗ trợ}
+    \stageitem{Cấu trúc đầu ra}
+    {\scriptsize Ràng buộc trích xuất}
+  };
+
+  \node[extract, right=of PROMPT] (LLM) {
+    \stagetitle{LLM trích xuất}
+    \stageitem{Thực thể}
+    \stageitem{Quan hệ}
+    \stageitem{Thuộc tính}
+    \stageitem{Chuẩn hóa JSON}
+    {\scriptsize Kết quả có cấu trúc}
+  };
+
+  \node[output, right=of LLM] (RAW) {
+    \stagetitle{Đồ thị thô}
+    \stageitem{Danh sách thực thể}
+    \stageitem{Danh sách quan hệ}
+    \stageitem{Thông tin nguồn}
+    \stageitem{Kiểm tra cấu trúc}
+    {\scriptsize Chuyển sang Chương 5}
+  };
+
+  \node[control] (SCHEMA) at ($(GROUP.north)!0.55!(LLM.north)+(0,1.05cm)$) {
+    {\bfseries Ontology và extraction schema}\\[-1pt]
+    {Quy định kiểu thực thể, quan hệ ưu tiên, thuộc tính, bằng chứng và cấu trúc JSON đầu ra}
+  };
+
+  \node[feedback, minimum height=1.08cm] (CTXFB) at ($(GROUP.south)!0.56!(LLM.south)+(0,-1.18cm)$) {
+    {\bfseries Cập nhật ngữ cảnh cục bộ}\\[-1pt]
+    {Thông tin đã trích xuất từ tệp trước hỗ trợ các tệp tiếp theo trong cùng cụm}
+  };
+
+  \draw[arr] (DATA) -- (GROUP);
+  \draw[arr] (GROUP) -- (PROMPT);
+  \draw[arr] (PROMPT) -- (LLM);
+  \draw[arr] (LLM) -- (RAW);
+
+  \draw[support] (SCHEMA.south west) -- (GROUP.north);
+  \draw[support] (SCHEMA.south) -- (PROMPT.north);
+  \draw[support] (SCHEMA.south east) -- (LLM.north);
+  \draw[support] (SCHEMA.east) -| (RAW.north);
+
+  \draw[loop] (LLM.south) -- ++(0,-0.36cm) -| (CTXFB.north east);
+  \draw[loop] (CTXFB.north west) -| (GROUP.south);
+
+\end{tikzpicture}
+\end{document}
