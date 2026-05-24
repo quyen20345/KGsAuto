@@ -16,6 +16,7 @@ from services.rag_system.modes import (
     run_hybrid,
     run_naive_grag,
     run_semantic_search,
+    run_direct,
 )
 from services.rag_system.modes.registry import UNIFIED_MODES, canonical_unified_mode
 from services.rag_system.retrieval.retriever import Retriever
@@ -45,6 +46,8 @@ class UnifiedRetrievalPipeline:
             result = run_graph_search(self, question, top_k, include_evidence)
         elif canonical == "naive_grag":
             result = run_naive_grag(self, question, top_k, include_evidence)
+        elif canonical == "direct":
+            result = run_direct(self, question)
         else:
             result = run_hybrid(self, question, top_k, include_evidence)
 
@@ -67,6 +70,8 @@ class UnifiedRetrievalPipeline:
             result = await arun_graph_search(self, question, top_k, include_evidence)
         elif canonical == "naive_grag":
             result = await arun_naive_grag(self, question, top_k, include_evidence)
+        elif canonical == "direct":
+            result = await asyncio.to_thread(run_direct, self, question)
         else:
             result = await arun_hybrid(self, question, top_k, include_evidence)
 

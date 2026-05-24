@@ -17,7 +17,9 @@ CLAUDE.md
 .agents/
 .codex/
 .obsidian/
-
+.antigravitycli
+*.zip
+*.backup
 
 # ==============================================================================
 # 2. ENVIRONMENT & SECRETS

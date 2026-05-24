@@ -1,5 +1,6 @@
 """Tests for UnifiedRetrievalPipeline."""
 
+# pyrefly: ignore [missing-import]
 import pytest
 from unittest.mock import MagicMock, patch
 from services.rag_system.pipeline import UnifiedRetrievalPipeline, canonical_unified_mode
@@ -12,6 +13,7 @@ class TestCanonicalUnifiedMode:
         assert canonical_unified_mode("graph_search") == "graph_search"
         assert canonical_unified_mode("naive_grag") == "naive_grag"
         assert canonical_unified_mode("hybrid") == "hybrid"
+        assert canonical_unified_mode("direct") == "direct"
         
     def test_whitespace_handling(self):
         assert canonical_unified_mode("  semantic_search  ") == "semantic_search"
@@ -122,4 +124,11 @@ class TestPipelineModes:
             mock.return_value = {"answer": "test", "mode": "hybrid"}
             pipeline = UnifiedRetrievalPipeline()
             result = pipeline.query("Q?", mode="hybrid")
+            mock.assert_called_once()
+
+    def test_mode_dispatch_direct(self):
+        with patch("services.rag_system.pipeline.run_direct") as mock:
+            mock.return_value = {"answer": "test", "mode": "direct"}
+            pipeline = UnifiedRetrievalPipeline()
+            result = pipeline.query("Q?", mode="direct")
             mock.assert_called_once()

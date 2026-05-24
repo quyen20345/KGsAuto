@@ -1,11 +1,13 @@
+# pyrefly: ignore [missing-import]
 import pytest
+# pyrefly: ignore [missing-import]
 from fastapi.testclient import TestClient
 
 from apps.chat_api import main, service
 
 
 class FakePipeline:
-    async def aquery(self, question, mode, top_k, include_evidence):
+    async def aquery(self, question, mode, top_k=None, include_evidence=True):
         return {
             "question": question,
             "mode": mode,
@@ -31,7 +33,7 @@ def test_health(client):
     body = res.json()
     assert body["status"] == "ok"
     assert body["service"] == "chat_api"
-    assert set(body["modes"]) == {"semantic_search", "graph_search", "naive_grag", "hybrid"}
+    assert set(body["modes"]) == {"semantic_search", "graph_search", "naive_grag", "hybrid", "direct"}
 
 
 def test_modes(client):
@@ -84,7 +86,7 @@ def test_openai_models(client):
     assert res.status_code == 200
     body = res.json()
     assert body["object"] == "list"
-    assert {model["id"] for model in body["data"]} == {"semantic_search", "graph_search", "naive_grag", "hybrid"}
+    assert {model["id"] for model in body["data"]} == {"semantic_search", "graph_search", "naive_grag", "hybrid", "direct"}
 
 
 def test_openai_chat_completion_success(monkeypatch, client):
@@ -131,3 +133,20 @@ def test_openai_chat_completion_stream(monkeypatch, client):
     assert "find relevant context" in text
     assert "ok" in text
     assert "data: [DONE]" in text
+
+
+def test_ask_endpoint_success(monkeypatch, client):
+    monkeypatch.setattr(main, "get_pipeline", lambda: FakePipeline())
+
+    res = client.post(
+        "/ask",
+        json={
+            "message": "Hello!",
+            "conversation_id": "test-conv",
+        },
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["answer"] == "ok"
+    assert body["conversation_id"] == "test-conv"

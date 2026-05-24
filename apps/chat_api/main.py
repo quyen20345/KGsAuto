@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
+# pyrefly: ignore [missing-import]
 from fastapi.responses import StreamingResponse
 
 from apps.chat_api.schemas import (
@@ -14,6 +17,8 @@ from apps.chat_api.schemas import (
     OpenAIChatCompletionRequest,
     OpenAIModel,
     OpenAIModelsResponse,
+    AskRequest,
+    AskResponse,
 )
 from apps.chat_api.service import (
     DEFAULT_MODE,
@@ -22,6 +27,7 @@ from apps.chat_api.service import (
     openai_stream_events,
     query_chat,
     query_openai_compatible,
+    get_pipeline,
 )
 from services.config import validate_settings
 
@@ -85,5 +91,23 @@ async def openai_chat_completions(req: OpenAIChatCompletionRequest):
         return openai_completion_response(req, chat)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/ask", response_model=AskResponse)
+async def ask(req: AskRequest) -> AskResponse:
+    """Direct, model-only questioning endpoint without any retrieval or mode overhead."""
+    try:
+        pipeline = get_pipeline()
+        result = await pipeline.aquery(
+            question=req.message,
+            mode="direct",
+            include_evidence=False,
+        )
+        return AskResponse(
+            answer=result.get("answer", ""),
+            conversation_id=req.conversation_id,
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

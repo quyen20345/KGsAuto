@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-UNIFIED_MODES = {"semantic_search", "graph_search", "naive_grag", "hybrid"}
+UNIFIED_MODES = {"semantic_search", "graph_search", "naive_grag", "hybrid", "direct"}
 MODE_ALIASES: dict[str, str] = {}
 
 

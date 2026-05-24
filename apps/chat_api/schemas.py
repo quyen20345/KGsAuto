@@ -69,3 +69,13 @@ class OpenAIModel(BaseModel):
 class OpenAIModelsResponse(BaseModel):
     object: str = "list"
     data: list[OpenAIModel]
+
+
+class AskRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+    conversation_id: str | None = None
+
+
+class AskResponse(BaseModel):
+    answer: str
+    conversation_id: str | None = None
