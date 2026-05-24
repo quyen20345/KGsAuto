@@ -1,8 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { pipelineApi } from '../../services/api';
 import CrawlForm from './CrawlForm';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 export default function FileBrowser() {
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Pipeline', link: '/pipeline' },
+      { label: 'Files', link: null }
+    ]);
+  }, [setBreadcrumbs]);
+
   const [tab, setTab] = useState('raw');
   const [rawFiles, setRawFiles] = useState([]);
   const [extractedFiles, setExtractedFiles] = useState([]);

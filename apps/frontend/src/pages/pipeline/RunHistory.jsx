@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pipelineApi } from '../../services/api';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 export default function RunHistory() {
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Pipeline', link: '/pipeline' },
+      { label: 'Runs', link: null }
+    ]);
+  }, [setBreadcrumbs]);
+
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

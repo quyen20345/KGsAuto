@@ -158,7 +158,7 @@ export default function CompareModal({ isOpen, onClose, entityA, duplicateId, on
               )}
 
               {/* Reasoning */}
-              <div style={{ margin: '12px 0', padding: '10px', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.9rem', lineHeight: '1.5' }}>
+              <div style={{ margin: '12px 0', padding: '10px', background: 'var(--bg)', borderRadius: '4px', fontSize: '0.9rem', lineHeight: '1.5' }}>
                 {comparison.reasoning}
               </div>
 

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import EntityLink from './EntityLink';
 import RelationshipTooltip from './RelationshipTooltip';
+import ExpandableText from './ExpandableText';
 
 export default function EntityPopover({ entityId, triggerRef, isVisible, onMouseEnter, onMouseLeave }) {
   const [entity, setEntity] = useState(null);
@@ -110,12 +111,11 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
       {entity && !loading && !error && (
         <div className="entity-popover-content">
           <div className="entity-popover-header">
-            <h3 className="entity-title" style={{ fontSize: '1.3rem', margin: '0 0 8px 0' }}>
+            <h3 className="entity-title" style={{ fontSize: '1.3rem', margin: '0' }}>
               <EntityLink entityId={entity.id} disablePopover={true}>
                 {entity.name || entity.id}
               </EntityLink>
             </h3>
-            <div className="entity-uri" style={{ fontSize: '0.85rem' }}>ID: {entity.id}</div>
             <div style={{ marginTop: '8px' }}>
               {entity.labels.map((l) => (
                 <span key={l} className="badge" style={{ fontSize: '0.75rem' }}>
@@ -125,26 +125,22 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
             </div>
           </div>
 
-          {Object.entries(entity.properties).filter(([key]) => key !== 'id' && key !== 'name').length > 0 && (
+          {Object.entries(entity.properties).filter(([key]) => key !== 'id' && key !== 'name' && !['search_name', 'search_aliases', 'search_description', 'model_extracted', 'chunk_id', 'search_text', 'aliases'].includes(key)).length > 0 && (
             <>
-              <div className="statements-header" style={{ fontSize: '1rem', marginTop: '16px' }}>
+              <div className="statements-header" style={{ fontSize: '1rem', marginTop: '16px', textAlign: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '6px' }}>
                 Properties
               </div>
               <table style={{ fontSize: '0.9rem' }}>
-                <thead>
-                  <tr>
-                    <th>Predicate</th>
-                    <th>Object</th>
-                  </tr>
-                </thead>
                 <tbody>
                   {Object.entries(entity.properties)
-                    .filter(([key]) => key !== 'id' && key !== 'name')
+                    .filter(([key]) => key !== 'id' && key !== 'name' && !['search_name', 'search_aliases', 'search_description', 'model_extracted', 'chunk_id', 'search_text', 'aliases'].includes(key))
                     .map(([key, val]) => (
                       <tr key={`prop-${key}`}>
-                        <td className="predicate">prop:{key}</td>
+                        <td className="predicate">
+                          <ExpandableText text={`prop:${key}`} maxLength={40} />
+                        </td>
                         <td className="object">
-                          {Array.isArray(val) ? val.map((v, i) => <div key={i}>{v}</div>) : val}
+                          {Array.isArray(val) ? val.map((v, i) => <div key={i}><ExpandableText text={v} maxLength={80} /></div>) : <ExpandableText text={val} maxLength={80} />}
                         </td>
                       </tr>
                     ))}
@@ -155,16 +151,10 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
 
           {entity.outgoing && entity.outgoing.length > 0 && (
             <>
-              <div className="statements-header" style={{ fontSize: '1rem', marginTop: '16px' }}>
+              <div className="statements-header" style={{ fontSize: '1rem', marginTop: '16px', textAlign: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '6px' }}>
                 Relationships
               </div>
               <table style={{ fontSize: '0.9rem' }}>
-                <thead>
-                  <tr>
-                    <th>Predicate</th>
-                    <th>Object</th>
-                  </tr>
-                </thead>
                 <tbody>
                   {Object.entries(
                     entity.outgoing.reduce((acc, rel) => {

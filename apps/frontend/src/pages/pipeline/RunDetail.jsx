@@ -1,12 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { pipelineApi } from '../../services/api';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 const STEPS = ['extraction', 'entity_resolution', 'neo4j_import'];
 const STEP_LABELS = { extraction: 'Extract', entity_resolution: 'Entity Resolution', neo4j_import: 'Import' };
 
 export default function RunDetail() {
   const { runId } = useParams();
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Pipeline', link: '/pipeline' },
+      { label: 'Runs', link: '/pipeline/runs' },
+      { label: `Run #${runId}`, link: null }
+    ]);
+  }, [runId, setBreadcrumbs]);
+
   const [run, setRun] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);

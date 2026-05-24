@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pipelineApi } from '../../services/api';
 import RunTrigger from './RunTrigger';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 export default function PipelineDashboard() {
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Pipeline', link: '/pipeline' },
+      { label: 'Dashboard', link: null }
+    ]);
+  }, [setBreadcrumbs]);
+
   const [stats, setStats] = useState({ raw: 0, extracted: 0, completedRuns: 0, runs: [] });
   const [showTrigger, setShowTrigger] = useState(false);
   const [loading, setLoading] = useState(true);

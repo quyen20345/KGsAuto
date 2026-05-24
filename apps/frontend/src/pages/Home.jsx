@@ -2,8 +2,18 @@ import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import EntityLink from '../components/EntityLink';
 import RelationshipTooltip from '../components/RelationshipTooltip';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 
 export default function Home() {
+  const { setBreadcrumbs } = useBreadcrumb();
+  
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Random Triplets', link: null }
+    ]);
+  }, [setBreadcrumbs]);
+
   const [triplets, setTriplets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,14 +32,19 @@ export default function Home() {
   }, []);
 
   return (
-    <main>
-      <h2>Welcome to UETKB Knowledge Base</h2>
-      <p>Search for entities in the top right, run custom Cypher queries, or start your exploration by clicking on any random triplet below.</p>
+    <main style={{ maxWidth: '900px', margin: '0 auto', padding: '30px 20px' }}>
 
-      <div className="statements-header">Random Triplets to Explore 🎲</div>
-
-      {loading && <div style={{ padding: '20px', fontStyle: 'italic', color: '#666' }}>Fetching random knowledge...</div>}
-      {error && <div style={{ color: 'red' }}>Error loading triplets: {error}</div>}
+      {loading && (
+        <div style={{ padding: '40px 20px', fontStyle: 'italic', color: '#666', textAlign: 'center' }}>
+          Fetching random knowledge...
+        </div>
+      )}
+      
+      {error && (
+        <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>
+          Error loading triplets: {error}
+        </div>
+      )}
 
       {!loading && !error && (
         <table>
@@ -42,25 +57,33 @@ export default function Home() {
 
               return (
                 <tr key={i}>
-                  <td>
-                    <span className="badge">{t.source_label}</span><br />
-                    <EntityLink entityId={t.source_id}>
-                      <strong>{t.source_name}</strong>
-                    </EntityLink>
+                  <td style={{ width: '40%' }}>
+                    <span className="badge" style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px' }}>
+                      {t.source_label}
+                    </span>
+                    <div style={{ marginTop: '4px' }}>
+                      <EntityLink entityId={t.source_id}>
+                        <strong>{t.source_name}</strong>
+                      </EntityLink>
+                    </div>
                   </td>
-                  <td className="predicate" style={{ verticalAlign: 'middle', textAlign: 'center', background: '#f8f9fa' }}>
+                  <td className="predicate" style={{ width: '20%', verticalAlign: 'middle', textAlign: 'center', background: 'var(--bg)', padding: '12px 8px' }}>
                     <RelationshipTooltip
                       relationshipType={t.rel_type}
                       description={descriptionText}
                     >
-                      {t.rel_type}
+                      <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{t.rel_type}</span>
                     </RelationshipTooltip>
                   </td>
-                  <td>
-                    <span className="badge">{t.target_label}</span><br />
-                    <EntityLink entityId={t.target_id}>
-                      <strong>{t.target_name}</strong>
-                    </EntityLink>
+                  <td style={{ width: '40%' }}>
+                    <span className="badge" style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px' }}>
+                      {t.target_label}
+                    </span>
+                    <div style={{ marginTop: '4px' }}>
+                      <EntityLink entityId={t.target_id}>
+                        <strong>{t.target_name}</strong>
+                      </EntityLink>
+                    </div>
                   </td>
                 </tr>
               );

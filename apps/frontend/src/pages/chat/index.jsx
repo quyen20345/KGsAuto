@@ -5,6 +5,7 @@ import ChatComposer from './ChatComposer';
 import ChatMessage from './ChatMessage';
 import EmptyState from './EmptyState';
 import { ScrollDownIcon } from './Icons';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import './chat.css';
 
 const modeLabels = {
@@ -15,6 +16,15 @@ const modeLabels = {
 };
 
 export default function Chat() {
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Home', link: '/' },
+      { label: 'Chat RAG', link: null }
+    ]);
+  }, [setBreadcrumbs]);
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState('semantic_search');
