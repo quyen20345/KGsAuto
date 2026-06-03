@@ -105,3 +105,56 @@ def test_cancel_run_marks_failed_and_waits(monkeypatch):
     assert waited is True
     assert updates[-1][1]["status"] == "failed"
     assert broadcasts[-1][1]["error_message"] == "Cancelled by user"
+
+
+def test_execute_pipeline_uses_in_process_extraction_for_quick_import(tmp_path, monkeypatch):
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    (input_dir / "a.md").write_text("a", encoding="utf-8")
+
+    request = runner.PipelineRunRequest(mode="quick_import")
+    runner._active_run_id = "run1"
+    updates = []
+    statuses = []
+    logs = []
+    subprocess_calls = []
+    extraction_call = {}
+
+    monkeypatch.setattr(runner, "_create_run", lambda run_id, request: None)
+    monkeypatch.setattr(runner, "_selected_input_dir", lambda run_id, files: input_dir)
+    monkeypatch.setattr(runner, "_update_run", lambda run_id, **kwargs: updates.append((run_id, kwargs)))
+    monkeypatch.setattr(runner, "_add_log", lambda run_id, level, message, step=None: logs.append((run_id, level, message, step)))
+
+    async def status(run_id, **event):
+        statuses.append((run_id, event))
+
+    async def fake_run_extraction(**kwargs):
+        extraction_call.update(kwargs)
+        assert kwargs["should_cancel"]() is False
+        await kwargs["progress_callback"]({
+            "file": "a.md",
+            "status": "completed",
+            "processed": 1,
+            "total": 1,
+            "successful": 1,
+            "failed": 0,
+            "skipped": 0,
+            "progress_pct": 100,
+        })
+
+    async def fake_run_subprocess(run_id, step, args):
+        subprocess_calls.append((step, args))
+        return 0
+
+    monkeypatch.setattr(runner, "_status", status)
+    monkeypatch.setattr(runner, "run_extraction", fake_run_extraction)
+    monkeypatch.setattr(runner, "_run_subprocess", fake_run_subprocess)
+
+    asyncio.run(runner.execute_pipeline("run1", request))
+
+    assert [path.name for path in extraction_call["files"]] == ["a.md"]
+    assert subprocess_calls == [("neo4j_import", ["-m", "services.neo4j_import.import_to_neo4j", "--dir", str(runner.EXTRACTED_DIR)])]
+    assert not any("services.extraction.cli" in arg for _, args in subprocess_calls for arg in args)
+    assert any(event.get("file") == "a.md" and event.get("progress_pct") == 60 for _, event in statuses)
+    assert updates[-1][1]["status"] == "completed"
+

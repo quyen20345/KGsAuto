@@ -4,9 +4,9 @@
 .git/
 # *.md
 !README.md
-!docs/
+!project/docs/
 data/
-# thesis/
+# project/thesis/
 *.txt
 */lib
 # AI agent instructions (local only)
@@ -20,7 +20,10 @@ CLAUDE.md
 .antigravitycli
 *.zip
 *.backup
+# project/docs/ (un-ignored above for README assets)
 
+# ==============================================================================
+# 2. ENVIRONMENT & SECRETS
 # ==============================================================================
 # 2. ENVIRONMENT & SECRETS
 # ==============================================================================
@@ -124,6 +127,12 @@ qdrant_storage/
 .docker/
 *.pid
 
+# Neo4j exports
+data/exports/
+
+# Data archive zip
+KGsAuto_data.zip
+
 # ==============================================================================
 # 8. LOGS
 # ==============================================================================
@@ -154,19 +163,19 @@ extraction_summary_*.json
 # 11. THESIS (LATEX)
 # ==============================================================================
 
-thesis/*.aux
-thesis/*.bbl
-thesis/*.blg
-thesis/*.log
-thesis/*.out
-thesis/*.toc
-thesis/*.lof
-thesis/*.lot
-thesis/*.fdb_latexmk
-thesis/*.fls
-thesis/*.synctex.gz
-thesis/main.pdf
-thesis/logs/
+project/thesis/*.aux
+project/thesis/*.bbl
+project/thesis/*.blg
+project/thesis/*.log
+project/thesis/*.out
+project/thesis/*.toc
+project/thesis/*.lof
+project/thesis/*.lot
+project/thesis/*.fdb_latexmk
+project/thesis/*.fls
+project/thesis/*.synctex.gz
+project/thesis/main.pdf
+project/thesis/logs/
 
 # ==============================================================================
 # 12. TEMP / CACHE
@@ -190,3 +199,9 @@ Thumbs.db
 # ==============================================================================
 
 services/rag_system/evaluation/interpolate_scores.py
+
+
+# ==============================================================================
+# 15. SLIDE
+# ==============================================================================
+project/tasks/archive/

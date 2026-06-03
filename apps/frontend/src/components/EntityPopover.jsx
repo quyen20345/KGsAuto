@@ -125,7 +125,7 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
             </div>
           </div>
 
-          {Object.entries(entity.properties).filter(([key]) => key !== 'id' && key !== 'name' && !['search_name', 'search_aliases', 'search_description', 'model_extracted', 'chunk_id', 'search_text', 'aliases'].includes(key)).length > 0 && (
+          {Object.entries(entity.properties).filter(([key]) => ['description', 'model_extracted'].includes(key)).length > 0 && (
             <>
               <div className="statements-header" style={{ fontSize: '1rem', marginTop: '16px', textAlign: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '6px' }}>
                 Properties
@@ -133,7 +133,7 @@ export default function EntityPopover({ entityId, triggerRef, isVisible, onMouse
               <table style={{ fontSize: '0.9rem' }}>
                 <tbody>
                   {Object.entries(entity.properties)
-                    .filter(([key]) => key !== 'id' && key !== 'name' && !['search_name', 'search_aliases', 'search_description', 'model_extracted', 'chunk_id', 'search_text', 'aliases'].includes(key))
+                    .filter(([key]) => ['description', 'model_extracted'].includes(key))
                     .map(([key, val]) => (
                       <tr key={`prop-${key}`}>
                         <td className="predicate">

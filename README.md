@@ -1,266 +1,113 @@
-# KGsAuto - Knowledge Graph Automation System
+# KGsAuto
 
-KGsAuto là hệ thống xây dựng Knowledge Graph từ tài liệu tiếng Việt, xử lý trùng lặp entity, lưu graph vào Neo4j, index tài liệu vào Qdrant và cung cấp API/frontend để search, visualize và hỏi đáp chatbot.
+Hệ thống tự động xây dựng Knowledge Graph từ tài liệu tiếng Việt, sử dụng LLM để trích xuất thực thể và quan hệ, xử lý trùng lặp, import vào Neo4j, index vào Qdrant, và cung cấp API/frontend để truy vấn.
 
-## Cài đặt
+## Kiến trúc
 
-```bash
-pip install -r requirements.txt
-pip install -e . --no-deps    # Cài đặt package kgsauto ở chế độ dev, không cài deps từ pyproject
+```
+Markdown → Extraction (LLM) → Entity Resolution → Neo4j + Qdrant → Graph/Chat/Pipeline API → Frontend
 ```
 
-Sao chép `.env.example` thành `.env` và điền các biến cần thiết:
+Xem hướng dẫn cài đặt chi tiết: **[SETUP.md](SETUP.md)**
 
-- `OPENAI_COMPATIBLE_API_KEY`
-- `OPENAI_COMPATIBLE_BASE_URL`
-- `OPENAI_COMPATIBLE_MODEL`
-- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`
-
-## Chạy nhanh các services
-
-Mở 5 terminal tại thư mục gốc repo.
-
-### Terminal 1 - Hạ tầng Docker
+## Chạy nhanh bằng Docker
 
 ```bash
 docker compose up -d
 ```
 
-Lệnh này khởi động hạ tầng local:
+Tất cả services được khởi động: Neo4j, Qdrant, Graph API, Pipeline API, Chat API, Frontend.
 
-- Neo4j
-- Qdrant
-- Ollama
+| URL | Mô tả |
+|-----|-------|
+| http://localhost:3000 | Frontend UI |
+| http://localhost:7474 | Neo4j Browser (neo4j/12345678) |
+| http://localhost:6333/dashboard | Qdrant Dashboard |
 
-### Terminal 2 - Graph API
-
-```bash
-uvicorn apps.graph_api.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Terminal 3 - Pipeline API
+## Chạy dev mode (không Docker)
 
 ```bash
-uvicorn apps.pipeline_api.main:app --host 0.0.0.0 --port 8001 --reload
+# Yêu cầu: Python 3.12+, Node.js, Docker (chạy Neo4j + Qdrant)
+cp .env.example .env   # Điền API key LLM
+docker compose up -d neo4j qdrant   # Chỉ chạy hạ tầng
+pip install -r requirements.txt && pip install -e . --no-deps
+cd apps/frontend && npm install && cd ../..
+./run.sh dev
 ```
 
-### Terminal 4 - Chat API
+## Giao diện
+
+### Xem chi tiết thực thể
+
+![Entity View](project/docs/assets/ui-entity.png)
+
+### So sánh và merge thực thể trùng lặp
+
+![Compare Entities](project/docs/assets/ui-compare.png)
+
+## Pipeline chính
+
+1. **Upload / Crawl** — Markdown đầu vào từ `data/raw/` hoặc crawl web
+2. **Extraction** — LLM trích xuất entities và relationships ra KG JSON
+3. **Entity Resolution** — Chuẩn hóa, blocking, clustering, matching thực thể trùng
+4. **Import Neo4j** — Import KG đã resolve vào Neo4j + index Qdrant
+
+Tất cả các bước chạy qua Pipeline API (`localhost:8001/docs`) hoặc qua UI Pipeline Dashboard.
+
+## API
+
+| Service | Port | Docs | Mô tả |
+|---------|------|------|-------|
+| Graph API | 8000 | /docs | Truy vấn graph, tìm kiếm entity, merge |
+| Pipeline API | 8001 | /docs | Upload, crawl, extract, resolve, import |
+| Chat API | 8002 | /docs | Chat RAG (semantic, graph, hybrid) |
+
+## Cấu trúc thư mục
+
+```
+├── apps/              # Frontend (React/Vite) + 3 FastAPI apps
+├── services/          # Pipeline, RAG, extraction, entity_resolution...
+├── scripts/           # Script vận hành, backfill, visualize
+├── docker/            # Dockerfile.backend (dùng chung 3 API)
+├── data/              # Dữ liệu, exports, archives
+├── project/           # Tài liệu, assets (ảnh UI)
+├── docker-compose.yaml
+├── run.sh             # Quick start script
+├── SETUP.md           # Hướng dẫn cài đặt chi tiết
+├── requirements.txt
+└── pyproject.toml
+```
+
+## Export / Import dữ liệu Neo4j
 
 ```bash
-uvicorn apps.chat_api.main:app --host 0.0.0.0 --port 8002 --reload
+# Export
+docker exec kgsauto_neo4j cypher-shell -u neo4j -p 12345678 \
+  "CALL apoc.export.cypher.all('/exports/neo4j_backup.cypher',
+    {format:'cypher-shell', useOptimizations:{type:'UNWIND_BATCH', unwindBatchSize:1000}})
+   YIELD file, nodes, relationships RETURN file, nodes, relationships"
+
+# Import
+docker exec -i kgsauto_neo4j cypher-shell -u neo4j -p 12345678 < data/exports/neo4j_backup.cypher
 ```
 
-### Terminal 5 - Frontend
+File backup hiện tại: `data/exports/neo4j_backup.cypher` (5.265 nodes, 9.653 relationships).
+
+## Kiểm thử
 
 ```bash
-cd apps/frontend && npm install && npm run dev
+python -m pytest apps/chat_api/tests apps/graph_api/tests apps/pipeline_api/tests -q
+python -m pytest services/rag_system/tests services/entity_resolution/tests -q
+cd apps/frontend && npm run lint && npm run build
 ```
 
-## Các địa chỉ sau khi chạy
+## Archive
 
-- Frontend: http://localhost:5173
-- Graph API Docs: http://localhost:8000/docs
-- Pipeline API Docs: http://localhost:8001/docs
-- Pipeline API Health: http://localhost:8001/api/health
-- Chat API Docs: http://localhost:8002/docs
-- Chat API Health: http://localhost:8002/health
-- Neo4j Browser: http://localhost:7474
-  - user: `neo4j`
-  - password: `12345678`
-- Qdrant Dashboard: http://localhost:6333/dashboard
-- Ollama API: http://localhost:11434
+Các file archive lưu trong `data/archives/`:
 
-## Dừng services
-
-Frontend/backend APIs: nhấn `Ctrl + C` ở terminal đang chạy.
-
-Docker services:
-
-```bash
-docker compose down
-```
-
-## Chat API
-
-`apps/chat_api` là API chatbot mới, thay thế `apps/rag_api` cũ.
-
-### Endpoints
-
-```text
-GET  /health
-GET  /modes
-POST /query
-GET  /v1/models
-POST /v1/chat/completions
-```
-
-### Query mẫu
-
-```bash
-curl -X POST http://localhost:8002/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Hiệu trưởng là ai?",
-    "mode": "semantic_search",
-    "top_k": 5,
-    "include_evidence": true
-  }'
-```
-
-### Modes
-
-- `semantic_search`: cần Qdrant running + collection đã tạo + markdown đã index.
-- `graph_search`: cần Neo4j running + graph đã import.
-- `naive_grag`: cần Neo4j running + graph đã import.
-- `hybrid`: cần cả Qdrant markdown index và Neo4j graph.
-
-## Pipeline API
-
-`apps/pipeline_api` phục vụ UI `/pipeline/*` để quản lý file và chạy pipeline end-to-end.
-
-### Endpoints chính
-
-```text
-GET    /api/health
-GET    /api/files/raw
-GET    /api/files/extracted
-GET    /api/files/resolved
-POST   /api/files/upload
-DELETE /api/files/raw/{filename}
-POST   /api/crawl
-POST   /api/pipeline/run
-GET    /api/pipeline/runs
-GET    /api/pipeline/runs/{run_id}
-POST   /api/pipeline/runs/{run_id}/cancel
-GET    /api/pipeline/runs/{run_id}/events
-```
-
-### Run modes
-
-- `quick_import`: extraction từ raw Markdown rồi import trực tiếp kết quả extracted vào Neo4j.
-- `full_pipeline`: extraction, entity resolution, rồi import output stage 3 vào Neo4j.
-
-## Chạy extract knowledge graph
-
-```bash
-python -m services.extraction.cli \
-  --input-dir data/raw/uet \
-  --output-dir data/extracted \
-  --provider OpenAICompatible \
-  --model cx/gpt-5.3-codex
-```
-
-Chạy lại toàn bộ, bỏ qua chế độ skip file đã tồn tại:
-
-```bash
-python -m services.extraction.cli \
-  --input-dir data/raw/uet \
-  --output-dir data/extracted \
-  --provider OpenAICompatible \
-  --model cx/gpt-5.3-codex \
-  --no-skip-existing
-```
-
-Xem options:
-
-```bash
-python -m services.extraction.cli --help
-```
-
-## Chạy entity resolution
-
-### Chạy nhanh toàn bộ 3 stage
-
-```bash
-python -m services.entity_resolution.cli \
-  --stage all \
-  --input-dir data/extracted \
-  --store-backend memory \
-  --run-id demo_run
-```
-
-Lưu ý:
-
-- `memory` nhanh nhưng không lưu dữ liệu giữa các lần chạy.
-- Với `memory`, dùng `--stage all` trong một lệnh.
-
-### Chạy từng stage với Qdrant backend
-
-```bash
-python -m services.entity_resolution.cli \
-  --stage stage1 \
-  --input-dir data/extracted \
-  --store-backend qdrant \
-  --run-id my_run
-
-python -m services.entity_resolution.cli \
-  --stage stage2 \
-  --store-backend qdrant \
-  --run-id my_run
-
-python -m services.entity_resolution.cli \
-  --stage stage3 \
-  --store-backend qdrant \
-  --run-id my_run
-```
-
-Options hay dùng:
-
-- `--llm-provider OpenAICompatible`
-- `--llm-model cx/gpt-5.3-codex`
-- `--enable-llm-blocking`
-- `--no-llm-blocking`
-- `--cluster-threshold 0.72`
-
-## Import vào Neo4j
-
-Sau khi chạy entity resolution, import graph đã resolve vào Neo4j:
-
-```bash
-python -m services.neo4j_import.import_to_neo4j \
-  --dir data/entity_resolution/artifacts/final/stage3/output_graph
-```
-
-## Index markdown cho RAG/Chat API
-
-```bash
-python -m services.rag_system.cli test-connections
-python -m services.rag_system.cli create-collection
-python -m services.rag_system.cli index --limit 100
-```
-
-Test query trực tiếp bằng CLI:
-
-```bash
-python -m services.rag_system.cli query \
-  --question "Hiệu trưởng là ai?" \
-  --mode semantic_search \
-  --top-k 5 \
-  --show-evidence
-```
-
-## Testing
-
-Tests chạy trong conda env `py312`:
-
-```bash
-conda run -n py312 python -m pytest apps/chat_api/tests -q
-conda run -n py312 python -m pytest apps/graph_api/tests -q
-conda run -n py312 python -m pytest services/rag_system/tests -q
-conda run -n py312 python -m pytest services/entity_resolution/tests -q
-conda run -n py312 python -m pytest services/extraction/tests -v
-```
-
-Frontend:
-
-```bash
-cd apps/frontend && npm run lint
-cd apps/frontend && npm run build
-```
-
-## Ghi chú
-
-- Luôn chạy lệnh từ thư mục gốc repo.
-- Docker Compose hiện dùng cho hạ tầng local; API/frontend vẫn có thể chạy trực tiếp khi phát triển.
-- `apps/rag_api` cũ đã được loại bỏ; dùng `apps/chat_api` cho chatbot product API.
-- Không commit `.env`, data generated, logs hoặc artifacts lớn.
+| File | Nội dung |
+|------|----------|
+| `thesis.zip` | Mã nguồn LaTeX + PDF luận văn |
+| `slide.zip` | PPTX + PDF báo cáo |
+| `evaluation.zip` | Dữ liệu đánh giá RAG pipeline |
+| `data.zip` | Archive dữ liệu cũ |

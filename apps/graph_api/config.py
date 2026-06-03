@@ -5,3 +5,6 @@ from services.config import (
     NEO4J_URI,
     NEO4J_USER,
 )
+import os
+
+VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "entity_embeddings")

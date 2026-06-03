@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+py312
+__pycache__
+.pytest_cache
+.mypy_cache
+apps/frontend/node_modules
+apps/frontend/dist
+data/docker
+data/archives
+project/thesis/logs
+*.log
+*.zip
+.env

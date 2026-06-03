@@ -19,9 +19,10 @@ class TestBuildCanonicalId:
         """Test Vietnamese names with diacritics."""
         assert build_canonical_id("Xuân Thủy") == "node_xuan_thuy"
         assert build_canonical_id("Hà Nội") == "node_ha_noi"
-        # Note: Đ with stroke becomes D after strip_accents, not Đ -> d
-        result = build_canonical_id("Trường Đại học Công nghệ")
-        assert result in ["node_truong_dai_hoc_cong_nghe", "node_truong_ai_hoc_cong_nghe"]
+        assert build_canonical_id("Trường Đại học Công nghệ") == "node_truong_dai_hoc_cong_nghe"
+        assert build_canonical_id("Đảng ủy") == "node_dang_uy"
+        assert build_canonical_id("Đại học Quốc gia Hà Nội") == "node_dai_hoc_quoc_gia_ha_noi"
+        assert build_canonical_id("Đồ họa máy tính") == "node_do_hoa_may_tinh"
 
     def test_complex_address(self):
         """Test complex address with numbers and special characters."""

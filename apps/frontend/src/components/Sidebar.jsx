@@ -6,7 +6,7 @@ export default function Sidebar() {
   const menuItems = [
     { path: '/', label: 'Home', icon: '🏠' },
     { path: '/search', label: 'Entities', icon: '📄' }, // Temporarily points to search
-    { path: '/chat', label: 'Chat RAG', icon: '💬' },
+    { path: '/duplicates', label: 'Duplicates', icon: '👯' },
     { path: '/pipeline', label: 'Pipeline', icon: '⚙️' },
     { path: '/developer', label: 'Developer', icon: '🛠️' },
   ];

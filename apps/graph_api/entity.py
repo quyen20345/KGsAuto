@@ -316,11 +316,13 @@ def search_entity_hybrid(q: str, top_k: int = 10, label_filter: str = None):
     driver = get_driver()
 
     with driver.session() as session:
+        from apps.graph_api.config import VECTOR_INDEX_NAME
         index_check = session.run(
-            "SHOW INDEXES YIELD name, state WHERE name = 'entity_embedding_index' RETURN state LIMIT 1"
+            "SHOW INDEXES YIELD name, state WHERE name = $index_name RETURN state LIMIT 1",
+            {"index_name": VECTOR_INDEX_NAME}
         ).single()
-        if not index_check:
-            return []
+        if not index_check or index_check["state"] != "ONLINE":
+            return search_entity_lexical(q, top_k, label_filter)
 
         model = _get_embedding_model()
         query_embedding = model.encode(query_text, convert_to_numpy=True, show_progress_bar=False).tolist()
@@ -329,8 +331,8 @@ def search_entity_hybrid(q: str, top_k: int = 10, label_filter: str = None):
         vector_top_k = min(top_k * 3, 100)
 
         results = session.run(
-            """
-            CALL db.index.vector.queryNodes('entity_embedding_index', $top_k, $query_embedding)
+            f"""
+            CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $top_k, $query_embedding)
             YIELD node, score
             RETURN node.id AS id,
                    node.name AS name,
@@ -449,55 +451,82 @@ def get_entity_details(entity_id: str):
     }
 
 
-@router.get("/entity/{entity_id}")
-def get_entity_details(entity_id: str):
-    query = """
+@router.get("/entity/{entity_id}/similar")
+def get_similar_entities(entity_id: str, top_k: int = 10):
+    from apps.graph_api.config import VECTOR_INDEX_NAME
+    query = f"""
     MATCH (n) WHERE n.id = $entity_id
-    OPTIONAL MATCH (n)-[r_out]->(m_out)
-    OPTIONAL MATCH (m_in)-[r_in]->(n)
-    RETURN n.id AS id, n.name AS name, labels(n) AS labels, properties(n) AS properties,
-           collect(DISTINCT {type: type(r_out), target_id: m_out.id, target_name: m_out.name, properties: properties(r_out)}) AS outgoing,
-           collect(DISTINCT {type: type(r_in), target_id: m_in.id, target_name: m_in.name, properties: properties(r_in)}) AS incoming
+    WITH n
+    WHERE n.embedding IS NOT NULL
+    CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $top_k + 1, n.embedding)
+    YIELD node, score
+    WHERE node.id <> $entity_id AND node.id IS NOT NULL
+    RETURN node.id AS id, node.name AS name, labels(node) AS labels, properties(node) AS properties, score
+    LIMIT $top_k
     """
     driver = get_driver()
     with driver.session() as session:
-        result = session.run(query, {"entity_id": entity_id}).single()
+        index_check = session.run(
+            "SHOW INDEXES YIELD name, state WHERE name = $index_name RETURN state LIMIT 1",
+            {"index_name": VECTOR_INDEX_NAME}
+        ).single()
+        if not index_check or index_check["state"] != "ONLINE":
+            return {"error": "Vector index not available"}
 
-    if not result or not result["id"]:
-        return {"error": "Entity not found"}
+        results = session.run(query, {"entity_id": entity_id, "top_k": top_k})
+        data = []
+        for r in results:
+            data.append({
+                "id": r["id"],
+                "name": r["name"],
+                "labels": r["labels"],
+                "properties": r["properties"],
+                "score": round(r["score"], 4),
+            })
+    return data
 
-    return {
-        "id": result["id"],
-        "name": result["name"],
-        "labels": result["labels"],
-        "properties": result["properties"],
-        "outgoing": [rel for rel in result["outgoing"] if rel.get("target_id")],
-        "incoming": [rel for rel in result["incoming"] if rel.get("target_id")],
-    }
 
-
-@router.get("/entity/{entity_id}")
-def get_entity_details(entity_id: str):
-    query = """
-    MATCH (n) WHERE n.id = $entity_id
-    OPTIONAL MATCH (n)-[r_out]->(m_out)
-    OPTIONAL MATCH (m_in)-[r_in]->(n)
-    RETURN n.id AS id, n.name AS name, labels(n) AS labels, properties(n) AS properties,
-           collect(DISTINCT {type: type(r_out), target_id: m_out.id, target_name: m_out.name, properties: properties(r_out)}) AS outgoing,
-           collect(DISTINCT {type: type(r_in), target_id: m_in.id, target_name: m_in.name, properties: properties(r_in)}) AS incoming
+@router.get("/duplicates/candidates")
+def get_duplicate_candidates(limit: int = 20, min_score: float = 0.85):
+    from apps.graph_api.config import VECTOR_INDEX_NAME
+    query = f"""
+    MATCH (n1:KGEntity)
+    WHERE n1.embedding IS NOT NULL
+    WITH n1 LIMIT $sample_size
+    CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', 5, n1.embedding)
+    YIELD node AS n2, score
+    WHERE n1.id < n2.id AND score >= $min_score AND n2.id IS NOT NULL
+    RETURN n1.id AS id1, n1.name AS name1, labels(n1) AS labels1, properties(n1) AS properties1,
+           n2.id AS id2, n2.name AS name2, labels(n2) AS labels2, properties(n2) AS properties2,
+           score
+    ORDER BY score DESC
+    LIMIT $limit
     """
     driver = get_driver()
     with driver.session() as session:
-        result = session.run(query, {"entity_id": entity_id}).single()
+        index_check = session.run(
+            "SHOW INDEXES YIELD name, state WHERE name = $index_name RETURN state LIMIT 1",
+            {"index_name": VECTOR_INDEX_NAME}
+        ).single()
+        if not index_check or index_check["state"] != "ONLINE":
+            return {"error": "Vector index not available", "data": []}
 
-    if not result or not result["id"]:
-        return {"error": "Entity not found"}
-
-    return {
-        "id": result["id"],
-        "name": result["name"],
-        "labels": result["labels"],
-        "properties": result["properties"],
-        "outgoing": [rel for rel in result["outgoing"] if rel.get("target_id")],
-        "incoming": [rel for rel in result["incoming"] if rel.get("target_id")],
-    }
+        results = session.run(query, {"limit": limit, "sample_size": limit * 5, "min_score": min_score})
+        data = []
+        for r in results:
+            data.append({
+                "entity1": {
+                    "id": r["id1"],
+                    "name": r["name1"],
+                    "labels": r["labels1"],
+                    "properties": r["properties1"],
+                },
+                "entity2": {
+                    "id": r["id2"],
+                    "name": r["name2"],
+                    "labels": r["labels2"],
+                    "properties": r["properties2"],
+                },
+                "score": round(r["score"], 4)
+            })
+    return {"success": True, "data": data}

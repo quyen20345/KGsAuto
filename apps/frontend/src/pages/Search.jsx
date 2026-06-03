@@ -2,10 +2,29 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import EntityLink from '../components/EntityLink';
+import EmptyState from '../components/EmptyState';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 
 export default function Search() {
   const { query } = useParams();
   const navigate = useNavigate();
+  const { setBreadcrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    if (query) {
+      setBreadcrumbs([
+        { label: 'Home', link: '/' },
+        { label: 'Search', link: '/search' },
+        { label: query, link: null }
+      ]);
+    } else {
+      setBreadcrumbs([
+        { label: 'Home', link: '/' },
+        { label: 'Search', link: null }
+      ]);
+    }
+  }, [query, setBreadcrumbs]);
+
   const [inputValue, setInputValue] = useState(query || '');
   const [labelFilter, setLabelFilter] = useState('');
   const [availableLabels, setAvailableLabels] = useState([]);
@@ -116,7 +135,11 @@ export default function Search() {
       </form>
 
       {!query ? (
-        <p>Nhập query rồi bấm Search.</p>
+        <EmptyState 
+          icon="🔍"
+          title="Bắt đầu tìm kiếm"
+          description="Nhập từ khóa vào ô tìm kiếm ở trên để tìm các thực thể trong Knowledge Graph."
+        />
       ) : (
         <>
           <h4>Duplicate-candidate results for: <i>{query}</i></h4>
@@ -125,7 +148,11 @@ export default function Search() {
           ) : searchState.error ? (
             <div className="merge-box merge-error">{searchState.error}</div>
           ) : results.length === 0 ? (
-            <p>No results found.</p>
+            <EmptyState 
+              icon="📭"
+              title="Không tìm thấy kết quả"
+              description={`Không có thực thể nào phù hợp với từ khóa "${query}". Hãy thử dùng từ khóa khác.`}
+            />
           ) : (
             <ul>
               {results.map((item) => (

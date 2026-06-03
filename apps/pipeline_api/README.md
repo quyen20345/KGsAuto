@@ -19,7 +19,7 @@ flowchart TB
     Crawl --> Raw
 
     Runs --> Runner[runner.py]
-    Runner --> Extraction[services.extraction.cli]
+    Runner --> Extraction[apps.pipeline_api.core.extraction]
     Runner --> EntityResolution[services.entity_resolution.cli]
     Runner --> Import[services.neo4j_import.import_to_neo4j]
     Runner --> DB[(SQLite run DB)]
@@ -91,8 +91,8 @@ flowchart LR
     ImportFull --> Neo4j
 ```
 
-- `quick_import`: runs `services.extraction.cli`, then imports `data/extracted` directly into Neo4j.
-- `full_pipeline`: runs extraction, runs `services.entity_resolution.cli --stage all --store-backend qdrant`, then imports `data/entity_resolution/artifacts/{run_id}/stage3/output_graph` into Neo4j.
+- `quick_import`: runs in-process extraction via `apps.pipeline_api.core.extraction`, then imports `data/extracted` directly into Neo4j.
+- `full_pipeline`: runs in-process extraction, runs `services.entity_resolution.cli --stage all --store-backend qdrant`, then imports `data/entity_resolution/artifacts/{run_id}/stage3/output_graph` into Neo4j.
 
 Only one active run is reserved at a time. A second trigger returns a conflict until the current run completes, fails, or is cancelled.
 
@@ -107,7 +107,8 @@ sequenceDiagram
     participant API as Pipeline API
     participant Runner as runner.py
     participant DB as SQLite
-    participant Services as Extraction/ER/Import
+    participant Core as In-process extraction
+    participant Services as ER/Import subprocesses
 
     UI->>API: POST /api/pipeline/run
     API->>Runner: reserve_run(run_id)
@@ -115,7 +116,9 @@ sequenceDiagram
     UI->>API: GET /api/pipeline/runs/{run_id}/events
 
     Runner->>DB: create/update run rows
-    Runner->>Services: run subprocess steps
+    Runner->>Core: run extraction with per-file progress callback
+    Core-->>Runner: file progress events
+    Runner->>Services: run ER/import subprocess steps
     Services-->>Runner: stdout/stderr lines
     Runner->>DB: append logs
     Runner-->>API: status/log events

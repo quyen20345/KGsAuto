@@ -9,6 +9,7 @@ import Entity from './pages/Entity';
 import Chat from './pages/chat';
 import Pipeline from './pages/pipeline';
 import Developer from './pages/Developer';
+import Duplicates from './pages/Duplicates';
 import { ToastProvider } from './context/ToastContext';
 import { BreadcrumbProvider } from './context/BreadcrumbContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -31,6 +32,7 @@ function App() {
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/entity/:id" element={<Entity />} />
                   <Route path="/pipeline/*" element={<Pipeline />} />
+                  <Route path="/duplicates" element={<Duplicates />} />
                   <Route path="/developer" element={<Developer />} />
                 </Routes>
               </div>

@@ -39,6 +39,50 @@ export const pipelineApi = {
     return jsonOrThrow(res);
   },
 
+  uploadStageFiles: async (formData) => {
+    const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/stages/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    return jsonOrThrow(res, 'Stage upload failed');
+  },
+
+  crawlStageUrls: async ({ urls, output_dir }) => {
+    const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/stages/crawl`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls, output_dir }),
+    });
+    return jsonOrThrow(res, 'Stage crawl failed');
+  },
+
+  runExtractStage: async ({ input_dir, output_dir, skip_existing = true, run_id = null }) => {
+    const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/stages/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input_dir, output_dir, skip_existing, run_id }),
+    });
+    return jsonOrThrow(res, 'Extract stage failed');
+  },
+
+  runEntityResolutionStage: async ({ input_dir, output_dir, store_backend = 'memory', run_id = null }) => {
+    const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/stages/entity-resolution`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input_dir, output_dir, store_backend, run_id }),
+    });
+    return jsonOrThrow(res, 'Entity resolution stage failed');
+  },
+
+  runIncrementalERStage: async ({ input_dir, candidate_top_k = 5, candidate_min_score = 0.85, enable_llm_blocking = true, run_id = null }) => {
+    const res = await fetch(`${PIPELINE_API_BASE}/api/pipeline/stages/incremental-er`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input_dir, candidate_top_k, candidate_min_score, enable_llm_blocking, run_id }),
+    });
+    return jsonOrThrow(res, 'Incremental ER stage failed');
+  },
+
   deleteRawFile: async (name) => {
     const res = await fetch(`${PIPELINE_API_BASE}/api/files/raw/${encodeURIComponent(name)}`, {
       method: 'DELETE',
@@ -177,6 +221,16 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    return jsonOrThrow(res);
+  },
+
+  getDuplicateCandidates: async (limit = 20, minScore = 0.85) => {
+    const res = await fetch(`${GRAPH_API_BASE}/api/duplicates/candidates?limit=${limit}&min_score=${minScore}`);
+    return jsonOrThrow(res);
+  },
+
+  getSimilarEntities: async (id, topK = 10) => {
+    const res = await fetch(`${GRAPH_API_BASE}/api/entity/${encodeURIComponent(id)}/similar?top_k=${topK}`);
     return jsonOrThrow(res);
   },
 

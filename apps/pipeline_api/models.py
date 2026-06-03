@@ -68,3 +68,56 @@ class CrawlRequest(BaseModel):
 class CrawlResponse(BaseModel):
     files_created: list[str]
     errors: list[str]
+
+
+class StageUploadResponse(BaseModel):
+    output_dir: str
+    uploaded: list[str]
+    skipped: list[str]
+
+
+class StageCrawlRequest(BaseModel):
+    urls: list[str]
+    output_dir: str
+
+
+class StageCrawlResponse(BaseModel):
+    output_dir: str
+    files_created: list[str]
+    errors: list[str]
+
+
+class ExtractStageRequest(BaseModel):
+    input_dir: str
+    output_dir: str
+    skip_existing: bool = True
+    run_id: str | None = None
+
+
+class EntityResolutionStageRequest(BaseModel):
+    input_dir: str
+    output_dir: str
+    store_backend: str = "memory"
+    run_id: str | None = None
+
+
+
+class IncrementalERRequest(BaseModel):
+    input_dir: str
+    candidate_top_k: int = 5
+    candidate_min_score: float = 0.85
+    enable_llm_blocking: bool = True
+    run_id: str | None = None
+
+
+class IncrementalERResult(BaseModel):
+    run_id: str
+    new_entities: int
+    merged_entities: int
+    total_clusters: int
+    nodes_created: int
+    nodes_updated: int
+    relationships_created: int
+    relationships_rewired: int
+    embeddings_updated: int
+    audit_path: str | None = None
