@@ -4,7 +4,6 @@
 .git/
 # *.md
 !README.md
-!project/docs/
 data/
 # project/thesis/
 *.txt
@@ -22,8 +21,6 @@ CLAUDE.md
 *.backup
 # project/docs/ (un-ignored above for README assets)
 
-# ==============================================================================
-# 2. ENVIRONMENT & SECRETS
 # ==============================================================================
 # 2. ENVIRONMENT & SECRETS
 # ==============================================================================

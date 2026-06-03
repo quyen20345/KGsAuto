@@ -3,7 +3,7 @@
 ## Yêu cầu hệ thống
 
 - **Docker** + Docker Compose (>= 2.0)
-- **Python 3.12+** (nếu chạy dev mode)
+- **Conda** + Python 3.12 (nếu chạy dev mode)
 - **Node.js 22+** (nếu chạy dev mode)
 - Ổ cứng trống ~2GB cho dữ liệu
 
@@ -11,11 +11,11 @@
 
 ```bash
 # Clone project
-git clone <repo-url> KGsAuto
+git clone https://github.com/quyen20345/KGsAuto.git
 cd KGsAuto
 
-# Tải và giải nén dữ liệu (nếu có file data.zip)
-# Link drive: <link>
+# Tải và giải nén dữ liệu (từ Google Drive)
+# Link: <link>
 unzip KGsAuto_data.zip
 # Cấu trúc sau giải nén:
 #   data/docker/       - Neo4j + Qdrant volumes (647MB)
@@ -26,7 +26,15 @@ unzip KGsAuto_data.zip
 #   data/pipeline_state.db - Trạng thái pipeline
 ```
 
-## 2. Cấu hình môi trường
+## 2. Cài đặt nhanh (tự động)
+
+```bash
+./run.sh setup
+```
+
+Lệnh này sẽ: tạo conda env `py312`, cài Python packages, cài frontend dependencies, khởi động Neo4j + Qdrant.
+
+## 3. Cấu hình môi trường
 
 ```bash
 cp .env.example .env
@@ -49,7 +57,7 @@ NEO4J_PASSWORD=12345678
 QDRANT_URL=http://localhost:6333
 ```
 
-## 3. Chạy toàn bộ hệ thống bằng Docker
+## 4. Chạy toàn bộ hệ thống bằng Docker
 
 ```bash
 # Khởi động tất cả services
@@ -78,14 +86,14 @@ docker compose logs -f
 - Graph API Docs: http://localhost:8000/docs
 - Pipeline API Docs: http://localhost:8001/docs
 
-## 4. Dừng hệ thống
+## 5. Dừng hệ thống
 
 ```bash
 docker compose down          # Dừng, giữ dữ liệu
 docker compose down -v       # Dừng và XÓA toàn bộ dữ liệu volumes
 ```
 
-## 5. Import/Export dữ liệu Neo4j
+## 6. Import/Export dữ liệu Neo4j
 
 ### Export ra file
 
@@ -104,7 +112,7 @@ cat data/exports/neo4j_backup.cypher | \
   docker exec -i kgsauto_neo4j cypher-shell -u neo4j -p 12345678
 ```
 
-## 6. Chạy Pipeline (tạo Knowledge Graph mới)
+## 7. Chạy Pipeline (tạo Knowledge Graph mới)
 
 Pipeline gồm 4 bước qua Pipeline API (port 8001) hoặc qua UI Pipeline Dashboard:
 
@@ -142,21 +150,21 @@ python -m services.neo4j_import.import_to_neo4j \
   --dir data/entity_resolution/artifacts/final/stage3/output_graph
 ```
 
-## 7. Chạy Dev Mode (không Docker cho backend)
+## 8. Chạy Dev Mode (không Docker cho backend)
 
 ```bash
-# Chỉ chạy hạ tầng (Neo4j + Qdrant)
-docker compose up -d neo4j qdrant
+# Cài đặt toàn bộ (chạy 1 lần)
+./run.sh setup
 
-# Cài dependencies
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+# Hoặc cài thủ công:
+conda activate py312                          # Kích hoạt conda env
+docker compose up -d neo4j qdrant             # Chạy hạ tầng
+pip install -r requirements.txt               # Python packages
 pip install -e . --no-deps
-
-# Cài frontend
-cd apps/frontend && npm install && cd ../..
+cd apps/frontend && npm install && cd ../..   # Frontend
 
 # Chạy tất cả
+conda activate py312
 ./run.sh dev
 
 # Hoặc chạy riêng lẻ
@@ -164,7 +172,7 @@ cd apps/frontend && npm install && cd ../..
 ./run.sh frontend  # Chỉ frontend
 ```
 
-## 8. Kiểm thử
+## 9. Kiểm thử
 
 ```bash
 # Backend tests
@@ -175,7 +183,7 @@ python -m pytest services/rag_system/tests services/entity_resolution/tests -q
 cd apps/frontend && npm run lint && npm run build
 ```
 
-## 9. Cấu trúc thư mục
+## 10. Cấu trúc thư mục
 
 ```
 KGsAuto/
@@ -199,7 +207,7 @@ KGsAuto/
 └── pyproject.toml
 ```
 
-## 10. Khắc phục sự cố thường gặp
+## 11. Khắc phục sự cố thường gặp
 
 **Neo4j không khởi động:**
 ```bash
