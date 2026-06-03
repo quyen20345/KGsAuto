@@ -2,13 +2,15 @@
 
 Hệ thống tự động xây dựng Knowledge Graph từ tài liệu tiếng Việt, sử dụng LLM để trích xuất thực thể và quan hệ, xử lý trùng lặp, import vào Neo4j, index vào Qdrant, và cung cấp API/frontend để truy vấn.
 
+Xem hướng dẫn cài đặt chi tiết: **[SETUP.md](SETUP.md)**
+
 ## Kiến trúc
 
 ```
-Markdown → Extraction (LLM) → Entity Resolution → Neo4j + Qdrant → Graph/Chat/Pipeline API → Frontend
+Markdown → Extraction (LLM) → Entity Resolution → Neo4j + Qdrant → API → Frontend
 ```
 
-Xem hướng dẫn cài đặt chi tiết: **[SETUP.md](SETUP.md)**
+![Architecture](static/architecture.png)
 
 ## Chạy nhanh bằng Docker
 
@@ -27,9 +29,8 @@ Tất cả services được khởi động: Neo4j, Qdrant, Graph API, Pipeline 
 ## Chạy dev mode (không Docker)
 
 ```bash
-# Yêu cầu: Python 3.12+, Node.js, Docker (chạy Neo4j + Qdrant)
-cp .env.example .env   # Điền API key LLM
-docker compose up -d neo4j qdrant   # Chỉ chạy hạ tầng
+cp .env.example .env                          # Điền API key LLM
+docker compose up -d neo4j qdrant             # Chạy hạ tầng
 pip install -r requirements.txt && pip install -e . --no-deps
 cd apps/frontend && npm install && cd ../..
 ./run.sh dev
@@ -37,19 +38,29 @@ cd apps/frontend && npm install && cd ../..
 
 ## Giao diện
 
+### Toàn cảnh Knowledge Graph
+
+![Graph Visualize](static/graph-visualize.png)
+
 ### Xem chi tiết thực thể
 
-![Entity View](project/docs/assets/ui-entity.png)
+![Entity Detail](static/entity-detail.png)
 
 ### So sánh và merge thực thể trùng lặp
 
-![Compare Entities](project/docs/assets/ui-compare.png)
+![Entity Compare](static/entity-compare.png)
 
 ## Pipeline chính
 
 1. **Upload / Crawl** — Markdown đầu vào từ `data/raw/` hoặc crawl web
 2. **Extraction** — LLM trích xuất entities và relationships ra KG JSON
+
+![Extraction Pipeline](static/pipeline-extraction.png)
+
 3. **Entity Resolution** — Chuẩn hóa, blocking, clustering, matching thực thể trùng
+
+![ER Pipeline](static/pipeline-er.png)
+
 4. **Import Neo4j** — Import KG đã resolve vào Neo4j + index Qdrant
 
 Tất cả các bước chạy qua Pipeline API (`localhost:8001/docs`) hoặc qua UI Pipeline Dashboard.
@@ -67,10 +78,10 @@ Tất cả các bước chạy qua Pipeline API (`localhost:8001/docs`) hoặc q
 ```
 ├── apps/              # Frontend (React/Vite) + 3 FastAPI apps
 ├── services/          # Pipeline, RAG, extraction, entity_resolution...
-├── scripts/           # Script vận hành, backfill, visualize
+├── scripts/           # Script vận hành
+├── static/            # Ảnh cho README
 ├── docker/            # Dockerfile.backend (dùng chung 3 API)
-├── data/              # Dữ liệu, exports, archives
-├── project/           # Tài liệu, assets (ảnh UI)
+├── data/              # Dữ liệu, exports, archives (gitignored)
 ├── docker-compose.yaml
 ├── run.sh             # Quick start script
 ├── SETUP.md           # Hướng dẫn cài đặt chi tiết
